@@ -153,23 +153,175 @@ Sí existe, en tres fuentes oficiales:
 
 Notación: L = lanzamiento, R = regreso, FD = día de vuelo, d = días, m = meses.
 
-| Medición | Antes del vuelo | En vuelo | Después del vuelo |
-|---|---|---|---|
-| Densidad ósea (DXA) | L-21/18 m, L-180/30 d | ❌ No hay DXA | R+<30 d, después hasta recuperar |
-| Fuerza | — | L+14 d, después al menos cada 30 d | — |
-| VO₂pico | L-12 m, L-90/30 d | FD14, FD75, FD165, FD255, R-14 | R+5, R+30 |
-| Masa corporal | — | L+7 d, después mensual | — |
-| Examen ocular (OCT, fondo de ojo) | L-21/18 m, L-9/6 m | L+30, L+90, L+180, L+270, R-30 | R+1/3 d |
-| Ecografía de trombosis venosa | L-12/3 m | L+30, L+60, R-42 | R+0/45 |
-| Sangre y orina | L-90/30 d | L+180 (y ante síntomas) | R+0/1, R+3/7, R+14/30 |
-| Tolerancia ortostática | — | — | R+0, después diaria hasta estabilizarse |
-| Equilibrio y vestíbulo | L-9/6 m, L-90/30 d | — | R+7/10 |
-| Prueba funcional física | L-9/6 m, L-90/30 d | — | R+5/7, R+30 |
-| Sueño (actígrafo) | 2 semanas de base | Continuo | Hasta R+7 |
-| Conferencia médica privada | — | Semanal (diaria los últimos 5 días) | — |
-| Cuestionario de dieta | — | Semanal | — |
+#### Mediciones antes y después del vuelo (en Tierra)
+
+Las mediciones previas al vuelo son la **línea base**: todo cambio se calcula contra ellas. Las posteriores muestran **cuánto se perdió y cuánto tarda en recuperarse**.
+
+| Medición | Antes del vuelo | Después del vuelo |
+|---|---|---|
+| Densidad ósea (DXA) | L-21/18 m y L-180/30 d | R+<30 d, luego seguimiento hasta recuperar |
+| Capacidad aeróbica (VO₂pico) | L-12 m, L-90/30 d | R+5, R+30 |
+| Examen ocular especializado (OCT, fondo de ojo) | L-21/18 m, L-9/6 m | R+1/3 d |
+| Ecografía de trombosis venosa | L-12/3 m | R+0/45 |
+| Análisis de sangre y orina | L-90/30 d | R+0/1, R+3/7, R+14/30 |
+| Tolerancia ortostática (prueba de pie) | — | R+0, luego diario hasta estabilizarse |
+| Equilibrio y vestíbulo | L-9/6 m, L-90/30 d | R+7/10 |
+| Prueba funcional física | L-9/6 m, L-90/30 d | R+5/7, R+30 |
+| Sueño (actígrafo) | 2 semanas de base | Hasta R+7 |
+| Standard Measures (investigación) | L-180, L-90 | R+10/15, R+30 |
+
+#### Mediciones durante el vuelo (a bordo)
+
+Son las que la herramienta puede seguir **en tiempo real** durante la misión.
+
+| Medición | Frecuencia en vuelo |
+|---|---|
+| Fuerza (strength & conditioning) | L+14 d y luego al menos cada 30 días |
+| Capacidad aeróbica | FD14, FD75, FD165, FD255, R-14 |
+| Masa corporal | L+7 d y luego mensual |
+| Examen ocular (OCT, fondo de ojo) | L+30, L+90, L+180, L+270, R-30 |
+| Ecografía de trombosis venosa | L+30, L+60, R-42 |
+| Análisis de sangre y orina | L+180 (y ante síntomas) |
+| Sueño (actígrafo) | Continuo |
+| Evaluación de salud por el médico de a bordo | L+14/21, L+90, L+180, L+270, R-21/14 |
+| Conferencia médica privada | Semanal (diaria los últimos 5 días) |
+| Cuestionario de dieta | Semanal |
+| Standard Measures (investigación) | FD30 y R-30 |
+
+**En vuelo no se miden** la densidad ósea, porque no hay DXA a bordo, ni la tolerancia ortostática, el equilibrio o la prueba funcional, que solo tienen sentido con gravedad. Por eso la herramienta tiene que **estimar** esos valores durante el vuelo.
 
 **Contramedida diaria:** unos **600 min de ejercicio por semana** (~2,5 h/día, 6 días/semana). Incluye aeróbico en CEVIS o T2 al 70–100 % del VO₂pico o de la frecuencia cardíaca máxima, y fuerza en ARED (sentadilla, peso muerto, elevación de talones).
+
+### 5.5 Cada medición: método, cómo funciona y qué le hace el espacio
+
+#### 1. Densidad ósea (DXA)
+- **Método:** absorciometría de rayos X de doble energía (DXA), en cadera, columna, talón, antebrazo y cuerpo entero.
+- **Cómo funciona:** el equipo emite rayos X con dos energías distintas. El hueso y el tejido blando los atenúan de forma diferente, y con esa diferencia se separa la masa mineral del resto. El resultado es la densidad mineral ósea en g/cm². Dos índices la comparan:
+  - **T-score**, contra un adulto joven;
+  - **Z-score**, contra personas de la misma edad.
+- **Qué hace el espacio:** sin peso, el hueso deja de recibir carga mecánica. Las células que la detectan (osteocitos) reaccionan, y aumenta la **resorción**, es decir, la destrucción de hueso, mientras la formación no aumenta. Se pierde **1–1,5 % por mes** en cadera y columna, sobre todo en hueso trabecular. El calcio liberado se elimina por la orina.
+- **Efecto en la salud:** mayor riesgo de **fractura**, por ejemplo al aterrizar o al trabajar en Marte, y osteoporosis temprana. La recuperación tarda meses o años y a veces no es completa. El calcio en la orina aumenta el riesgo de **cálculos renales**.
+
+#### 2. Fuerza muscular
+- **Método:**
+  - En Tierra, **dinamómetro isocinético** (Biodex).
+  - En vuelo, cargas en **ARED**, el equipo de pesas con cilindros de vacío.
+- **Cómo funciona:** el dinamómetro mantiene la articulación a una velocidad angular constante, por ejemplo 60°/s o 180°/s, y mide el **torque máximo** que genera el músculo en extensión y flexión de rodilla y tobillo.
+- **Qué hace el espacio:** los músculos antigravitatorios (sóleo, gastrocnemio, cuádriceps y los de la columna) ya no sostienen el cuerpo. Baja la síntesis de proteínas y aparece **atrofia**. Aun con ejercicio, el sóleo pierde ~5,8 % y el gastrocnemio ~4 %. Sin ejercicio, en reposo en cama, la fuerza de rodilla cayó **27 %** en 70 días (Campaign 11).
+- **Efecto en la salud:** menos capacidad para tareas exigentes como caminatas espaciales (EVA), salida de emergencia de la nave o trabajo en superficie. También aumenta el riesgo de caídas y lesiones al volver a la gravedad.
+
+#### 3. Capacidad aeróbica (VO₂pico)
+- **Método:** prueba en cicloergómetro con carga creciente. A bordo se hace en el **CEVIS**: se registra la frecuencia cardíaca por etapa y, con el **PFS**, se miden los gases respirados.
+- **Cómo funciona:** se mide el O₂ consumido en cada respiración. El VO₂pico es el máximo alcanzado y depende de cuánta sangre bombea el corazón y de cuánto oxígeno extraen los músculos. Cuando no se miden gases, se estima por la relación entre frecuencia cardíaca y carga.
+- **Qué hace el espacio:**
+  - se pierde **10–15 % del volumen de plasma**;
+  - el corazón se atrofia un poco y bombea menos sangre por latido;
+  - el músculo pierde mitocondrias.
+- **Efecto en la salud:**
+  - Una caída **≥20 %** se asocia con peor rendimiento en tareas críticas; entre el 12 y el 21 % de la tripulación de la ISS la sufre en algún momento.
+  - El mínimo operativo es **32,9 ml/kg/min**.
+  - Se recupera en unos 30 días después de volver.
+
+#### 4. Masa corporal
+- **Método:** **SLAMMD**. En ingravidez una balanza no funciona.
+- **Cómo funciona:** aplica la 2.ª ley de Newton (m = F/a). Unos resortes ejercen una fuerza conocida sobre el astronauta, el equipo mide la aceleración que produce y de ahí calcula la masa.
+- **Qué hace el espacio:** suele haber un **déficit calórico** por menos apetito, alteración del gusto y mucha carga de trabajo. Se suma a la pérdida de músculo y hueso.
+- **Efecto en la salud:** una pérdida de masa no planificada acelera la atrofia muscular y la pérdida ósea, y reduce el rendimiento. El **cuestionario semanal de dieta** sirve para corregirlo; vigila energía, proteína, vitamina D y sodio, ya que el exceso de sodio aumenta la pérdida ósea.
+
+#### 5. Examen ocular: SANS
+- **Método:**
+  - **OCT** (tomografía de coherencia óptica);
+  - fotografía de **fondo de ojo**;
+  - **tonometría**, que mide la presión dentro del ojo;
+  - **ecografía ocular**.
+- **Cómo funciona:**
+  - La OCT usa luz infrarroja de baja coherencia y mide cómo se refleja, como una "ecografía con luz". Así obtiene cortes de la retina y del nervio óptico con resolución de micrómetros.
+  - La ecografía mide el diámetro de la vaina del nervio óptico, que indica la presión alrededor del cerebro.
+- **Qué hace el espacio:** sin gravedad, los fluidos se desplazan hacia la cabeza (**desplazamiento cefálico**). Aumenta la congestión venosa y desaparece la bajada de presión intracraneal que ocurre en la Tierra al estar de pie. Esto produce el **SANS** (Spaceflight-Associated Neuro-ocular Syndrome):
+  - edema del disco óptico;
+  - pliegues en la coroides;
+  - aplanamiento del globo ocular;
+  - cambio hacia la hipermetropía.
+- **Efecto en la salud:** visión borrosa de cerca. Es frecuente en misiones largas y algunos cambios **persisten años**. Es uno de los mayores riesgos sin resolver para un viaje a Marte.
+
+#### 6. Ecografía venosa (trombosis)
+- **Método:** **ecografía con compresión y Doppler** de la vena yugular interna del cuello.
+- **Cómo funciona:**
+  - Se presiona la vena con la sonda: si no colapsa, puede haber un coágulo.
+  - El Doppler mide la velocidad y la dirección de la sangre por el cambio de frecuencia del ultrasonido reflejado.
+- **Qué hace el espacio:** por el desplazamiento de fluidos, las yugulares se dilatan. En un estudio de la ISS, varios astronautas tenían **flujo estancado o invertido**, y en uno se encontró un **trombo** que se descubrió de forma inesperada.
+- **Efecto en la salud:** riesgo de **embolia**. Tratarla en vuelo es difícil porque hay pocos anticoagulantes a bordo y no hay evacuación rápida.
+
+#### 7. Análisis de sangre y orina
+- **Método:**
+  - **Sangre:** hemograma, panel metabólico y marcadores óseos (fosfatasa alcalina, CTX/NTX).
+  - **Orina:** de 24 h, con calcio, oxalato, citrato y volumen.
+  - En la ISS las muestras se congelan en el **MELFI** y se analizan en la Tierra.
+- **Cómo funciona:** son análisis clínicos estándar. En la orina se calcula la **sobresaturación**, la tendencia de las sales a cristalizar y formar cálculos.
+- **Qué hace el espacio:**
+  - Al principio la sangre se concentra, porque se pierde plasma.
+  - Después aparece la **"anemia espacial"**, por mayor destrucción de glóbulos rojos.
+  - Aumenta el calcio en orina por la pérdida ósea, y hay tendencia a la deshidratación.
+- **Efecto en la salud:**
+  - Los **cálculos renales** serían una emergencia lejos de la Tierra.
+  - La anemia causa fatiga.
+  - Estos análisis también son la base para controlar la función renal y el sistema inmune.
+
+#### 8. Tolerancia ortostática (prueba de pie o de inclinación)
+- **Método:** **prueba de pie** de 10 minutos, o **mesa basculante a 80°**. Se mide:
+  - la frecuencia cardíaca con **ECG**;
+  - la presión latido a latido con un **Finapres**, un manguito de dedo que sigue la presión de forma continua mediante pletismografía;
+  - el volumen sistólico por Doppler.
+- **Cómo funciona:** al pasar de acostado a de pie, la gravedad lleva sangre a las piernas. Normalmente el **barorreflejo** compensa: acelera el corazón y contrae los vasos. La prueba mide si esa compensación alcanza, con la caída de presión, la subida de frecuencia cardíaca y el tiempo que la persona tolera de pie.
+- **Qué hace el espacio:**
+  - hay menos volumen de sangre;
+  - el corazón está algo atrofiado;
+  - el barorreflejo está "desentrenado", porque en ingravidez nunca tuvo que actuar.
+- **Efecto en la salud:** al volver a la gravedad, **mareo, presíncope o desmayo**, sobre todo en los primeros días. Es crítico al llegar a Marte, donde no hay equipo de apoyo y puede ser necesario salir de la nave en una emergencia. En vuelo no se puede medir; por eso los datos de MR001G sirven para **predecirla**.
+
+#### 9. Equilibrio y función vestibular
+- **Método:**
+  - **posturografía dinámica computarizada** (Sensory Organization Test);
+  - pruebas de campo después del aterrizaje (Field Test): levantarse, caminar, esquivar obstáculos.
+- **Cómo funciona:** una plataforma con sensores de fuerza mide el balanceo del cuerpo. La plataforma y el entorno visual se mueven a la par con la persona para "anular" la información de los pies o de la vista, y así se aísla el **sistema vestibular**, el oído interno.
+- **Qué hace el espacio:** los **otolitos** del oído interno detectan la gravedad y la aceleración lineal. Sin gravedad, el cerebro **reinterpreta** sus señales para adaptarse. Al volver, esa adaptación falla por un tiempo.
+- **Efecto en la salud:**
+  - al principio de la misión, mareo espacial;
+  - al regresar, vértigo, marcha inestable, desorientación y dificultad para conducir u operar equipos.
+  - Se recupera en días o semanas.
+
+#### 10. Prueba funcional física
+- **Método:** una batería de pruebas: fuerza de prensión, flexiones, abdominales, flexibilidad (*sit-and-reach*), agilidad con conos y salto.
+- **Cómo funciona:** son pruebas de campo simples y repetibles que integran fuerza, potencia, coordinación y resistencia.
+- **Qué hace el espacio:** combina todos los efectos anteriores: músculo, hueso, corazón y equilibrio.
+- **Efecto en la salud:** indica si el astronauta está **apto para tareas físicas reales** y cuándo puede volver a la actividad normal.
+
+#### 11. Sueño
+- **Método:** **actígrafo**, un sensor en la muñeca con acelerómetro y sensor de luz, más diarios de sueño.
+- **Cómo funciona:** un algoritmo clasifica cada minuto como sueño o vigilia según el movimiento. Con eso estima la duración, la eficiencia y los despertares. El sensor de luz sirve para evaluar el ritmo circadiano.
+- **Qué hace el espacio:** no lo causa la gravedad, pero afecta a todos los astronautas:
+  - la ISS ve unos 16 amaneceres por día;
+  - hay ruido, CO₂ y una agenda exigente;
+  - el promedio ronda las ~6 h de sueño, y es común usar somníferos.
+- **Efecto en la salud:** fatiga, errores, peor rendimiento cognitivo y estado de ánimo. Además empeora la recuperación muscular.
+
+#### Mediciones operativas (no son mediciones físicas)
+- **Conferencia médica privada y evaluación del médico de a bordo:** son entrevistas y exámenes clínicos con el cirujano de vuelo en Tierra. Ahí se integran los síntomas y todos los datos anteriores.
+- **Standard Measures:** una batería de investigación que se aplica igual a todos los astronautas (sangre, cognición, microbioma, etc.). Sirve para construir una base de datos comparable entre misiones.
+
+#### Qué implica para la herramienta
+- **Se puede seguir en vuelo con datos reales:**
+  - fuerza (ARED);
+  - capacidad aeróbica (CEVIS);
+  - masa (SLAMMD);
+  - ojo (OCT);
+  - ecografía venosa;
+  - sueño;
+  - dieta.
+- **Hay que estimar con modelos y datos históricos:**
+  - hueso, a partir de la pendiente de MR035G y la adherencia al ejercicio;
+  - tolerancia ortostática al regresar, con MR001G y la tendencia del VO₂ y la masa;
+  - equilibrio.
 
 ---
 

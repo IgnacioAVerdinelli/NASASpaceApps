@@ -6,6 +6,10 @@ It reads from gravsim's DataService and builds the dashboard JSON the 3D page sh
 
     from mocks.healthservice import HealthService, validate_dashboard
     dash = HealthService(data).dashboard(crew, day=120)      # data: a gravsim.DataService
+
+Its tests are not in the default run (sim/pyproject.toml collects tests/ only). Run them from sim/ with:
+
+    python -m pytest -q mocks
 """
 from .health import HealthService, validate_dashboard
 

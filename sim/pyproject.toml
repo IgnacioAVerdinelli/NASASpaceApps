@@ -12,7 +12,9 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 pandas = ["pandas>=2.0"]
-dev = ["pandas>=2.0", "pytest>=7"]
+dev = ["pandas>=2.0", "pytest>=7.2"]
+# the demo notebook, examples/gravsim_demo.ipynb (altair 6 fails nbformat validation on its charts)
+examples = ["pandas>=2.0", "altair>=5,<6"]
 
 [tool.setuptools]
 packages = ["gravsim"]
@@ -21,8 +23,7 @@ packages = ["gravsim"]
 gravsim = ["params.json"]
 
 [tool.pytest.ini_options]
-# tests/ checks the gravsim package; mocks/ (demo stand-ins for other teams' services, not packaged) has its own
-testpaths = ["tests", "mocks"]
+testpaths = ["tests"]
 pythonpath = ["."]
 # the stress tests sample thousands of crew members; run them with  python -m pytest -m slow
 markers = ["slow: stress tests against the data ranges and standards (a few minutes)"]

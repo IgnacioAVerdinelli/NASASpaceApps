@@ -4,6 +4,7 @@ schedule="nasa" follows the in-flight routine described in docs/investigacion-gr
 Table 8 and the Spaceflight Standard Measures): DXA only before and after flight, strength every 30 days,
 VO2peak on flight days 14, 75, 165 (and every 90 days on longer missions) and 14 days before return, the
 wearable every day. schedule=<int> reads every instrument every N days instead, DXA in flight included.
+The spacesuit reads only during spacewalks (CrewMember.add_eva), whatever the schedule.
 
 OCHMO-STD-100.1A Rev A (2024-09-09), Table 8 "Mission Medical Examinations for Assigned Crew on > 30-day
 Missions", based on a 180-day ISS mission (L = launch, R = return, FD = flight day, d = days):
@@ -21,7 +22,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Wearable
+from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Spacesuit, Wearable
 from .reading import Reading
 
 
@@ -30,7 +31,7 @@ def default_instruments(seed: int | None = None, faults: dict | None = None, noi
     faults = faults or {}
     # seed + 1, + 2, ...: each instrument gets its own random stream
     return {cls.name: cls(seed=None if seed is None else seed + k, faults=faults.get(cls.name, ()), noise=noise)
-            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable), start=1)}
+            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit), start=1)}
 
 
 def nasa_days(mission, instrument: str) -> list[float]:
@@ -46,6 +47,8 @@ def nasa_days(mission, instrument: str) -> list[float]:
         days = pre + sorted({d for d in flight if 0 <= d < land - 14} | {land - 14.0}) + [land + 5, land + 30]
     elif instrument == "wearable":
         days = [float(d) for d in range(-14, int(land + 30))]
+    elif instrument == "suit":    # the days of the crew's spacewalks; it reads whoever is outside
+        days = sorted({ev.day for cm in mission.crew for ev in cm.evas})
     else:
         raise KeyError(instrument)
     return [d for d in days if mission.start <= d <= end]
@@ -66,7 +69,7 @@ def timeline(mission, schedule: str | int = "nasa", instruments: dict[str, Instr
     crews = mission.crew if crew is None else (crew if isinstance(crew, (list, tuple)) else [crew])
     out: list[Reading] = []
     for name, inst in instruments.items():
-        if schedule == "nasa":
+        if schedule == "nasa" or name == "suit":
             days = nasa_days(mission, name)
         else:
             step = float(schedule)
@@ -79,6 +82,8 @@ def timeline(mission, schedule: str | int = "nasa", instruments: dict[str, Instr
         for cm in crews:
             for d in days:
                 out += inst.measure_all(cm, d)
+    if until is not None:          # a spacewalk that started by `until` may run past it
+        out = [r for r in out if r.mission_day <= until]
     out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure))
     return out
 

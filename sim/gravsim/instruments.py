@@ -25,7 +25,7 @@ import numpy as np
 
 from .core import MEASURES, MODEL, MODEL_VERSION, CrewMember
 from .pipeline import LIMITS
-from .reading import Reading
+from .reading import ContextRecord, Reading
 
 
 @dataclass
@@ -57,6 +57,31 @@ class Fault:
 def hr_max_tanaka(age: float) -> float:
     """Maximum heart rate from age (Tanaka 2001). A textbook formula, not fitted to our data."""
     return 208 - 0.7 * age
+
+
+# Heart rate above rest, as a share of the way from resting to maximum heart rate (assumed, not fitted)
+EXERCISE_EFFORT = 0.55            # an exercise block
+EVA_EFFORT = (0.2, 0.5)           # a spacewalk: long, moderate work, one task after another, 0.35 on average
+EVA_TASK_MINUTES = (20, 40)       # how long the effort of one spacewalk task lasts
+EVA_STREAM = 2                    # the random stream of spacewalk effort, next to routine.ROUTINE_STREAM
+
+
+def eva_heart_rate(crew: CrewMember, eva: ContextRecord) -> np.ndarray:
+    """True heart rate, minute by minute, through a spacewalk (an "eva" context record): the person's resting
+    heart rate that day plus an effort that changes from task to task. The Wearable's trace and the
+    Spacesuit's readings both use it, so they agree."""
+    ms = crew.mission
+    start = ms.day_of(eva.start)
+    minutes = int(round((ms.day_of(eva.end) - start) * 1440))
+    rng = np.random.default_rng([crew._day_key, EVA_STREAM, int(eva.start[:10].replace("-", ""))])
+    effort = np.empty(minutes)
+    i = 0
+    while i < minutes:
+        n = int(rng.integers(EVA_TASK_MINUTES[0], EVA_TASK_MINUTES[1] + 1))
+        effort[i:i + n] = rng.uniform(*EVA_EFFORT)
+        i += n
+    rest = crew.true_value("resting_hr", start)
+    return rest + effort * (hr_max_tanaka(crew.age) - rest)
 
 
 class Instrument:
@@ -232,20 +257,24 @@ class Wearable(Instrument):
     measures = ("resting_hr", "resting_sbp", "resting_dbp", "spo2", "hrv_rmssd")
 
     def session(self, crew: CrewMember, day: float, minutes: int = 1440) -> dict:
-        """Minute-by-minute heart rate over a day: resting level, a daily rhythm, sleep dip and two exercise
-        sessions when the crew member is exercising. The shape is assumed; the resting level comes from the model."""
+        """Minute-by-minute heart rate over the UTC date of `day` (minute 0 is 00:00 UTC), following the crew
+        member's routine for that date (routine.py, returned as "context"): the resting level with a daily
+        rhythm, a dip while asleep, a rise in each exercise block and through a spacewalk. The shape is
+        assumed; the resting level comes from the model. Past 1440 minutes the same day repeats."""
         rest = crew.true_value("resting_hr", day)
+        context = crew.routine(day)
+        midnight = crew.mission.day_of(context[0].start)
+        day_hr = rest + 6 * np.sin(2 * np.pi * (np.arange(1440) / 60 - 10) / 24)    # daily rhythm, low at night
+        for c in context:
+            s, e = (int(round((crew.mission.day_of(t) - midnight) * 1440)) for t in (c.start, c.end))
+            if c.activity == "sleep":
+                day_hr[s:e] -= 6
+            elif c.activity == "exercise":
+                day_hr[s:e] += (hr_max_tanaka(crew.age) - rest) * EXERCISE_EFFORT
+            elif c.activity == "eva":
+                day_hr[s:e] = eva_heart_rate(crew, c)
         t = np.arange(minutes)
-        hours = (t / 60.0) % 24
-        hr = rest + 6 * np.sin(2 * np.pi * (hours - 10) / 24)          # daily rhythm, low at night
-        hr -= np.where((hours < 6) | (hours >= 22.5), 6, 0)            # sleep
-        adh = crew.adherence(day)
-        if adh > 0:
-            for start_h, dur in ((9.0, 60), (16.0, 60)):                # exercise blocks (~2 h/day on the ISS)
-                if self.rng.random() < adh:
-                    s = int(start_h * 60)
-                    hr[s:s + dur] += (hr_max_tanaka(crew.age) - rest) * 0.55
-        hr = hr + self.rng.normal(0, 2.5 * self.noise, size=minutes)
+        hr = day_hr[t % 1440] + self.rng.normal(0, 2.5 * self.noise, size=minutes)
         trace = [{"minute": int(i), "hr_bpm": int(round(v))} for i, v in zip(t, hr)]
         for f in self.faults:
             if f.kind == "dropout" and f.active(day):
@@ -253,7 +282,38 @@ class Wearable(Instrument):
                     if self.rng.random() < f.prob:
                         p["hr_bpm"] = None
         return {"instrument": self.name, "crew_id": crew.id, "mission_day": day, "daily": [r.to_dict() for r in self.measure_all(crew, day)],
-                "trace": trace, "assumed": ["daily rhythm, sleep dip and exercise blocks"]}
+                "trace": trace, "context": [c.to_dict() for c in context],
+                "assumed": ["daily rhythm, sleep dip, effort of exercise blocks and spacewalks"]}
 
 
-INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable)}
+class Spacesuit(Instrument):
+    """Spacesuit telemetry: heart rate every few minutes while the crew member is outside on a spacewalk
+    (CrewMember.add_eva). Assumed: there is no spacewalk data behind it (instruments.eva_heart_rate)."""
+    name = "suit"
+    device = "spacesuit biomedical telemetry"
+    measures = ("heart_rate",)
+    every_minutes = 5
+
+    def measure(self, crew: CrewMember, day: float, measure: str | None = None) -> Reading:
+        """One heart-rate reading at mission time `day`, which must fall inside a spacewalk."""
+        eva = next((c for c in crew.routine(day) if c.activity == "eva"), None)
+        ms = crew.mission
+        if eva is None or not eva.start <= ms.timestamp(day) < eva.end:
+            raise ValueError(f"{crew.id} is not on a spacewalk at mission day {day:g}")
+        hr = eva_heart_rate(crew, eva)
+        minute = min(int((day - ms.day_of(eva.start)) * 1440), len(hr) - 1)
+        return self._read(crew, day, "heart_rate", true_value=float(hr[minute]))
+
+    def measure_all(self, crew: CrewMember, day: float) -> list[Reading]:
+        """Every heart-rate reading of the spacewalk on the UTC date of `day`, one every `every_minutes`;
+        [] if the crew member has no spacewalk that day."""
+        if crew.eva_on(day) is None:
+            return []
+        eva = next(c for c in crew.routine(day) if c.activity == "eva")
+        hr = eva_heart_rate(crew, eva)
+        start = crew.mission.day_of(eva.start)
+        return [self._read(crew, start + m / 1440, "heart_rate", true_value=float(hr[m]))
+                for m in range(0, len(hr), self.every_minutes)]
+
+
+INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit)}

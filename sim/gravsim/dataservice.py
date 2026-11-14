@@ -1,10 +1,13 @@
-"""DataService: holds all the data, raw readings and processed results, and answers requests for it.
+"""DataService: holds all the data, raw readings, crew context and processed results, and answers requests for it.
 
-Sensors send readings to ingest(); for the challenge, gravsim stands in for them. Every reading goes
-through the pipeline (pipeline.py) on the way in. The HealthService and the API then ask for:
+Sensors send readings to ingest() and crew context to ingest_context(); for the challenge, gravsim stands in
+for them. Everything goes through the pipeline (pipeline.py) on the way in. The HealthService and the API
+then ask for:
 
     readings(crew_id, measures, start, end)   every reading of a crew member in a time range
     latest(crew_id, measures, at)             the newest usable reading of each measure
+    context(crew_id, start, end)              where the crew member was and what they were doing
+    current_context(crew_id, at)              where they are and what they are doing at one time
 
 The HealthService saves what it computes with save_result(), and results() reads it back.
 
@@ -18,15 +21,20 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .core import MODEL_VERSION, expand
-from .pipeline import clean, key, order, utc_iso
-from .reading import Reading, Result
+from .pipeline import clean, clean_context, context_key, context_order, key, order, utc_iso
+from .reading import ContextRecord, Reading, Result
 from .store import SqliteStore
+
+# When context records overlap (a planned work block and a room sensor's toilet visit), observed beats planned:
+# the suit, then a room sensor, then the timeline, then any other source; within one source, the newest record.
+SOURCE_PRIORITY = {"suit": 3, "room_sensor": 2, "timeline": 1}
 
 
 class DataService:
     def __init__(self, store: SqliteStore | None = None):
         self.store = store or SqliteStore()
         self._readings: dict[tuple, Reading] = {}
+        self._context: dict[tuple, ContextRecord] = {}
         self._results: dict[tuple, Result] = {}
 
     # ---- raw data
@@ -57,6 +65,33 @@ class DataService:
         """The newest reading with quality "ok" of each measure, up to `at` (None: no limit)."""
         # readings() is oldest first, so the newest of each measure is written last
         return {r.measure: r for r in self.readings(crew_id, measures, end=at) if r.quality == "ok"}
+
+    # ---- crew context
+    def ingest_context(self, records: Iterable[ContextRecord | dict]) -> list[ContextRecord]:
+        """Clean context records (pipeline.clean_context), keep them and return them as kept. A record sent
+        again by the same source, for the same crew member and start, replaces the old one."""
+        records = clean_context(records)
+        self.store.save_context(records)
+        for c in records:
+            self._context[context_key(c)] = c
+        return records
+
+    def context(self, crew_id: str, start=None, end=None) -> list[ContextRecord]:
+        """A crew member's context records under way at any time from start to end (both included; None
+        leaves that end open), oldest first. Times in any form readings() takes."""
+        start, end = _utc_range(start, end)
+        found = {context_key(c): c for c in self.store.query_context(crew_id, start, end)}   # [] for now
+        for c in self._context.values():
+            if c.crew_id == crew_id and (start is None or c.end > start) and (end is None or c.start <= end):
+                found[context_key(c)] = c
+        return sorted(found.values(), key=context_order)
+
+    def current_context(self, crew_id: str, at) -> ContextRecord | None:
+        """Where the crew member is and what they are doing at `at`: the record with start <= at < end. If
+        several cover it, observed beats planned (SOURCE_PRIORITY: suit, room sensor, timeline), and within
+        one source the one that started last wins. None if nothing covers `at`, as before launch."""
+        at = utc_iso(at)
+        return max(self.context(crew_id, at, at), key=lambda c: (SOURCE_PRIORITY.get(c.source, 0), c.start), default=None)
 
     # ---- processed data
     def save_result(self, crew_id: str, kind: str, timestamp, payload: dict,

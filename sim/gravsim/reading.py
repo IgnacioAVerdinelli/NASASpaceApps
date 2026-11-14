@@ -1,7 +1,10 @@
-"""The two records the DataService holds: Reading (raw data) and Result (processed data).
+"""The three records the DataService holds: Reading (raw data), ContextRecord (crew context) and Result
+(processed data).
 
 gravsim's instruments create Readings. A real sensor can send a plain dict with the same keys; it needs
 crew_id, measure, timestamp, value and unit, and the DataService's pipeline turns it into a Reading.
+Context records say where a crew member is and what they are doing; gravsim's routine (routine.py) makes
+them, and real sources (the crew timeline, room sensors, the spacesuit) can send dicts with the same keys.
 The HealthService saves what it computes as Results.
 """
 from __future__ import annotations
@@ -40,6 +43,25 @@ class Reading:
         m = MEASURES.get(self.measure)
         if m and self.label is None:
             self.label, self.region, self.muscle_keys = m["label"], m.get("region"), list(m.get("muscle_keys") or [])
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+ACTIVITIES = ("sleep", "exercise", "work", "meal", "hygiene", "eva")     # "eva": a spacewalk, outside
+SOURCES = ("timeline", "room_sensor", "suit")    # crew timeline (the plan), module presence sensors, spacesuit
+
+
+@dataclass(kw_only=True)
+class ContextRecord:
+    """Where a crew member is and what they are doing, from `start` until `end`."""
+    crew_id: str
+    start: str                    # UTC, "2027-03-01T06:00:00Z"; the record starts here
+    end: str                      # UTC; the record stops just before this, where the next one starts
+    activity: str                 # one of ACTIVITIES
+    location: str | None = None   # an ISS module ("Destiny", "Tranquility", ...), "outside" on a spacewalk, None if unknown
+    source: str = "unknown"       # who reported it: one of SOURCES for gravsim; any text from a real sensor
+    synthetic: bool = False       # True for everything gravsim makes
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -15,6 +15,10 @@ and unit; the other Reading fields are optional and kept, unknown keys are ignor
    wins. The result is sorted by time.
 
 Flagged readings are kept, so nothing a sensor sent is lost; the HealthService only uses quality "ok".
+
+Crew context goes through clean_context(), with the same rules where they apply: records without a crew
+member, a known activity or a readable start and end, or that end before they start, are dropped; times
+become UTC ISO text; of several records with the same crew member, source and start, the last one wins.
 """
 from __future__ import annotations
 
@@ -25,11 +29,12 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .core import GROUPS, MEASURES, TIME_FORMAT
-from .reading import Reading
+from .reading import ACTIVITIES, ContextRecord, Reading
 from .units import convert
 
 log = logging.getLogger(__name__)
 FIELDS = {f.name for f in fields(Reading)}
+CONTEXT_FIELDS = {f.name for f in fields(ContextRecord)}
 
 # Values no living crew member produces at rest, in canonical units: the hard physiological and device limits.
 # Wide on purpose: they catch sensor and unit errors (a resting heart rate of 1.2 is beats per second sent
@@ -45,6 +50,7 @@ LIMITS = {
     "resting_dbp": (30, 150),    # mmHg
     "spo2": (70, 100),           # %; a saturation can't pass 100, and pulse oximeters are not accurate under 70
     "hrv_rmssd": (1, 300),       # ms
+    "heart_rate": (30, 220),     # bpm, the spacesuit's heart rate during a spacewalk
 }
 
 
@@ -68,6 +74,28 @@ def clean(records: Iterable[Reading | dict]) -> list[Reading]:
     if dropped:
         log.warning("dropped %d records without a crew member, a known measure or a readable time", dropped)
     return sorted(kept.values(), key=order)
+
+
+def clean_context(records: Iterable[ContextRecord | dict]) -> list[ContextRecord]:
+    """Run context records through the context rules (module docstring) and return them sorted by start."""
+    kept: dict[tuple, ContextRecord] = {}
+    dropped = 0
+    for record in records:
+        data = vars(record) if isinstance(record, ContextRecord) else record
+        try:
+            start, end = utc_iso(data.get("start")), utc_iso(data.get("end"))
+        except (TypeError, ValueError, OverflowError, OSError):
+            start = end = None
+        if not data.get("crew_id") or data.get("activity") not in ACTIVITIES or start is None or end <= start:
+            dropped += 1
+            continue
+        known = {k: v for k, v in data.items() if k in CONTEXT_FIELDS}
+        c = ContextRecord(**{**known, "start": start, "end": end})
+        kept[context_key(c)] = c
+    if dropped:
+        log.warning("dropped %d context records without a crew member, a known activity or a readable start "
+                    "before the end", dropped)
+    return sorted(kept.values(), key=context_order)
 
 
 def check_value(measure: str, value, unit: str | None) -> tuple[float | None, str | None, str]:
@@ -109,3 +137,12 @@ def key(r: Reading) -> tuple:
 
 def order(r: Reading) -> tuple:
     return r.timestamp, r.crew_id, r.instrument, r.measure, r.side or ""
+
+
+def context_key(c: ContextRecord) -> tuple:
+    """What makes two context records the same record: a source reports one record per crew member and start."""
+    return c.crew_id, c.source, c.start
+
+
+def context_order(c: ContextRecord) -> tuple:
+    return c.start, c.crew_id, c.source

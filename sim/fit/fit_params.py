@@ -42,7 +42,7 @@ DIRECTION = {
     "trunk_extension_60": -1, "trunk_flexion_60": -1,
     "hip_bmd": -1, "spine_bmd": -1, "heel_bmd": -1, "lean_legs": -1, "lean_arms": -1, "lean_trunk": -1,
     "vo2peak": -1, "resting_hr": 1, "resting_sbp": 1, "resting_dbp": 1,
-    "spo2": -1, "hrv_rmssd": -1,
+    "spo2": -1, "hrv_rmssd": -1, "heart_rate": 1,
 }
 
 # Generator-wide settings. Fitted where the data allows, otherwise assumed and listed here.
@@ -88,6 +88,7 @@ DEVICE = {
     "resting_dbp": (0.04, "blood-pressure cuff, about ±3 mmHg at 76 mmHg (assumed)"),
     "spo2": (0.01, "pulse oximeter, about ±1 point (assumed)"),
     "hrv_rmssd": (0.05, "wearable HRV, about ±5 % (assumed)"),
+    "heart_rate": (0.03, "spacesuit heart rate, about ±3 % (assumed)"),
 }
 
 QUANTILES = list(range(0, 101, 5))     # percentiles stored for sampling baselines (0 = min, 100 = max)
@@ -785,11 +786,22 @@ ASSUMED_WEARABLE = {
 }
 
 
+# The spacesuit's heart rate during a spacewalk, for crew context. "derived": the instrument computes it from the
+# person's resting heart rate (instruments.eva_heart_rate), so it has no baseline and draws nothing per person.
+ASSUMED_SUIT = {
+    "heart_rate": {"instrument": "suit", "code": None, "label": "Heart rate (spacesuit, during a spacewalk)", "region": None,
+                   "muscle_keys": [], "unit": "bpm", "decimals": 0, "model": "derived", "noise_cv": 0.03, "responder_sd": 0.0,
+                   "source": "not in the data",
+                   "assumed": ["whole measure: resting heart rate that day plus 0.2 to 0.5 of the way to maximum, changing "
+                               "with each task (instruments.eva_heart_rate); replace with a cited source"]},
+}
+
+
 def finish(mid, m):
     """Rules every measure gets after its fit: direction, the exercise cap, no improvement while unloaded,
     and the noise split."""
     m["direction"] = DIRECTION[mid]
-    if m["model"] != "constant":
+    if m["model"] not in ("constant", "derived"):
         e = m.get("exercise_effect") or 0.0
         if e > MODEL["exercise_effect_cap"]:
             m["exercise_effect"] = MODEL["exercise_effect_cap"]
@@ -817,6 +829,7 @@ def main():
     aer, extra, cft_pre = aerobic_and_wearable(notes["strength_tau_days"])
     measures.update(aer)
     measures.update(ASSUMED_WEARABLE)
+    measures.update(ASSUMED_SUIT)
     measures = {mid: finish(mid, m) for mid, m in measures.items()}
     lean = {k: v for k, v in lean_subj.items() if k.startswith("lean_")}
     params = {
@@ -868,7 +881,7 @@ def short(assumed: str) -> str:
 def readme_table(params=None):
     """The parameter table in sim/README.md, from params.json:  python sim/fit/fit_params.py --table"""
     params = params or json.loads(OUT.read_text(encoding="utf-8"))
-    inst = {"dynamometer": "dynamometer", "dxa": "DXA", "cycle": "cycle", "wearable": "wearable"}
+    inst = {"dynamometer": "dynamometer", "dxa": "DXA", "cycle": "cycle", "wearable": "wearable", "suit": "spacesuit"}
     rows = ["| Measure | Instrument | Unit | Worse is | Shape without exercise | Loss prevented by full exercise "
             "| Spread between people | Recovery time constant | Noise: device + day to day | Baselines drawn from "
             "| Assumed instead of fitted |",
@@ -881,12 +894,15 @@ def readme_table(params=None):
             shape = f"{30 * m['rate_pct_per_day']:+.2f}% per month"
             spread = f"{30 * m['responder_sd']:.2f} pts/month"
         else:
-            shape, spread = "constant", ""
+            shape, spread = ("constant", "") if m["model"] == "constant" else ("resting heart rate + effort", "")
         ex = f"{100 * m['exercise_effect']:.0f}%" if m.get("exercise_effect") is not None else ""
         rec = f"{m['recovery_tau_days']:g} d" if m.get("recovery_tau_days") else ""
-        b = m["baseline"]["all"]
         dec = m["decimals"]
-        base = f"{b['min']:.{dec}f} to {b['max']:.{dec}f}" + (f" ({b['n']} people)" if b.get("n") else " (assumed)")
+        if "baseline" in m:
+            b = m["baseline"]["all"]
+            base = f"{b['min']:.{dec}f} to {b['max']:.{dec}f}" + (f" ({b['n']} people)" if b.get("n") else " (assumed)")
+        else:
+            base = "none of its own"
         noise = f"{100 * m['device_cv']:.1f}% + {100 * m['bio_cv']:.1f}%"
         assumed = "; ".join(short(a) for a in m["assumed"]) or "none"
         rows.append(f"| `{mid}` | {inst[m['instrument']]} | {m['unit']} | {'higher' if m['direction'] > 0 else 'lower'} "

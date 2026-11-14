@@ -21,6 +21,9 @@ What keeps a person consistent with the data:
   worse way.
 * A person's response sits at most z_max (2) SD from the group median; within the data's coverage
   (90 unloaded days at 0 or 1 g) the true change is clipped to the change range the subjects showed.
+
+A crew member also has a daily routine (routine.py): sleep, meals, exercise, work, spacewalks added with
+add_eva(). It is the crew context the DataService holds, and the wearable's 24-hour trace follows it.
 """
 from __future__ import annotations
 
@@ -44,6 +47,9 @@ Z90, Z_FAST_MAX = MODEL["fast_z"]     # a fast responder sits between the 90th p
 QUANTILES = np.arange(0, 101, 5)      # the percentiles at which params.json stores each baseline distribution
 # measure (or "mass_kg") -> (shared factor, loading): the Gaussian copula behind a person's baselines
 LOADINGS = {mid: (factor, lam) for factor, f in PARAMS["baseline_factors"].items() for mid, lam in f["loadings"].items()}
+# Measures with a personal baseline and response. A "derived" measure (the spacesuit's heart rate) is computed
+# by its instrument from the others, so it draws nothing: adding it left every crew member's numbers unchanged.
+PERSONAL = [mid for mid, m in MEASURES.items() if m["model"] != "derived"]
 
 # Handy groups for events and filters
 GROUPS = {
@@ -176,10 +182,16 @@ class Mission:
         from .schedule import timeline       # imported here: schedule imports this module
         return timeline(self, *args, **kwargs)
 
+    def context(self, crew=None, start: float = 0.0, until: float | None = None):
+        """The crew's context (routine.context_timeline): where each person is and what they are doing, from
+        mission day `start` to `until` (default: launch to landing, the time on board)."""
+        from .routine import context_timeline       # imported here: routine imports this module
+        return context_timeline(self, crew=crew, start=start, until=until)
+
     @classmethod
     def random(cls, preset: str = "iss_180", n_crew: int = 4, seed: int | None = None, **kwargs) -> Mission:
         """A mission with randomly varied crew: mostly on the exercise routine, some slipping,
-        the odd fast responder or injury."""
+        the odd fast responder or injury, and in about half the missions a spacewalk by two of them."""
         rng = np.random.default_rng(seed)
         m = cls(preset, **kwargs)
         flight_end = m.landing
@@ -196,6 +208,11 @@ class Mission:
                 cm.add_event(day=float(rng.uniform(10, flight_end - 10)), measures="legs",
                              severity_pct=float(rng.uniform(5, 15)), recovery_days=float(rng.uniform(10, 40)),
                              label="lower-limb injury")
+        # drawn after every crew member, so the crew are the same as before spacewalks existed
+        if n_crew >= 2 and flight_end > 30 and rng.random() < 0.5:
+            day, hours = float(np.floor(rng.uniform(10, flight_end - 10))), round(float(rng.uniform(5.5, 7.5)), 1)
+            for i in sorted(rng.choice(n_crew, size=2, replace=False)):
+                m.crew[int(i)].add_eva(day, start_hour=12.0, hours=hours)
         return m
 
 
@@ -218,6 +235,25 @@ class Event:
         if measure not in self.measures or day < self.day:
             return 0.0
         return _direction(measure) * self.severity_pct * math.exp(-(day - self.day) / max(self.recovery_days, 0.1))
+
+
+# A spacewalk fits the waking day of routine.py: breakfast ends at 07:00 and the pre-sleep hygiene starts at 22:00,
+# with an hour in the airlock before and after (suiting up, then out of the suit).
+EVA_EARLIEST_START, EVA_LATEST_END = 8.0, 21.0
+
+
+@dataclass
+class Eva:
+    """A spacewalk: outside from start_hour (UTC, on the date of mission day `day`) for `hours` hours."""
+    day: float
+    start_hour: float = 12.0
+    hours: float = 6.5
+    label: str = "spacewalk"
+
+    def __post_init__(self):
+        if not (self.hours > 0 and self.start_hour >= EVA_EARLIEST_START and self.start_hour + self.hours <= EVA_LATEST_END):
+            raise ValueError(f"a spacewalk starts at {EVA_EARLIEST_START:g}:00 UTC or later and ends by {EVA_LATEST_END:g}:00, "
+                             f"not {self.start_hour:g} + {self.hours:g} h")
 
 
 def _direction(measure: str) -> int:
@@ -264,6 +300,7 @@ class CrewMember:
         self.mass_kg = mass_kg if mass_kg is not None else float(np.clip(mean_mass + w["sd"] * 0.8 * u_mass, 50, 100))
         self.responder = responder
         self.events: list[Event] = []
+        self.evas: list[Eva] = []
         self._cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._day_var: dict[str, np.ndarray] = {}
         self.set_adherence(adherence)
@@ -276,14 +313,14 @@ class CrewMember:
         if responder == "fast":
             z_shared = Z90 + abs(self.rng.normal(0, 0.5))
         self.z = {}
-        for mid in MEASURES:
+        for mid in PERSONAL:
             z = shared * z_shared + math.sqrt(1 - shared ** 2) * self.rng.normal()
             if responder == "fast":
                 z = min(max(z, Z90), Z_FAST_MAX)
             elif isinstance(responder, (int, float)):
                 z = float(responder)              # exactly this many SD on every measure (0 = the group median)
             self.z[mid] = float(np.clip(z, -Z_MAX, Z_MAX))
-        self.baseline = {mid: self._sample_baseline(mid) for mid in MEASURES}
+        self.baseline = {mid: self._sample_baseline(mid) for mid in PERSONAL}
         # a fixed left/right hip difference, as a fraction (0.01 = the left hip 1 % denser than the right)
         a_max = MODEL["hip_asymmetry_max_pct"] / 100
         self.hip_asymmetry = float(np.clip(self.rng.normal(0, MODEL["hip_asymmetry_sd_pct"] / 100), -a_max, a_max))
@@ -339,6 +376,29 @@ class CrewMember:
         ev = Event(float(day), expand(measures), float(severity_pct), float(recovery_days), label)
         self.events.append(ev)
         return ev
+
+    def add_eva(self, day: float, start_hour: float = 12.0, hours: float = 6.5, label: str = "spacewalk") -> Eva:
+        """A spacewalk on the UTC date of mission `day`, outside from start_hour (UTC) for `hours`. It must be on
+        a day away from Earth, one per date. It changes that day's routine and the wearable's trace, and the
+        spacesuit reports heart rate while it lasts."""
+        if self.mission.gravity(day) >= 1.0:
+            raise ValueError(f"a spacewalk needs a day away from Earth; day {day:g} is {self.mission.phase(day).name}")
+        if self.eva_on(day):
+            raise ValueError(f"{self.id} already has a spacewalk on {self.mission.timestamp(day)[:10]}")
+        ev = Eva(float(day), float(start_hour), float(hours), label)
+        self.evas.append(ev)
+        return ev
+
+    def eva_on(self, day: float) -> Eva | None:
+        """The spacewalk on the UTC date of mission `day`, if there is one."""
+        date = self.mission.timestamp(day)[:10]
+        return next((ev for ev in self.evas if self.mission.timestamp(ev.day)[:10] == date), None)
+
+    def routine(self, day: float):
+        """Where this person is and what they are doing over the UTC date of mission `day`: ContextRecords from
+        00:00 to 24:00, in order, without gaps (routine.routine)."""
+        from .routine import routine       # imported here: routine imports this module
+        return routine(self, day)
 
     # ---- physiology
     def _amplitude(self, mid: str, k: float) -> float:
@@ -426,7 +486,7 @@ class CrewMember:
 
     def extrapolated(self, measure: str, day: float) -> bool:
         """True when the reading is outside what the bed-rest data covers."""
-        if MEASURES[measure]["model"] == "constant":
+        if MEASURES[measure]["model"] in ("constant", "derived"):      # no data behind it
             return True
         if self.mission.unloaded_days(day) > MAX_DATA_DAYS:
             return True

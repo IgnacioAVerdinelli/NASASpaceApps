@@ -26,7 +26,7 @@ import pytest
 import gravsim as gs
 
 RANGES = json.loads((Path(__file__).with_name("data_ranges.json")).read_text())["measures"]
-MODELLED = [m for m in gs.MEASURES if gs.MEASURES[m]["model"] != "constant"]      # spo2 and hrv have no data
+MODELLED = [m for m in gs.MEASURES if gs.MEASURES[m]["model"] in ("saturating", "linear")]   # spo2, hrv and the suit have no data
 
 
 RISES_WHEN_DECONDITIONED = {"resting_hr", "resting_sbp", "resting_dbp"}

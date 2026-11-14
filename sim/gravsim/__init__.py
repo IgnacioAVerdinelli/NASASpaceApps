@@ -10,13 +10,16 @@ bed-rest data. See README.md.
     data = gs.DataService()
     data.ingest(mission.timeline(seed=7))              # gravsim stands in for the sensors
     data.latest("CM-1", "bone", at=mission.timestamp(200))
+    data.ingest_context(mission.context())             # where each crew member is and what they are doing
+    data.current_context("CM-1", mission.timestamp(95.1))
     data.save_result("CM-1", "measure_change", mission.timestamp(120), {"knee_extension_60": -12.5})
 """
-from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Event, Mission, Phase, expand
+from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Eva, Event, Mission, Phase, expand
 from .dataservice import DataService
-from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Wearable
-from .pipeline import LIMITS, clean
-from .reading import Reading, Result, to_dataframe
+from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Spacesuit, Wearable
+from .pipeline import LIMITS, clean, clean_context
+from .reading import ACTIVITIES, SOURCES, ContextRecord, Reading, Result, to_dataframe
+from .routine import LOCATIONS, context_timeline, routine
 from .schedule import default_instruments, nasa_days, timeline
 from .store import SqliteStore
 from .units import UNITS, convert
@@ -24,11 +27,11 @@ from .units import UNITS, convert
 __version__ = MODEL_VERSION
 __all__ = [
     # generator
-    "Mission", "Phase", "CrewMember", "Event", "PRESETS", "MEASURES", "GROUPS", "PARAMS", "MODEL_VERSION", "expand",
-    "Instrument", "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable", "Fault",
-    "timeline", "nasa_days", "default_instruments",
-    # the records: raw readings and processed results
-    "Reading", "Result", "to_dataframe",
+    "Mission", "Phase", "CrewMember", "Event", "Eva", "PRESETS", "MEASURES", "GROUPS", "PARAMS", "MODEL_VERSION", "expand",
+    "Instrument", "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable", "Spacesuit", "Fault",
+    "timeline", "nasa_days", "default_instruments", "routine", "context_timeline", "LOCATIONS",
+    # the records: raw readings, crew context and processed results
+    "Reading", "ContextRecord", "Result", "ACTIVITIES", "SOURCES", "to_dataframe",
     # DataService
-    "DataService", "SqliteStore", "clean", "LIMITS", "UNITS", "convert",
+    "DataService", "SqliteStore", "clean", "clean_context", "LIMITS", "UNITS", "convert",
 ]

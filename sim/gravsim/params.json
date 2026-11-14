@@ -2517,6 +2517,26 @@
    "assumed": [
     "whole measure: typical adult range, no trend; replace with a cited source"
    ]
+  },
+  "heart_rate": {
+   "instrument": "suit",
+   "code": null,
+   "label": "Heart rate (spacesuit, during a spacewalk)",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "bpm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.03,
+   "device_cv": 0.03,
+   "bio_cv": 0.0,
+   "noise_source": "spacesuit heart rate, about ±3 % (assumed)",
+   "source": "not in the data",
+   "assumed": [
+    "whole measure: resting heart rate that day plus 0.2 to 0.5 of the way to maximum, changing with each task (instruments.eva_heart_rate); replace with a cited source"
+   ]
   }
  }
 }

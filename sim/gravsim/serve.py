@@ -2,18 +2,20 @@
 
     python -m gravsim.serve --preset iss_180 --day 95 --speed 20 --port 8000
 
-At start-up gravsim generates the whole mission and sends it through the DataService, as the sensors would.
-Requests then see the data up to the mission clock ("now").
+At start-up gravsim generates the whole mission, readings and crew context, and sends it through the
+DataService, as the sensors would. Requests then see the data up to the mission clock ("now").
 
-GET  /api/v1/readings    every reading so far
-GET  /api/v1/latest      the newest usable reading of each measure
-GET  /api/v1/results     processed results saved so far
-POST /api/v1/results     save a processed result: a JSON object with crew_id, kind, timestamp and payload
-                         (model_version optional), as DataService.save_result() takes them
+GET  /api/v1/readings          every reading so far
+GET  /api/v1/latest            the newest usable reading of each measure
+GET  /api/v1/context           context records under way between start and end (default: the 24 hours up to now)
+GET  /api/v1/context/current   the context record under way at `at` (default: now), or null
+GET  /api/v1/results           processed results saved so far
+POST /api/v1/results           save a processed result: a JSON object with crew_id, kind, timestamp and payload
+                               (model_version optional), as DataService.save_result() takes them
 
 Query parameters, all optional: crew=CM-2 (default: the first), day=120 (the mission day used as now;
-default: the mission clock), measures=bone,vo2peak (ids or groups; /readings and /latest), kind=study
-(/results), start and end (ISO times; /results).
+default: the mission clock), measures=bone,vo2peak (ids or groups; /readings and /latest), start and end
+(ISO times; /context and /results), at (an ISO time; /context/current), kind=study (/results).
 
 With --speed N the mission clock advances N days per real minute, so a client that polls sees the
 mission unfold.
@@ -23,12 +25,14 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
-from .core import PRESETS, Mission
+from .core import PRESETS, TIME_FORMAT, Mission
 from .dataservice import DataService
+from .pipeline import utc_iso
 
 
 class NotFound(Exception):
@@ -128,6 +132,15 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
     def latest(q, _):
         return 200, {m: r.to_dict() for m, r in data.latest(who(q), measures(q), at=now(q)).items()}
 
+    def context(q, _):
+        end = utc_iso(q.get("end") or now(q))
+        start = q.get("start") or (datetime.strptime(end, TIME_FORMAT) - timedelta(days=1)).strftime(TIME_FORMAT)
+        return 200, [c.to_dict() for c in data.context(who(q), start, end)]
+
+    def current_context(q, _):
+        found = data.current_context(who(q), q.get("at") or now(q))
+        return 200, None if found is None else found.to_dict()
+
     def results(q, _):
         found = data.results(who(q), q.get("kind"), start=q.get("start"), end=q.get("end", now(q)))
         return 200, [r.to_dict() for r in found]
@@ -138,6 +151,7 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
         return 201, data.save_result(**body).to_dict()
 
     return {("GET", "/api/v1/readings"): readings, ("GET", "/api/v1/latest"): latest,
+            ("GET", "/api/v1/context"): context, ("GET", "/api/v1/context/current"): current_context,
             ("GET", "/api/v1/results"): results, ("POST", "/api/v1/results"): save_result}
 
 
@@ -146,6 +160,7 @@ def main(argv=None):
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     data = DataService()
     data.ingest(mission.timeline(seed=args.seed))
+    data.ingest_context(mission.context())
     server = make_server(data_routes(mission, data, mission_clock(mission, args.day, args.speed)), args.port, args.origin)
     print(f"DataService: {args.preset}, crew {[c.id for c in mission.crew]}, day {args.day}"
           f"{f' +{args.speed} d/min' if args.speed else ''} on http://localhost:{args.port}/api/v1/readings", flush=True)

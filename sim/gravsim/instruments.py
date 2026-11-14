@@ -89,7 +89,8 @@ class Instrument:
         m = MEASURES[measure]
         ms = crew.mission
         true = crew.true_value(measure, day) if true_value is None else true_value
-        value = true * (1.0 + self.rng.normal(0.0, m["noise_cv"] * self.noise))
+        # normal noise cut at 2.5 SD; larger outliers come from the "spike" fault
+        value = true * (1.0 + float(np.clip(self.rng.normal(), -2.5, 2.5)) * m["noise_cv"] * self.noise)
         active, quality = [], "ok"
         for f in self.faults:
             if not f.active(day):

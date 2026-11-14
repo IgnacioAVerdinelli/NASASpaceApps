@@ -35,6 +35,8 @@ df = gs.to_dataframe(readings)          # one row per reading
 dash = gs.build_dashboard(mission, ben, day=120, readings=readings)   # JSON for the 3D page
 ```
 
+`examples/gravsim_demo.ipynb` shows what it generates, with charts against the bed-rest data (needs `pandas` and `altair`; run it from `sim/examples`).
+
 To feed the 3D page:
 
 ```bash

@@ -423,7 +423,8 @@ def cft_measure(df, col, mid, instrument, label, unit, decimals, strength_tau, s
     pre = df[df.TEST == "PRE"]
     base = {"all": baseline_stats(pre[col], decimals)}
     for sx in ("F", "M"):
-        base[sx] = baseline_stats(pre[pre.SEX == sx][col], decimals)
+        if (pre.SEX == sx).sum() >= 5:          # Campaign 11's aerobic files hold one woman
+            base[sx] = baseline_stats(pre[pre.SEX == sx][col], decimals)
     return {
         "instrument": instrument, "code": col, "label": label, "region": None, "muscle_keys": [],
         "unit": unit, "decimals": decimals, "model": "saturating",

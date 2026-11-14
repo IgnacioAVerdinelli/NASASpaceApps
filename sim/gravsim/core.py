@@ -213,7 +213,8 @@ class CrewMember:
     """One person: a pre-flight baseline per measure and a personal response, kept for every reading.
 
     sex: "F" or "M" (random if None). responder: "typical" (random within the spread seen in the data),
-    "fast" (losing faster than 9 in 10 subjects) or a number of standard deviations (positive = worse).
+    "fast" (losing faster than 9 in 10 subjects) or a number of standard deviations on every measure
+    (positive = worse, 0 = the group median).
     adherence: exercise adherence, 1 = full routine (Campaign 11 exercise group), 0 = none (control
     groups). A number, a list of (day, value) steps, or a function of the day.
     """
@@ -246,6 +247,8 @@ class CrewMember:
             z = 0.7 * z_shared + math.sqrt(1 - 0.49) * self.rng.normal()
             if responder == "fast":
                 z = max(z, 1.2816)
+            elif isinstance(responder, (int, float)):
+                z = float(responder)              # exactly this many SD on every measure (0 = group median)
             self.z[mid] = z
         self.baseline = {mid: self._sample_baseline(mid) for mid in MEASURES}
         self._cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
@@ -255,7 +258,9 @@ class CrewMember:
 
     def _sample_baseline(self, mid: str) -> float:
         b = MEASURES[mid]["baseline"]
-        stats = b.get(self.sex) or b["all"]
+        stats = b.get(self.sex)
+        if not stats or (stats.get("n") or 0) < 5 or not stats.get("sd"):
+            stats = b["all"]                      # too few people of this sex in the data
         sd = stats.get("sd") or 0.1 * stats["mean"]
         lo = stats.get("p5", stats["mean"] - 2 * sd)
         hi = stats.get("p95", stats["mean"] + 2 * sd)

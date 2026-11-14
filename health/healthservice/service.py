@@ -12,10 +12,12 @@ from .sources import DataSource
 
 
 class HealthService:
-    def __init__(self, source: DataSource, reference: Reference | None = None, queue: AlertQueue | None = None):
+    def __init__(self, source: DataSource, reference: Reference | None = None, queue: AlertQueue | None = None,
+                 process_on_read: bool = True):
         self.source = source
         self.reference = reference or Reference.load()
         self.queue = queue or AlertQueue()
+        self.process_on_read = process_on_read
         self._seen: dict[str, tuple] = {}            # crew id -> identity of the last readings processed
         self._active: dict[str, set[str]] = {}       # crew id -> measures currently alerting
         self._lock = threading.Lock()
@@ -42,7 +44,7 @@ class HealthService:
         mission = self.source.mission()
         readings = self.source.readings(crew.id, day)
         results = compute_results(self.reference, mission, crew, readings, day)
-        if live:
+        if live and self.process_on_read:
             self._on_readings(crew, readings, results)
         return build_dashboard(self.reference, mission, crew, readings, results, day)
 
@@ -52,7 +54,6 @@ class HealthService:
         with self._lock:
             if self._seen.get(crew.id) == key:
                 return
-            self._seen[crew.id] = key
             self.source.save_results(results)
             now = check(self.reference, self.source.mission(), results)
             active = self._active.setdefault(crew.id, set())
@@ -60,3 +61,4 @@ class HealthService:
                 if measure not in active:
                     self.queue.publish(alert)
             self._active[crew.id] = set(now)
+            self._seen[crew.id] = key

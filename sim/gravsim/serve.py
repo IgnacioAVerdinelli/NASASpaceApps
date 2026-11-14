@@ -28,6 +28,8 @@ from __future__ import annotations
 import argparse
 import json
 import time
+import threading
+import logging
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
@@ -37,6 +39,8 @@ from .core import PRESETS, Mission
 from .measures import TIME_FORMAT
 from .dataservice import DataService
 from .pipeline import utc_iso
+from .queue import Queue
+from .store import SqliteStore
 
 
 class NotFound(Exception):
@@ -192,12 +196,41 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
 
 
 def main(argv=None):
-    args = mission_parser(__doc__, port=8000).parse_args(argv)
+    parser = mission_parser(__doc__, port=8000)
+    parser.add_argument('--db', default=':memory:', help='SQLite data file')
+    parser.add_argument('--queue', help='SQLite message queue file for the local demo')
+    args = parser.parse_args(argv)
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
-    data = DataService()
-    data.ingest(mission.timeline(seed=args.seed))
+    data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
+    clock = mission_clock(mission, args.day, args.speed)
+    pending = iter(mission.timeline(seed=args.seed))
+    next_reading = next(pending, None)
+    def advance():
+        nonlocal next_reading
+        while True:
+            day = clock()
+            batch = []
+            while next_reading is not None and next_reading.mission_day <= day:
+                batch.append(next_reading)
+                next_reading = next(pending, None)
+            if batch:
+                while True:
+                    try:
+                        data.ingest(batch)
+                        break
+                    except Exception:
+                        logging.exception('Could not ingest simulated readings; retrying')
+                        time.sleep(1)
+            time.sleep(1)
+    # Publish initial readings synchronously before the API starts.
+    initial = []
+    while next_reading is not None and next_reading.mission_day <= clock():
+        initial.append(next_reading)
+        next_reading = next(pending, None)
+    data.ingest(initial)
     data.ingest_context(mission.context())
-    server = make_server(data_routes(mission, data, mission_clock(mission, args.day, args.speed)), args.port, args.origin)
+    threading.Thread(target=advance, daemon=True).start()
+    server = make_server(data_routes(mission, data, clock), args.port, args.origin)
     print(f"DataService: {args.preset}, crew {[c.id for c in mission.crew]}, day {args.day}"
           f"{f' +{args.speed} d/min' if args.speed else ''} on http://localhost:{args.port}/api/v1/readings", flush=True)
     server.serve_forever()

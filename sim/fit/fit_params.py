@@ -854,12 +854,13 @@ def main():
     for k, m in measures.items():
         loss = m.get("loss_pct")
         rate = m.get("rate_pct_per_day")
-        b = m["baseline"]["all"]
+        base = m.get("baseline", {})          # a "derived" measure (the suit's heart rate) has none
+        b = base.get("all", {})
         r = m.get("data_range", {})
         print(f"  {k:24s} {m['model']:10s} dir={m['direction']:+d} loss={loss!s:7s} rate/d={rate!s:9s} ex={m.get('exercise_effect')!s:6s} "
               f"rsd={m['responder_sd']!s:7s} noise={m['noise_cv']!s:6s} dev={m['device_cv']!s:6s} bio={m['bio_cv']!s:6s} "
-              f"base n={b.get('n')} [{b.get('min')}, {b.get('max')}] F={m['baseline'].get('F', {}).get('n')} "
-              f"M={m['baseline'].get('M', {}).get('n')} range=[{r.get('baseline_min')}, {r.get('baseline_max')}] "
+              f"base n={b.get('n')} [{b.get('min')}, {b.get('max')}] F={base.get('F', {}).get('n')} "
+              f"M={base.get('M', {}).get('n')} range=[{r.get('baseline_min')}, {r.get('baseline_max')}] "
               f"change=[{r.get('change_pct_min')}, {r.get('change_pct_max')}]")
 
 

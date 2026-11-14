@@ -11,6 +11,10 @@ then ask for:
 
 The HealthService saves what it computes with save_result(), and results() reads it back.
 
+Whatever is stored is announced on the event queue through the publisher (events.py): one message per crew
+member for each ingest() and ingest_context() call, one per saved result. The default publisher is a mock
+that logs and keeps the messages.
+
 Everything is kept in memory. The SQLite store (store.py) is wired in but inert: it saves nothing and
 finds nothing, so for now memory holds the whole data set.
 """
@@ -20,6 +24,7 @@ import json
 from datetime import datetime, timezone
 from typing import Iterable
 
+from . import events
 from .core import MODEL_VERSION, expand
 from .pipeline import clean, clean_context, context_key, context_order, key, order, utc_iso
 from .reading import ContextRecord, Reading, Result
@@ -31,8 +36,11 @@ SOURCE_PRIORITY = {"suit": 3, "room_sensor": 2, "timeline": 1}
 
 
 class DataService:
-    def __init__(self, store: SqliteStore | None = None):
+    def __init__(self, store: SqliteStore | None = None, publisher: events.Publisher | None = None):
+        """store: the database (default: the inert SQLite store). publisher: anything with
+        publish(topic, message) (default: events.MockPublisher, which logs and keeps the messages)."""
         self.store = store or SqliteStore()
+        self.publisher = publisher if publisher is not None else events.MockPublisher()
         self._readings: dict[tuple, Reading] = {}
         self._context: dict[tuple, ContextRecord] = {}
         self._results: dict[tuple, Result] = {}
@@ -44,6 +52,8 @@ class DataService:
         self.store.save(readings)
         for r in readings:
             self._readings[key(r)] = r
+        for message in events.readings_stored(readings):
+            self.publisher.publish(events.READINGS_STORED, message)
         return readings
 
     def readings(self, crew_id: str, measures: str | Iterable[str] | None = None,
@@ -74,6 +84,8 @@ class DataService:
         self.store.save_context(records)
         for c in records:
             self._context[context_key(c)] = c
+        for message in events.context_updated(records):
+            self.publisher.publish(events.CONTEXT_UPDATED, message)
         return records
 
     def context(self, crew_id: str, start=None, end=None) -> list[ContextRecord]:
@@ -97,12 +109,14 @@ class DataService:
     def save_result(self, crew_id: str, kind: str, timestamp, payload: dict,
                     model_version: str = MODEL_VERSION) -> Result:
         """Keep something computed for a crew member at a mission time. There is one result per crew
-        member, kind, time and model version: computing it again replaces it."""
+        member, kind, time and model version: computing it again replaces it. The analysis scheduler
+        records the studies it schedules the same way, as kind "study"."""
         result = Result(crew_id=crew_id, kind=kind, timestamp=utc_iso(timestamp),
                         computed_at=utc_iso(datetime.now(timezone.utc)), model_version=model_version,
                         payload=json.loads(json.dumps(payload)))     # a copy, as a database would keep it
         self.store.save_results([result])
         self._results[_result_key(result)] = result
+        self.publisher.publish(events.RESULT_SAVED, events.result_saved(result))
         return result
 
     def results(self, crew_id: str, kind: str | None = None, start=None, end=None) -> list[Result]:

@@ -226,6 +226,9 @@ def test_api_saves_and_reads_results(api):
     status, saved = call("/api/v1/results", study)
     assert status == 201 and saved["payload"] == study["payload"] and saved["timestamp"] == m.timestamp(60)
     assert [r.kind for r in data.results("CM-1")] == ["study"]
+    assert data.publisher.messages[-1] == {"topic": "data.result_saved", "message": {
+        "crew_id": "CM-1", "kind": "study", "timestamp": saved["timestamp"], "computed_at": saved["computed_at"],
+        "model_version": gs.MODEL_VERSION}}
     assert call("/api/v1/results?crew=CM-1&kind=study")[1] == [saved]
     assert call("/api/v1/results?crew=CM-1&day=50")[1] == []            # it is for day 60, after "now"
     assert call("/api/v1/results", {"crew_id": "CM-1"})[0] == 400       # kind, timestamp and payload missing

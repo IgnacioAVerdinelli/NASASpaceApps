@@ -16,6 +16,7 @@ bed-rest data. See README.md.
 """
 from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Eva, Event, Mission, Phase, expand
 from .dataservice import DataService
+from .events import TOPICS, MockPublisher
 from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Spacesuit, Wearable
 from .pipeline import LIMITS, clean, clean_context
 from .reading import ACTIVITIES, SOURCES, ContextRecord, Reading, Result, to_dataframe
@@ -33,5 +34,5 @@ __all__ = [
     # the records: raw readings, crew context and processed results
     "Reading", "ContextRecord", "Result", "ACTIVITIES", "SOURCES", "to_dataframe",
     # DataService
-    "DataService", "SqliteStore", "clean", "clean_context", "LIMITS", "UNITS", "convert",
+    "DataService", "SqliteStore", "clean", "clean_context", "LIMITS", "UNITS", "convert", "MockPublisher", "TOPICS",
 ]

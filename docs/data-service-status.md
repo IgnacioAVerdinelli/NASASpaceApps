@@ -1,6 +1,6 @@
 # Data service: status and planned changes
 
-Snapshot: Saturday 14 Nov 2026, 19:20 (Argentina). Updated after the work in section 2 was pushed. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
+Snapshot: Saturday 14 Nov 2026, 20:15 (Argentina). Pull request #7 is open. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
 
 The agreed architecture is in [architecture.md](architecture.md). The data service is the left part of it: sources → DataService ↔ database, with the generator (`gravsim`) standing in for every source during the challenge. The HealthService, the two queues, the analysis scheduler, the notification system and the frontend belong to other teammates.
 
@@ -10,7 +10,7 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 |---|---|---|
 | `main` | `docs/architecture.md` (diagram and parts), `docs/img/architecture-sketch.png`, `docs/references/OCHMO-STD-100.1A_RevA_2024-09-09.pdf` (Table 8 on pages 33-37) | Pushed |
 | `feat/sensor-simulator` on GitHub (`0560b75`) | `sim/`: the generator, the DataService with its HTTP API, crew context, the event hook, tests, README, demo notebook; the HealthService mock in `sim/mocks/`. Based on `Feat/gravityEffectsInvestigation` (Tomás's data in `data/nlsp/`) | Pushed, **current** |
-| Pull request to `main` | Only the data service and what it depends on | **Planned**: final checks running now |
+| Pull request [#7](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/7) to `main`, from branch `data-service` | Only `sim/` without `sim/mocks/` (283 files). Final checks passed | **Open**, waiting for review |
 
 ## 1. Done and pushed (on `feat/sensor-simulator`)
 
@@ -65,9 +65,9 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 
 ## 3. Planned
 
-1. **Final checks** (running now, in parallel): data quality and NASA standards on the final code; crew context, events and the HTTP API; and a merge-readiness check that installs and tests only the files that will land.
+1. **Final checks: done.** Data quality and standards (no regressions); crew context, events and API (5 small issues, fixed); merge readiness (the subset installs and passes on a clean machine).
 3. **Pull request to `main`** containing only the data service and its dependencies.
-   - Lands: `sim/gravsim/`, `sim/fit/`, the data-service tests, `sim/pyproject.toml`, the README and `data/nlsp/`.
+   - Lands: `sim/gravsim/`, `sim/fit/` (with `source_data/`, the 256 strength files the fit needs; `data/nlsp/` is not touched), the data-service tests, `sim/pyproject.toml`, the README and the demo notebook. Strength is stored in N·m.
    - Stays on the branch: the dashboard mock, Tomás's research doc and `prototype/`, and the duplicate zips in `data/healthData/`.
    - The team reviews and merges it.
 

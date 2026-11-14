@@ -3,13 +3,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import maleModelUrl from '../node_modules/open-anatomy-3d/models/anatomy-male.glb?url';
-import femaleModelUrl from '../node_modules/open-anatomy-3d/models/anatomy-female.glb?url';
+import maleModelUrl from '../../../node_modules/open-anatomy-3d/models/anatomy-male.glb?url';
+import femaleModelUrl from '../../../node_modules/open-anatomy-3d/models/anatomy-female.glb?url';
 import maleRegions from './assets/surface-male.json';
 import femaleRegions from './assets/surface-female.json';
 import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, intensityColor, visibleSystems } from './anatomy.js';
 import { buildSurfaceWeights, pickSurfaceRegion } from './surfaceWeights.js';
 import { softenMaleGroin } from './surfaceShape.js';
+import { createIndicatorLayer, orderedIndicators } from './indicators.js';
+import './indicators.css';
 
 export { SURFACE_MUSCLE_KEYS };
 const muscleKeys = new Set(muscles.map(item => item.key));
@@ -96,13 +98,20 @@ function focusSelection(view, selected, layer) {
   view.controls.update();
 }
 
-export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0 }) {
+function orientCamera(view, direction) {
+  if (direction !== 'front' && direction !== 'back') return;
+  const distance = view.camera.position.distanceTo(view.controls.target);
+  view.camera.position.copy(view.controls.target).add(new THREE.Vector3(0, 0, direction === 'front' ? distance : -distance));
+  view.controls.update();
+}
+
+export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0, viewRequest = null, framing = 1.15, showIndicators = false }) {
   const containerRef = useRef(null);
   const viewRef = useRef(null);
   const pendingFocusRef = useRef(false);
-  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated });
+  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated, viewRequest });
   const [status, setStatus] = useState('loading');
-  valuesRef.current = { scores, selected, onSelect, layer, isolated };
+  valuesRef.current = { scores, selected, onSelect, layer, isolated, viewRequest };
 
   useEffect(() => {
     if (viewRef.current) updateView(viewRef.current, valuesRef.current);
@@ -115,6 +124,10 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
       pendingFocusRef.current = false;
     }
   }, [focusRequest]);
+
+  useEffect(() => {
+    if (viewRef.current && viewRequest) orientCamera(viewRef.current, viewRequest.direction);
+  }, [viewRequest?.direction, viewRequest?.request]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -149,7 +162,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     };
     const observer = new ResizeObserver(resize);
     observer.observe(container); resize();
-    let active = true, root = null, frame = 0;
+    let active = true, root = null, frame = 0, indicators = null;
     const originalMaterials = new Set();
     const disposeRoot = model => {
       const geometries = new Set(), materials = new Set(originalMaterials);
@@ -229,18 +242,21 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         const view = { root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, regions: data.regions, surfaceWeights, camera, controls };
         viewRef.current = view;
         scene.add(root);
+        root.updateMatrixWorld(true);
+        if (showIndicators) indicators = createIndicatorLayer(container, view);
         const bounds = new THREE.Box3().setFromObject(skin);
         if (!bounds.isEmpty()) {
           const center = bounds.getCenter(new THREE.Vector3());
           const size = bounds.getSize(new THREE.Vector3());
           const verticalFov = THREE.MathUtils.degToRad(camera.fov);
           const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
-          const distance = Math.max(size.y / (2 * Math.tan(verticalFov / 2)), size.x / (2 * Math.tan(horizontalFov / 2))) * 1.15 + size.z / 2;
+          const distance = Math.max(size.y / (2 * Math.tan(verticalFov / 2)), size.x / (2 * Math.tan(horizontalFov / 2))) * framing + size.z / 2;
           controls.target.copy(center);
           camera.position.copy(center).add(new THREE.Vector3(0, 0, distance));
           controls.update();
         }
         updateView(view, valuesRef.current);
+        if (valuesRef.current.viewRequest) orientCamera(view, valuesRef.current.viewRequest.direction);
         if (pendingFocusRef.current) {
           focusSelection(view, valuesRef.current.selected, valuesRef.current.layer);
           pendingFocusRef.current = false;
@@ -274,18 +290,19 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     };
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointerup', onPointerUp);
-    const animate = () => { controls.update(); renderer.render(scene, camera); frame = requestAnimationFrame(animate); };
+    const animate = (now = 0) => { controls.update(); indicators?.update(valuesRef.current, now); renderer.render(scene, camera); frame = requestAnimationFrame(animate); };
     animate();
     return () => {
       active = false; cancelAnimationFrame(frame); observer.disconnect();
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
       controls.dispose();
+      indicators?.dispose();
       viewRef.current = null;
       disposeRoot(root); root = null;
       renderer.dispose(); renderer.domElement.remove();
     };
-  }, [body]);
+  }, [body, framing, showIndicators]);
 
   const message = {
     loading: 'Cargando modelo 3D…',
@@ -295,6 +312,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     'model-error': 'El modelo 3D no contiene las capas esperadas.',
   }[status];
   return <div ref={containerRef} aria-label="Modelo 3D interactivo de grupos musculares" style={{ width: '100%', height: '100%', minHeight: 360, position: 'relative' }}>
+    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Intensidades musculares">{orderedIndicators(scores, selected).map(item => <li key={item.key}>{item.label}: {Math.round(item.value)}%</li>)}</ul>}
     {message && <div role={status === 'loading' ? 'status' : 'alert'} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', pointerEvents: 'none' }}>{message}</div>}
   </div>;
 }

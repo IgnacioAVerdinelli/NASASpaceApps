@@ -1,8 +1,8 @@
 import React, { useMemo, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ATTRIBUTION } from 'open-anatomy-3d';
-import BodyViewer from './BodyViewer.jsx';
-import { muscles, SURFACE_MUSCLE_KEYS, intensityColor, intensityLabel } from './anatomy.js';
+import BodyViewer from '../body-3d/BodyViewer.jsx';
+import { muscles, SURFACE_MUSCLE_KEYS, intensityColor, intensityLabel } from '../body-3d/anatomy.js';
 import { scoresReducer } from './scores.js';
 import './style.css';
 

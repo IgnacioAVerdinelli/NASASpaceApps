@@ -19,6 +19,31 @@ npm run build
 npm run preview
 ```
 
+## Organización
+
+- `src/front/body-3d/`: visor 3D, catálogo anatómico, geometría y mapas de regiones.
+- `src/front/web/`: página, controles, estilos y estado de intensidades.
+- `src/front/sketch/`: página HBARAI con el visor 3D integrado. El original permanece en `sketch/`.
+
+Para levantar la página HBARAI con el modelo 3D, instalá primero las dependencias del proyecto y luego las de la página:
+
+```bash
+npm install
+cd src/front/sketch
+npm install
+npm run dev
+```
+
+La página usa por defecto [datos de ejemplo](src/front/sketch/data/dashboard.example.json), sin requerir un backend. Para conectarla a una API implementada por otro integrante, iniciá Vite con la URL completa:
+
+```bash
+VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
+```
+
+El comando anterior se ejecuta desde `src/front/sketch`. La página consulta cada 3 segundos después de completar la solicitud anterior; si la API falla conserva los últimos datos y muestra un aviso. Si `VITE_DASHBOARD_URL` está configurada, nunca reemplaza silenciosamente un error con datos de ejemplo. Si API y frontend usan distintos orígenes, el backend debe habilitar CORS para el origen del frontend.
+
+El contrato, ejemplos, errores y claves disponibles están documentados en [Integración frontend–backend](docs/frontend-backend.md). Esta implementación **no incluye un servidor** ni una conexión real: otra persona puede implementar el endpoint siguiendo ese contrato.
+
 ## Explorar
 
 - **Superficie:** piel lisa con 27 regiones coloreables alrededor del cuerpo. Seleccioná una región con clic o desde la lista.

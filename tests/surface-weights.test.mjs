@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { buildSurfaceWeights, pickSurfaceRegion } from '../src/surfaceWeights.js';
+import { buildSurfaceWeights, pickSurfaceRegion } from '../src/front/body-3d/surfaceWeights.js';
 
 function geometry(indexed) {
   const g = new THREE.BufferGeometry();

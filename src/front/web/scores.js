@@ -1,4 +1,4 @@
-import { muscles } from './anatomy.js';
+import { muscles } from '../body-3d/anatomy.js';
 
 const testLevels = [25, 50, 75, 100];
 

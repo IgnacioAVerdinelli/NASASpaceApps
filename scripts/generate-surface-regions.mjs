@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { SURFACE_KEYS } from '../src/anatomy.js';
+import { SURFACE_KEYS } from '../src/front/body-3d/anatomy.js';
 
 // Nearest reference vertices are only a proxy for anatomy, not a segmentation.
 function tree(points, depth = 0) {
@@ -23,7 +23,7 @@ function nearest(node, p, best = Infinity) {
   return best;
 }
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-await mkdir('src/assets', { recursive: true });
+await mkdir('src/front/body-3d/assets', { recursive: true });
 for (const body of ['male', 'female']) {
   const bytes = await readFile(`node_modules/open-anatomy-3d/models/anatomy-${body}.glb`);
   const gltf = await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
@@ -145,6 +145,6 @@ for (const body of ['male', 'female']) {
   }
   console.log(body, 'largest connected fraction', Object.fromEntries(SURFACE_KEYS.map((key, i) => [key, (Math.max(...components[i+1]) / counts[i+1]).toFixed(3)])));
   const result = { version: 1, body, sourceSha256: createHash('sha256').update(bytes).digest('hex'), keys: SURFACE_KEYS, triangleCount: triangles, regions: Array.from(regions) };
-  await writeFile(`src/assets/surface-${body}.json`, JSON.stringify(result));
+  await writeFile(`src/front/body-3d/assets/surface-${body}.json`, JSON.stringify(result));
   console.log(body, 'triangles', triangles, 'counts', Object.fromEntries(['neutral', ...SURFACE_KEYS].map((key, i) => [key, counts[i]])));
 }

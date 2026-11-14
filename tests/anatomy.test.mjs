@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, normalizeScore, intensityColor, visibleSystems } from '../src/anatomy.js';
+import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, normalizeScore, intensityColor, visibleSystems } from '../src/front/body-3d/anatomy.js';
 
 test('muscle keys are unique and surface keys are a bilateral subset', () => {
   const keys = new Set(muscles.map(muscle => muscle.key));

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BufferGeometry, Float32BufferAttribute, Matrix4 } from 'three';
-import { softenMaleGroin } from '../src/surfaceShape.js';
+import { softenMaleGroin } from '../src/front/body-3d/surfaceShape.js';
 
 test('softens the front of the groin and leaves surrounding areas in place', () => {
   const geometry = new BufferGeometry();

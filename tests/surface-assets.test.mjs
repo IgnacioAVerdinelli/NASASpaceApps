@@ -5,11 +5,11 @@ import { createHash } from 'node:crypto';
 import { Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { SURFACE_KEYS, muscles } from '../src/anatomy.js';
+import { SURFACE_KEYS, muscles } from '../src/front/body-3d/anatomy.js';
 
 for (const body of ['male', 'female']) test(`${body}: surface map matches model topology and anatomical sides`, async () => {
   const bytes = await readFile(`node_modules/open-anatomy-3d/models/anatomy-${body}.glb`);
-  const map = JSON.parse(await readFile(`src/assets/surface-${body}.json`, 'utf8'));
+  const map = JSON.parse(await readFile(`src/front/body-3d/assets/surface-${body}.json`, 'utf8'));
   assert.equal(map.version, 1);
   assert.equal(map.body, body);
   assert.equal(map.sourceSha256, createHash('sha256').update(bytes).digest('hex'), 'Regenerate the surface map after changing the source GLB');

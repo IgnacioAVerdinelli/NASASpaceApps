@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { muscles } from '../src/anatomy.js';
-import { scoresReducer } from '../src/scores.js';
+import { muscles } from '../src/front/body-3d/anatomy.js';
+import { scoresReducer } from '../src/front/web/scores.js';
 
 test('test mode populates all muscles and restores previous values after edits or clearing', () => {
   const initial = { scores: { quadriceps_l: 71 }, savedScores: null };

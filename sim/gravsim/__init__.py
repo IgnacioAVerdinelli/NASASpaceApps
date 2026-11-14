@@ -1,29 +1,35 @@
-"""gravsim: synthetic instrument readings for astronauts losing gravity, fitted to NASA bed-rest data.
+"""gravsim: synthetic instrument readings for astronauts losing gravity, fitted to NASA bed-rest data,
+plus the DataService and HealthService that carry them to the 3D page. See README.md.
 
     import gravsim as gs
 
     mission = gs.Mission("iss_180")
-    ana = mission.add_crew("CM-1", sex="F", adherence=1.0, seed=1)          # follows the exercise routine
-    ben = mission.add_crew("CM-2", adherence=[(0, 1.0), (60, 0.2), (120, 1.0)], seed=2)   # skips exercise for 2 months
-    ben.add_event(day=95, measures="legs", severity_pct=12, recovery_days=20, label="ankle sprain")
+    ana = mission.add_crew("CM-1", sex="F", adherence=1.0, seed=1)
 
-    dyn = gs.Dynamometer(seed=3)
-    dyn.measure(ana, day=90, measure="knee_extension_60")      # one Reading
-    dyn.session(ben, day=90)                                   # every test with its repetitions
-
-    readings = mission.timeline()                              # NASA schedule, every crew member
-    df = gs.to_dataframe(readings)                             # needs pandas
+    data = gs.DataService()
+    data.ingest(mission.timeline(seed=7))              # gravsim stands in for the sensors
+    data.latest("CM-1", "bone", at=mission.timestamp(200))
+    gs.HealthService(data).dashboard(ana, day=120)     # JSON for the 3D page
 """
 from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Event, Mission, Phase, expand
-from .dashboard import build_dashboard, validate
+from .dataservice import DataService
+from .health import HealthService, validate_dashboard
 from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Wearable
+from .pipeline import LIMITS, clean
 from .reading import Reading, to_dataframe
 from .schedule import default_instruments, nasa_days, timeline
+from .store import SqliteStore
+from .units import UNITS, convert
 
 __version__ = MODEL_VERSION
 __all__ = [
-    "Mission", "Phase", "CrewMember", "Event", "Fault", "Reading", "Instrument",
-    "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable",
-    "timeline", "nasa_days", "default_instruments", "to_dataframe",
-    "build_dashboard", "validate", "MEASURES", "GROUPS", "PRESETS", "PARAMS", "MODEL_VERSION", "expand",
+    # generator
+    "Mission", "Phase", "CrewMember", "Event", "PRESETS", "MEASURES", "GROUPS", "PARAMS", "MODEL_VERSION", "expand",
+    "Instrument", "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable", "Fault",
+    "timeline", "nasa_days", "default_instruments",
+    # the record every part passes around
+    "Reading", "to_dataframe",
+    # DataService and HealthService
+    "DataService", "SqliteStore", "clean", "LIMITS", "UNITS", "convert",
+    "HealthService", "validate_dashboard",
 ]

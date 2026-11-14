@@ -1,0 +1,109 @@
+"""The ingestion pipeline. Every reading passes through clean() on its way into the DataService,
+whether gravsim made it or a real sensor sent it.
+
+A record is a Reading or a plain dict with the same keys. It needs crew_id, measure, timestamp, value
+and unit; the other Reading fields are optional and kept, unknown keys are ignored. The rules:
+
+1. Records without a crew member, a known measure or a readable time are dropped, with a logged warning.
+2. Times become UTC ISO text, "2027-03-01T12:00:00Z". Any offset is accepted; no offset means UTC.
+3. A missing or unreadable value becomes None, with quality "missing".
+4. Values are converted to their measure's canonical unit (units.py). An unknown unit, or one of
+   the wrong kind, keeps the value and unit as sent, with quality "bad_unit".
+5. Values outside LIMITS get quality "out_of_range" and are kept unrounded, as evidence of what went
+   wrong. The rest are rounded to their measure's decimals.
+6. Of several readings with the same crew member, measure, time, instrument and side, the last one
+   wins. The result is sorted by time.
+
+Flagged readings are kept, so nothing a sensor sent is lost; the HealthService only uses quality "ok".
+"""
+from __future__ import annotations
+
+import logging
+import math
+from dataclasses import fields
+from datetime import datetime, timezone
+from typing import Iterable
+
+from .core import GROUPS, MEASURES, TIME_FORMAT
+from .reading import Reading
+from .units import convert
+
+log = logging.getLogger(__name__)
+FIELDS = {f.name for f in fields(Reading)}
+
+# Values no living crew member produces, in canonical units. Wide on purpose: they catch sensor and unit
+# errors (a resting heart rate of 1.2 is beats per second sent as bpm), not unusual but real values.
+LIMITS = {
+    **{m: (1, 1000) for m in GROUPS["strength"]},                           # peak torque, ft-lb
+    **{m: (0.1, 2.5) for m in GROUPS["bone"]},                              # g/cm²
+    **{m: (300, 80_000) for m in ("lean_legs", "lean_arms", "lean_trunk")},   # g of lean mass in one region
+    "vo2peak": (5, 100),         # ml/kg/min; the highest ever recorded is just under 100
+    "resting_hr": (20, 220),     # bpm
+    "resting_sbp": (50, 260),    # mmHg
+    "resting_dbp": (20, 160),    # mmHg
+    "spo2": (50, 100),           # %
+    "hrv_rmssd": (1, 500),       # ms
+}
+
+
+def clean(records: Iterable[Reading | dict]) -> list[Reading]:
+    """Run records through the rules above and return clean Readings, sorted by time."""
+    kept: dict[tuple, Reading] = {}
+    dropped = 0
+    for record in records:
+        data = vars(record) if isinstance(record, Reading) else record
+        try:
+            timestamp = utc_iso(data.get("timestamp"))
+        except (TypeError, ValueError, OverflowError, OSError):
+            timestamp = None
+        if not data.get("crew_id") or data.get("measure") not in MEASURES or timestamp is None:
+            dropped += 1
+            continue
+        value, unit, quality = check_value(data["measure"], data.get("value"), data.get("unit"))
+        known = {k: v for k, v in data.items() if k in FIELDS}
+        r = Reading(**{**known, "timestamp": timestamp, "value": value, "unit": unit, "quality": quality})
+        kept[key(r)] = r
+    if dropped:
+        log.warning("dropped %d records without a crew member, a known measure or a readable time", dropped)
+    return sorted(kept.values(), key=order)
+
+
+def check_value(measure: str, value, unit: str | None) -> tuple[float | None, str | None, str]:
+    """Rules 3 to 5 for one value: (value in the canonical unit, its unit, quality)."""
+    m = MEASURES[measure]
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        value = math.nan
+    if not math.isfinite(value):
+        return None, m["unit"], "missing"
+    try:
+        value = convert(value, unit, m["unit"])
+    except ValueError:
+        return value, unit, "bad_unit"
+    lo, hi = LIMITS.get(measure, (-math.inf, math.inf))
+    if not lo <= value <= hi:
+        return value, m["unit"], "out_of_range"
+    return round(value, m["decimals"]), m["unit"], "ok"
+
+
+def utc_iso(t) -> str:
+    """A time as UTC ISO text, "2027-03-01T12:00:00Z". Takes ISO text, a datetime or Unix seconds."""
+    if isinstance(t, (int, float)):
+        t = datetime.fromtimestamp(t, timezone.utc)
+    elif isinstance(t, str):
+        t = datetime.fromisoformat(t.strip().replace("Z", "+00:00"))     # Python 3.10 can't read "Z"
+    elif not isinstance(t, datetime):
+        raise TypeError(f"can't read a time from {t!r}")
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return t.astimezone(timezone.utc).strftime(TIME_FORMAT)
+
+
+def key(r: Reading) -> tuple:
+    """What makes two readings the same reading (rule 6)."""
+    return r.crew_id, r.measure, r.timestamp, r.instrument, r.side
+
+
+def order(r: Reading) -> tuple:
+    return r.timestamp, r.crew_id, r.instrument, r.measure, r.side or ""

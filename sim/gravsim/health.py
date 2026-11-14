@@ -2,6 +2,9 @@
 
 dashboard() builds the dashboard JSON, version 1 of the contract in docs/frontend-backend.md on the
 design-body branch. validate_dashboard() runs the same checks as the page (src/front/sketch/data/contract.js).
+Everything dashboard() computes is saved back through the DataService as processed results: kind
+"dashboard" (the JSON it returns) and kind "measure_change" (for each measure shown: the pre-flight
+reference, the % change and the time of the latest reading).
 In the team's sketch the HealthService also feeds a queue and a notification system (ship, crew, Earth);
 those are out of scope for the challenge.
 
@@ -54,7 +57,8 @@ class HealthService:
         self.data = data
 
     def dashboard(self, crew: CrewMember, day: float, layer: str = "surface", selected: str | None = None) -> dict:
-        """The dashboard JSON for one crew member on a mission day, from the readings taken up to then."""
+        """The dashboard JSON for one crew member on a mission day, from the readings taken up to then.
+        It is also saved, with the per-measure changes behind it, as processed results."""
         mission = crew.mission
         launch = mission.timestamp(0)
         unloaded = mission.unloaded_days(day)
@@ -99,7 +103,7 @@ class HealthService:
         for mid, title, what in WHOLE_BODY:
             charts.append(chart(f"{mid}-trend", [], title, what, mid))
 
-        return {
+        dashboard = {
             "version": 1,
             "updatedAt": mission.timestamp(day),
             "simulated": True,
@@ -113,6 +117,12 @@ class HealthService:
             },
             "charts": charts,
         }
+        changes = {mid: {"reference": ref, "change_pct": change,
+                         "latest_at": series[mid][-1].timestamp if series[mid] else None}
+                   for mid, (ref, change) in trend.items()}
+        self.data.save_result(crew.id, "dashboard", mission.timestamp(day), dashboard)
+        self.data.save_result(crew.id, "measure_change", mission.timestamp(day), changes)
+        return dashboard
 
 
 def _trend(readings: list, launch: str) -> tuple[float | None, float | None]:

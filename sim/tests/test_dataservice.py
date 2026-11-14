@@ -1,5 +1,5 @@
-"""Checks for the DataService: units, the cleaning rules, the inert store, and gravsim's readings going
-through the pipeline.
+"""Checks for the DataService: units, the cleaning rules, the inert store, gravsim's readings going
+through the pipeline, and the processed results the HealthService saves.
 
 Run from sim/:  python -m pytest -q
 """
@@ -89,14 +89,22 @@ def test_duplicates_keep_the_last_and_output_is_sorted():
 
 # ---- the inert store ------------------------------------------------------------------------
 
+def primary_key(store, table):
+    return [row[1] for row in sorted(store.db.execute(f"PRAGMA table_info({table})"), key=lambda row: row[5]) if row[5]]
+
+
 def test_store_has_the_schema_but_saves_and_finds_nothing():
     store = gs.SqliteStore()
-    columns = [row[1] for row in store.db.execute("PRAGMA table_info(readings)")]
-    assert columns[:5] == ["crew_id", "measure", "timestamp", "instrument", "side"]
-    readings = gs.clean([sensor()])
-    store.save(readings)
-    assert store.query("CM-1") == []
-    assert store.db.execute("SELECT COUNT(*) FROM readings").fetchone() == (0,)
+    assert primary_key(store, "readings") == ["crew_id", "measure", "timestamp", "instrument", "side"]
+    assert [row[1] for row in store.db.execute("PRAGMA table_info(processed)")] == \
+        ["crew_id", "kind", "timestamp", "computed_at", "model_version", "payload"]
+    assert primary_key(store, "processed") == ["crew_id", "kind", "timestamp", "model_version"]
+
+    store.save(gs.clean([sensor()]))
+    store.save_results([gs.DataService().save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"a": 1})])
+    assert store.query("CM-1") == [] and store.query_results("CM-1") == []
+    for table in ("readings", "processed"):
+        assert store.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone() == (0,)
 
 
 # ---- gravsim through the DataService --------------------------------------------------------
@@ -136,3 +144,54 @@ def test_latest_is_the_newest_usable_reading_of_each_measure(mission_and_data):
     assert latest["knee_extension_60"].mission_day == 74 and latest["vo2peak"].mission_day == 75
     data.ingest([sensor(measure="vo2peak", unit="ml/kg/min", value=None, timestamp=m.timestamp(99))])
     assert data.latest("CM-1", "vo2peak", at=m.timestamp(100))["vo2peak"].mission_day == 75     # a gap doesn't hide it
+
+
+# ---- processed results ----------------------------------------------------------------------
+
+def test_results_are_saved_and_read_back_by_kind_and_time():
+    data = gs.DataService()
+    payload = {"knee_extension_60": {"change_pct": -12.5}}
+    for day in (3, 1, 2):
+        data.save_result("CM-1", "measure_change", f"2027-03-0{day}T12:00:00Z", payload)
+        data.save_result("CM-1", "dashboard", f"2027-03-0{day}T14:00:00+02:00", {"version": 1})
+    data.save_result("CM-2", "dashboard", "2027-03-01T12:00:00Z", {"version": 1})
+    payload["knee_extension_60"]["change_pct"] = 0        # the saved copy must not follow later edits
+
+    everything = data.results("CM-1")
+    assert len(everything) == 6 and [r.timestamp for r in everything] == sorted(r.timestamp for r in everything)
+    changes = data.results("CM-1", kind="measure_change")
+    assert [r.timestamp[:10] for r in changes] == ["2027-03-01", "2027-03-02", "2027-03-03"]
+    assert changes[0].payload == {"knee_extension_60": {"change_pct": -12.5}}
+    assert changes[0].model_version == gs.MODEL_VERSION and changes[0].computed_at.endswith("Z")
+    window = data.results("CM-1", start="2027-03-02T00:00:00Z", end="2027-03-02T23:59:59Z")
+    assert {(r.kind, r.timestamp) for r in window} == {("measure_change", "2027-03-02T12:00:00Z"),
+                                                       ("dashboard", "2027-03-02T12:00:00Z")}
+    assert data.results("CM-3") == []
+
+
+def test_computing_a_result_again_replaces_it_and_a_new_model_version_adds_one():
+    data = gs.DataService()
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 1})
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 2})
+    assert [r.payload for r in data.results("CM-1")] == [{"n": 2}]
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 3}, model_version="0.2.0")
+    assert sorted(r.model_version for r in data.results("CM-1")) == [gs.MODEL_VERSION, "0.2.0"]
+
+
+def test_dashboard_saves_what_it_computes(mission_and_data):
+    m, _, _, kept = mission_and_data
+    data = gs.DataService()
+    data.ingest(kept)
+    crew = m.crew[0]
+    dash = gs.HealthService(data).dashboard(crew, 120)
+
+    saved = {r.kind: r for r in data.results(crew.id)}
+    assert set(saved) == {"dashboard", "measure_change"}
+    assert {r.timestamp for r in saved.values()} == {m.timestamp(120)}
+    assert saved["dashboard"].payload == dash
+    changes = saved["measure_change"].payload
+    for item in dash["summary"]["items"]:
+        measure = next(mid for item_id, mid, _, _ in gs.health.REGIONS if item_id == item["id"])
+        change = changes[measure]["change_pct"]
+        assert item["changePercent"] == (None if change is None else round(change, 1))
+    assert changes["vo2peak"]["latest_at"] <= m.timestamp(120)

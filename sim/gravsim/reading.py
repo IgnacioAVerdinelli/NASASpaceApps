@@ -1,7 +1,8 @@
-"""Reading: one value from one instrument. Every part of the system passes these around.
+"""The two records the DataService holds: Reading (raw data) and Result (processed data).
 
 gravsim's instruments create Readings. A real sensor can send a plain dict with the same keys; it needs
 crew_id, measure, timestamp, value and unit, and the DataService's pipeline turns it into a Reading.
+The HealthService saves what it computes as Results.
 """
 from __future__ import annotations
 
@@ -39,6 +40,20 @@ class Reading:
         m = MEASURES.get(self.measure)
         if m and self.label is None:
             self.label, self.region, self.muscle_keys = m["label"], m.get("region"), list(m.get("muscle_keys") or [])
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass(kw_only=True)
+class Result:
+    """Something the HealthService computed for a crew member at a mission time."""
+    crew_id: str
+    kind: str                 # what was computed: "dashboard", "measure_change", ...
+    timestamp: str            # the mission time the result is for, UTC like Reading.timestamp
+    computed_at: str          # when it was computed, UTC
+    model_version: str
+    payload: dict             # the result itself; anything JSON can hold
 
     def to_dict(self) -> dict:
         return asdict(self)

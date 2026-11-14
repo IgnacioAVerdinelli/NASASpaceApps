@@ -13,7 +13,7 @@ You need Python 3.10 or newer. From the repository root:
 ```bash
 cd sim
 pip install -e ".[dev]"      # numpy, plus pandas and pytest
-python -m pytest -q          # 37 checks, some of them against the bed-rest data
+python -m pytest -q          # 40 checks, some of them against the bed-rest data
 ```
 
 Feed the 3D page:
@@ -40,6 +40,7 @@ data.ingest(mission.timeline(seed=7))      # gravsim plays the sensors, on NASA'
 data.readings("CM-2", "knee_extension_60", end=mission.timestamp(120))   # 6 readings, L-60 to FD105
 data.latest("CM-2", "bone", at=mission.timestamp(200))                   # newest hip, spine and heel scans (R+7)
 dash = gs.HealthService(data).dashboard(ben, day=120)                    # the JSON for the 3D page
+data.results("CM-2", kind="measure_change")                              # what that call computed, saved
 ```
 
 `examples/gravsim_demo.ipynb` shows what the generator makes, with charts against the bed-rest data (it also needs `altair`; run it from `sim/examples`).
@@ -52,10 +53,10 @@ flowchart LR
     gen["gravsim generator<br/>core.py, instruments.py, schedule.py"]
     subgraph dataservice["DataService (dataservice.py)"]
         pipe["ingestion pipeline<br/>pipeline.py, units.py"]
-        mem["readings in memory"]
-        db[("SQLite store (store.py)<br/>schema only, inert")]
+        mem["memory: readings<br/>and processed results"]
+        db[("SQLite store (store.py)<br/>readings and processed tables,<br/>inert")]
         pipe --> mem
-        pipe -. "save() does nothing" .-> db
+        mem -. "saves nothing yet" .-> db
     end
     health["HealthService<br/>health.py"]
     api["API<br/>serve.py"]
@@ -64,7 +65,8 @@ flowchart LR
     sensors -.-> pipe
     gen -- "stands in for the sensors" --> pipe
     mem -- "readings(), latest()" --> health
-    db -. "query() returns nothing" .-> health
+    health -- "processed results" --> mem
+    db -. "queries return nothing" .-> health
     health --> api --> front
     health -.-> notify
 ```
@@ -74,11 +76,11 @@ flowchart LR
 | "real" data for the challenge | `core.py` | `Mission`, `CrewMember` and the physiology curves |
 | | `instruments.py` | the four simulated instruments and their faults |
 | | `schedule.py` | `timeline()`: who is measured on which days |
-| shared by every box | `reading.py` | `Reading`, the record that travels through the system; `to_dataframe()` |
-| DataService | `dataservice.py` | `DataService`: `ingest()`, `readings()`, `latest()` |
+| shared by every box | `reading.py` | `Reading` (raw data) and `Result` (processed data), the records that travel through the system; `to_dataframe()` |
+| DataService | `dataservice.py` | `DataService`: `ingest()`, `readings()`, `latest()`, `save_result()`, `results()` |
 | | `pipeline.py` | `clean()`: the ingestion rules, and `LIMITS` |
 | | `units.py` | the unit registry and `convert()` |
-| | `store.py` | the SQLite schema and `SqliteStore`, inert |
+| | `store.py` | the SQLite schema (readings and processed results) and `SqliteStore`, inert |
 | HealthService | `health.py` | `HealthService.dashboard()` and `validate_dashboard()` |
 | between HealthService and frontend | `serve.py` | the HTTP API |
 
@@ -86,11 +88,15 @@ flowchart LR
 
 ## The DataService
 
-It holds every reading and answers three calls:
+It holds all the data: raw readings and the processed results the HealthService computes from them.
 
 - `ingest(records)` runs records through the pipeline and keeps them. A record is a `Reading` or a plain dict with at least `crew_id`, `measure`, `timestamp`, `value` and `unit`, so any sensor can send one.
 - `readings(crew_id, measures=None, start=None, end=None)` returns a crew member's readings in a time range, oldest first, whatever their quality. `measures` takes ids or group names (`"bone"`); times can be ISO text, a `datetime` or Unix seconds.
 - `latest(crew_id, measures=None, at=None)` returns the newest reading of each measure that has quality `ok`.
+- `save_result(crew_id, kind, timestamp, payload)` keeps a processed result: what was computed for a crew member at a mission time, as a `Result` with the JSON `payload`, the time it was computed and the model version. Computing the same kind for the same crew member, time and model version again replaces it.
+- `results(crew_id, kind=None, start=None, end=None)` reads them back, oldest first, for one kind or all of them, in a range of mission times.
+
+Every call to `HealthService.dashboard()` saves two results for the day it shows: kind `dashboard`, the JSON it returns, and kind `measure_change`, which holds the pre-flight reference, the % change and the time of the latest reading for each measure on the page.
 
 A reading from a real sensor goes in the same way as gravsim's:
 
@@ -126,7 +132,12 @@ The HealthService only uses readings with quality `ok`.
 
 To accept a new unit, add one line to `UNITS`.
 
-**The store** (`store.py`) is where real sensor data and imported historical data would live. For the challenge it does nothing on purpose: `SqliteStore` creates the `readings` table (in memory by default), `save()` writes nothing and `query()` returns an empty list, so the demo runs on gravsim's readings held in memory. The table has one row per reading, keyed by crew member, measure, time, instrument and side, with the value in its canonical unit, the quality, a `synthetic` flag and the remaining fields as JSON. Making it real means an `INSERT OR REPLACE` in `save()` and a `SELECT` in `query()`.
+**The store** (`store.py`) is where real sensor data, imported historical data and the processed results would live. For the challenge it does nothing on purpose: `SqliteStore` creates its two tables (in memory by default), its save methods write nothing and its query methods return an empty list, so the demo runs on what the DataService holds in memory.
+
+- `readings` has one row per reading, keyed by crew member, measure, time, instrument and side, with the value in its canonical unit, the quality, a `synthetic` flag and the remaining fields as JSON.
+- `processed` has one row per result: crew member, kind, the mission time it is for, when it was computed, the model version and the payload as JSON. The key is crew member, kind, time and model version, so a recomputed result replaces the old one and a new model version adds a row that can be compared with the old.
+
+Making it real means an `INSERT OR REPLACE` in `save()` and `save_results()` and a `SELECT` in `query()` and `query_results()`.
 
 **The API** (`python -m gravsim.serve`), all `GET`:
 

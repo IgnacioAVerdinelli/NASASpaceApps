@@ -141,9 +141,9 @@ def test_latest_is_the_newest_usable_reading_of_each_measure(mission_and_data):
     data.ingest(kept)
     latest = data.latest("CM-1", ["knee_extension_60", "vo2peak"], at=m.timestamp(100))
     assert set(latest) == {"knee_extension_60", "vo2peak"}
-    assert latest["knee_extension_60"].mission_day == 74 and latest["vo2peak"].mission_day == 75
+    assert latest["knee_extension_60"].day_label == "FD75" and latest["vo2peak"].day_label == "FD75"
     data.ingest([sensor(measure="vo2peak", unit="ml/kg/min", value=None, timestamp=m.timestamp(99))])
-    assert data.latest("CM-1", "vo2peak", at=m.timestamp(100))["vo2peak"].mission_day == 75     # a gap doesn't hide it
+    assert data.latest("CM-1", "vo2peak", at=m.timestamp(100))["vo2peak"].day_label == "FD75"   # a gap doesn't hide it
 
 
 # ---- processed results ----------------------------------------------------------------------

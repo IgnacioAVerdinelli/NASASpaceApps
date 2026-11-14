@@ -1,9 +1,11 @@
 """Data-quality checks for gravsim against the raw NLSP bed-rest data.
 
 The team lead's requirement: the generator "cannot generate data outside the ranges we got from the original
-NASA data". `data_ranges.json` next to this file holds those ranges, derived straight from the CSVs in
-data/nlsp (independently of fit_params.py): for each measure the pre-bed-rest minimum and maximum, and the
-minimum and maximum % change per cohort. Everything below is checked against that file.
+NASA data". `data_ranges.json` next to this file holds those ranges, derived straight from the raw CSVs by a
+separate verification script that is not in the repository (independently of fit_params.py; the strength
+files it read are now in data/nlsp and sim/fit/source_data): for each measure the pre-bed-rest minimum and
+maximum, and the minimum and maximum % change per cohort, in the files' units (ft-lb for strength, which is
+what gravsim generates). Everything below is checked against that file.
 
 Classification used here (from the review brief):
   (a) a value outside the data range while the reading is inside the data's coverage (<= 90 unloaded days,

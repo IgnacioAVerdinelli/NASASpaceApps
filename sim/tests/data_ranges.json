@@ -1,5 +1,5 @@
 {
- "_about": "Ranges derived straight from the raw NLSP CSVs in data/nlsp by the verifier (scratch script derive_ranges.py), independently of fit_params.py. baseline = pre-bed-rest values; change_pct = first post-bed-rest test vs the subject's pre mean, per cohort. 'any_post' includes later post tests (recovery days). Units as in the files.",
+ "_about": "Ranges derived straight from the raw NLSP CSVs by a separate verification script that is not in the repository, independently of fit_params.py. The MR079G files it read are in data/nlsp (CFT70) and sim/fit/source_data (the other studies). baseline = pre-bed-rest values; change_pct = first post-bed-rest test vs the subject's pre mean, per cohort. 'any_post' includes later post tests (recovery days). Units as in the files.",
  "measures": {
   "knee_extension_60": {
    "unit": "ft-lb",

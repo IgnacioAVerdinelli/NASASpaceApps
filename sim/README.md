@@ -2,11 +2,13 @@
 
 This folder is the health monitor's data service. The `DataService` takes in everything the sources on board produce (instrument readings and crew context: where each astronaut is and what they are doing), cleans it, keeps it, answers queries for it over Python or HTTP, and announces what it stored on the team's event queue. See `docs/architecture.md` for where it sits: Sources → DataService ↔ Database.
 
-We have none of those sources: no dynamometer, DXA scanner, metabolic cart, flight wearable, room sensors or spacesuit. The `gravsim` generator stands in for all of them. It produces readings for a crew member on any mission day, following the curves measured in NASA's open bed-rest studies (the files in `data/nlsp/`), and a daily routine with spacewalks for the context. Readings are random by default and fully controllable: exercise adherence over time, fast responders, injuries on a chosen day, broken instruments, spacewalks.
+We have none of those sources: no dynamometer, DXA scanner, metabolic cart, flight wearable, room sensors or spacesuit. The `gravsim` generator stands in for all of them. It produces readings for a crew member on any mission day, following the curves measured in NASA's open bed-rest studies (the files in `data/nlsp/` and `sim/fit/source_data/`), and a daily routine with spacewalks for the context. Readings are random by default and fully controllable: exercise adherence over time, fast responders, injuries on a chosen day, broken instruments, spacewalks.
 
 All data it produces is synthetic and every record says so (`synthetic: true`).
 
-The HealthService, the queues, the analysis scheduler, the notifications and the frontend belong to other parts of the team. For the demo, a mock of the HealthService that feeds the 3D page lives in `sim/mocks/healthservice/` on the `feat/sensor-simulator` branch. It imports gravsim; gravsim never imports it.
+The HealthService, the queues, the analysis scheduler, the notifications and the frontend belong to other parts of the team.
+
+A mock of the HealthService, used to feed the 3D page during the demo, lives in `sim/mocks/healthservice/` on branch `feat/sensor-simulator`.
 
 ## Quick start
 
@@ -15,7 +17,7 @@ You need Python 3.10 or newer. From the repository root:
 ```bash
 cd sim
 pip install -e ".[dev]"      # numpy, plus pandas and pytest
-python -m pytest -q          # 108 quick checks (113 with the mocks folder), about 25 seconds
+python -m pytest -q          # 115 quick checks, about 25 seconds
 python -m pytest -q -m slow  # 85 stress tests against the data ranges and NASA standards, about 3 minutes
 ```
 
@@ -50,7 +52,7 @@ data.save_result("CM-2", "study", mission.timestamp(120), {"study": "functional_
 data.publisher.messages[-1]["topic"]                                     # 'data.result_saved'
 ```
 
-`examples/gravsim_demo.ipynb` shows what the generator makes, with charts against the bed-rest data, and ends with crew context and events in the DataService (it also needs `altair`; run it from `sim/examples`).
+`examples/gravsim_demo.ipynb` shows what the generator makes, with charts against the bed-rest data, and ends with crew context and events in the DataService. It also needs altair 5 (`pip install -e ".[examples]"`); run it from `sim/examples`.
 
 ## How the pieces fit
 
@@ -92,9 +94,9 @@ flowchart LR
 | | `gravsim/store.py` | the SQLite schema (readings, context, processed results) and `SqliteStore`, inert |
 | | `gravsim/events.py` | the event topics, their messages and `MockPublisher` |
 | | `gravsim/serve.py` | the HTTP API |
-| Fit | `fit/fit_params.py` | refits `gravsim/params.json` from `data/nlsp/` |
+| Fit | `fit/fit_params.py` | refits `gravsim/params.json` from `data/nlsp/` and `fit/source_data/` |
+| | `fit/source_data/` | the MR079G strength studies other than CFT70, which the fit needs and `data/nlsp/` no longer holds (see its README) |
 | Checks | `tests/` | the generator against the data and NASA's standards, the DataService, context, events |
-| Not part of the data service | `mocks/healthservice/` | the HealthService mock, its server, tests and notebook (demo branch only) |
 
 ## The DataService
 
@@ -116,22 +118,29 @@ A reading from a real sensor goes in the same way as gravsim's:
 r.timestamp, r.value, r.unit, r.quality      # ('2027-06-01T07:30:00Z', 69.0, 'bpm', 'ok')
 ```
 
+Strength goes in the same way: gravsim's dynamometer reports ft-lb, as NASA's files do, and the DataService stores N·m.
+
+```python
+[r] = data.ingest([gs.Dynamometer(seed=3).measure(ben, day=104, measure="knee_extension_60")])
+r.value, r.unit, r.truth["value"]            # (85.6, 'N·m', 73.115): 63.1 ft-lb from the dynamometer
+```
+
 **Ingestion rules** (`pipeline.py`), applied to every reading, gravsim's included:
 
 1. A record with no crew member, no known measure or no readable time is dropped, and a warning says how many.
 2. Times are stored as UTC ISO text to the second, `2027-03-01T12:00:00Z`. A time with no offset is taken as UTC.
 3. A missing or unreadable value becomes `None` with quality `missing`. It is kept, because a gap is information too.
-4. The value is converted to its measure's canonical unit. An unknown unit, or one of the wrong kind (kg for a heart rate), keeps value and unit as sent and gets quality `bad_unit`.
-5. A value outside the physiological limits in `LIMITS` gets quality `out_of_range` and is kept unrounded. The limits are wide on purpose: a resting heart rate of 1.2 is beats per second sent as bpm, not a very calm astronaut. Values inside the limits are rounded to the measure's decimals. gravsim clamps its own readings to the same table, so nothing it makes is flagged.
+4. The value is converted to the unit its measure is stored in (`STORED_UNITS`), and so is gravsim's `truth` value. An unknown unit, or one of the wrong kind (kg for a heart rate), keeps value and unit as sent and gets quality `bad_unit`.
+5. A value outside the physiological limits in `LIMITS` gets quality `out_of_range` and is kept unrounded. The limits are wide on purpose: a resting heart rate of 1.2 is beats per second sent as bpm, not a very calm astronaut. Values inside the limits are rounded to the measure's decimals. gravsim clamps its own readings to the same table, so nothing it makes is flagged. `LIMITS` is in each measure's `params.json` unit, ft-lb for strength, and the pipeline converts it before checking.
 6. For readings with the same crew member, measure, time, instrument and side, the last one sent wins. The result is sorted by time.
 
-Consumers should use readings with quality `ok`; the HealthService mock does.
+Consumers should use readings with quality `ok`.
 
-**Units** (`units.py`). Each measure is stored in the unit `params.json` gives it. `UNITS` maps every accepted unit to that canonical unit and a factor, and `gs.convert(100, "N·m", "ft-lb")` gives 73.76.
+**Units** (`units.py`). Each measure is stored in one canonical unit, listed in `gs.STORED_UNITS`. `UNITS` maps every accepted unit to the canonical unit of its kind and a factor, and `gs.convert(100, "ft-lb", "N·m")` gives 135.58. The canonical unit is the one `params.json` gives the measure, except for strength: the fit, `params.json` and the simulated dynamometer keep ft-lb, as NASA's files do, and the DataService stores N·m (1 ft-lb = 1.35582 N·m), so the whole system and the website use one SI unit.
 
 | Canonical unit | Also accepted |
 |---|---|
-| ft-lb (torque) | N·m, Nm |
+| N·m (torque) | Nm, ft-lb |
 | g/cm² (bone density) | g/cm2, mg/cm², mg/cm2 |
 | g (lean mass) | kg, lb |
 | bpm (heart rate) | beats/s |
@@ -243,16 +252,6 @@ Messages say what changed, not the data itself; a subscriber asks the DataServic
 
 The scheduler records a study with `save_result(crew_id, "study", when, payload)`; a payload such as `{"study": "bone_densitometry", "status": "scheduled", "reason": "..."}` is a suggestion, not a contract. It reads past studies back with `results(crew_id, kind="study")`.
 
-## The HealthService mock (demo branch only)
-
-`sim/mocks/healthservice/` is a mock of the HealthService, which another part of the team builds. It is not part of the data service and will not be merged with it. It reads from a DataService in its own process and builds the dashboard JSON the 3D page in `src/front/sketch` reads (contract version 1, `docs/frontend-backend.md` on the `design-body` branch); each dashboard is saved back as two results, kinds `dashboard` and `measure_change`. Its notebook is `mocks/healthservice/dashboard_demo.ipynb`. To feed the 3D page:
-
-```bash
-python -m mocks.healthservice.serve --day 95 --speed 20 --port 3000
-# then, in src/front/sketch on the design-body branch:
-VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
-```
-
 ## The generator
 
 **Mission.** A list of phases with a gravity level. Presets:
@@ -283,13 +282,13 @@ Measure groups for events and queries: `legs`, `trunk`, `arms`, `bone`, `cardio`
 
 ```python
 r = gs.Dynamometer(seed=3).measure(ben, day=104, measure="knee_extension_60")
-r.value, r.unit, r.day_label      # (63.1, 'ft-lb', 'FD105'): one test, noise included
+r.value, r.unit, r.day_label      # (63.1, 'ft-lb', 'FD105'): one test, noise included; 85.6 N·m once ingested
 r.truth                           # {'value': 53.927, 'change_pct': -27.917, 'faults': []}
 ```
 
 | Instrument | Measures | `session()` |
 |---|---|---|
-| `Dynamometer` | knee extension/flexion 60°/s, ankle plantar/dorsiflexion 30°/s, trunk extension/flexion 60°/s (ft-lb) | every test with its repetitions |
+| `Dynamometer` | knee extension/flexion 60°/s, ankle plantar/dorsiflexion 30°/s, trunk extension/flexion 60°/s (reported in ft-lb, stored in N·m) | every test with its repetitions |
 | `DxaScanner` | hip, spine, heel bone density (g/cm²); lean mass of legs, arms, trunk (g) | full report, left and right hip |
 | `CycleErgometer` | VO2peak (ml/kg/min) | graded test stage by stage: watts, heart rate, VO2, Borg, ending part-way through the last stage at the workload where the person reaches VO2peak |
 | `Wearable` | resting heart rate, systolic and diastolic pressure, SpO2, HRV | 24 hours of minute-by-minute heart rate, following the day's routine |
@@ -313,16 +312,16 @@ The data measured people before and after 21 to 90 days of head-down bed rest, w
 - Measurement noise comes from repeat tests before bed rest and from same-day duplicate DXA scans. For DXA all of it is the scanner. For the other instruments an assumed device noise is taken out and the rest is the person's day-to-day variation.
 - Baselines: the pre-bed-rest values of every subject in the files (137 people for strength: AG Pilot, Campaign 1, 3 and 17, CFT70, HDT30 and MEDES), kept as quantiles per sex in `params.json`.
 
-`params.json` holds every number with its source; `python fit/fit_params.py` refits it from `data/nlsp/`, and `python fit/fit_params.py --table` prints this table from it. The current fit ("pts" are percentage points of change; noise as a share of the value):
+`params.json` holds every number with its source; `python fit/fit_params.py` refits it from `data/nlsp/` and `fit/source_data/`, and `python fit/fit_params.py --table` prints this table from it. `data/nlsp/` keeps only CFT70 of the strength studies, the one the website uses, and CFT70 has a single length of bed rest, so the fit reads the other strength studies from `fit/source_data/`. `params.json` keeps strength in ft-lb, as in the files; the table shows it in N·m, as the DataService stores it. The current fit ("pts" are percentage points of change; noise as a share of the value):
 
 | Measure | Instrument | Unit | Worse is | Shape without exercise | Loss prevented by full exercise | Spread between people | Recovery time constant | Noise: device + day to day | Baselines drawn from | Assumed instead of fitted |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `knee_extension_60` | dynamometer | ft-lb | lower | plateau -23.5% | 64% | 5.7 pts | 19 d | 5.0% + 6.7% | 49.5 to 328.4 (137 people) | none |
-| `knee_flexion_60` | dynamometer | ft-lb | lower | plateau -13.6% | 90% | 5.8 pts | 19 d | 5.0% + 8.9% | 31.5 to 178.2 (137 people) | exercise effect capped at 0.9 (fitted 1) |
-| `ankle_plantarflexion_30` | dynamometer | ft-lb | lower | plateau -25.7% | 12% | 3.8 pts | 19 d | 5.0% + 9.2% | 42.2 to 186.3 (137 people) | none |
-| `ankle_dorsiflexion_30` | dynamometer | ft-lb | lower | plateau -6.8% | 70% | 3.3 pts | 19 d | 5.0% + 8.9% | 10.5 to 49.0 (137 people) | exercise effect |
-| `trunk_extension_60` | dynamometer | ft-lb | lower | plateau -17.7% | 77% | 9.3 pts | 19 d | 5.0% + 7.2% | 72.7 to 628.5 (128 people) | none |
-| `trunk_flexion_60` | dynamometer | ft-lb | lower | plateau -2.8% | 70% | 8.1 pts | 19 d | 5.0% + 11.2% | 49.7 to 286.0 (128 people) | exercise effect; Campaign 11 left out (runs the wrong way) |
+| `knee_extension_60` | dynamometer | N·m | lower | plateau -23.5% | 64% | 5.7 pts | 19 d | 5.0% + 6.7% | 67.1 to 445.3 (137 people) | none |
+| `knee_flexion_60` | dynamometer | N·m | lower | plateau -13.6% | 90% | 5.8 pts | 19 d | 5.0% + 8.9% | 42.7 to 241.6 (137 people) | exercise effect capped at 0.9 (fitted 1) |
+| `ankle_plantarflexion_30` | dynamometer | N·m | lower | plateau -25.7% | 12% | 3.8 pts | 19 d | 5.0% + 9.2% | 57.2 to 252.6 (137 people) | none |
+| `ankle_dorsiflexion_30` | dynamometer | N·m | lower | plateau -6.8% | 70% | 3.3 pts | 19 d | 5.0% + 8.9% | 14.2 to 66.4 (137 people) | exercise effect |
+| `trunk_extension_60` | dynamometer | N·m | lower | plateau -17.7% | 77% | 9.3 pts | 19 d | 5.0% + 7.2% | 98.6 to 852.1 (128 people) | none |
+| `trunk_flexion_60` | dynamometer | N·m | lower | plateau -2.8% | 70% | 8.1 pts | 19 d | 5.0% + 11.2% | 67.4 to 387.8 (128 people) | exercise effect; Campaign 11 left out (runs the wrong way) |
 | `hip_bmd` | DXA | g/cm² | lower | -1.38% per month | 50% | 0.46 pts/month | 405.5 d | 0.8% + 0.0% | 0.822 to 1.270 (74 people) | exercise effect |
 | `spine_bmd` | DXA | g/cm² | lower | -0.10% per month | 50% | 0.71 pts/month | 399 d | 0.6% + 0.0% | 0.880 to 1.193 (74 people) | exercise effect; spaceflight loss likely larger |
 | `heel_bmd` | DXA | g/cm² | lower | -0.38% per month | 50% | 0.88 pts/month | 286.2 d | 0.8% + 0.0% | 0.474 to 0.861 (50 people) | exercise effect |
@@ -341,7 +340,7 @@ The data measured people before and after 21 to 90 days of head-down bed rest, w
 
 ## What the data checks guarantee
 
-Two test files check the generator against numbers it was not fitted with. `tests/data_ranges.json` holds the smallest and largest value of every measure in the raw NASA files, worked out by a separate script. `tests/nasa_standards.json` holds NASA's thresholds, each with its document, page and quote. When `python -m pytest -m slow` passes, this holds:
+Two test files check the generator against numbers it was not fitted with. `tests/data_ranges.json` holds the smallest and largest value of every measure in the raw NASA files, in the files' units (ft-lb for strength), so the tests check the generator's own output. It was derived by a separate verification script that is not in the repository: the script read the raw files directly (the strength studies now in `data/nlsp/` and `fit/source_data/`), without going through the fit. To change a range, edit the JSON by hand and say in the commit where the number comes from. `tests/nasa_standards.json` holds NASA's thresholds, each with its document, page and quote. When `python -m pytest -m slow` passes, this holds:
 
 - Every crew member starts with values a real bed-rest subject had. Nobody is stronger, weaker or fitter, or has denser or thinner bones, than the extremes in the data.
 - A reading taken before launch with a working instrument is never outside the smallest and largest pre-bed-rest value in the data. Up to 90 days without gravity it is never outside what the subjects showed after bed rest: their starting range combined with their range of change.
@@ -376,8 +375,9 @@ These are choices, not facts from the data. Each one can be undone in one place,
 15. `Mission.random` draws its spacewalk after the crew, so a seed gives the same people it gave before spacewalks existed. [`Mission.random` in `core.py`]
 16. Events say what changed, not the data: one message per crew member per call and one per saved result, a replaced result announced again, nothing when nothing was stored. The DataService stores first and publishes after. If `publish()` raises, the data is kept, the remaining messages of that call are still sent, and the first error reaches the caller. [`events.py`, `dataservice.py`]
 17. A study the scheduler records is a result of kind `study`, not a table of its own. [`save_result()` in `dataservice.py`]
-18. The DataService's API listens on port 8000 and the HealthService mock on 3000, as the 3D page expects. Both listen on every network interface with `Access-Control-Allow-Origin: *` and no login, which suits a demo on a team network, not a real deployment. `POST /api/v1/results` lets services in other processes save results and studies; sensors cannot post readings or context over HTTP yet. [`serve.py`]
-19. The HealthService mock builds its dashboards from a DataService in its own process; it does not call the DataService's API. [`mocks/healthservice/serve.py`]
+18. The DataService's API listens on port 8000, on every network interface, with `Access-Control-Allow-Origin: *` and no login, which suits a demo on a team network, not a real deployment. `POST /api/v1/results` lets services in other processes save results and studies; sensors cannot post readings or context over HTTP yet. [`serve.py`]
+19. Strength is stored in N·m, the SI unit the website uses. The simulated dynamometer reports ft-lb, as NASA's files do and as a real device might, and the pipeline converts it on the way in. The fit and `params.json` stay in ft-lb, the unit of the files they read. [`STORED_UNITS` in `pipeline.py`, `UNITS` in `units.py`]
+20. The fit reads CFT70 from `data/nlsp/` and the other strength studies from `fit/source_data/`, a copy of the 256 files it needs (0.4 MB), so `data/nlsp/` stays as the website needs it. [`files()` in `fit/fit_params.py`]
 
 ## Limits
 

@@ -20,5 +20,7 @@ export function intensityColor(value) {
     : new THREE.Color(palette[1]).lerp(new THREE.Color(palette[2]), (score - 50) / 50);
 }
 export function visibleSystems(layer, isolated = false) {
+  // 'organs': translucent skin with the requested organs, vessels and muscles inside (structureColors).
+  if (layer === 'organs') return { skin: true, muscles: true, skeleton: false };
   return { skin: layer === 'surface', muscles: layer === 'muscles', skeleton: layer === 'skeleton' || (layer === 'muscles' && isolated) };
 }

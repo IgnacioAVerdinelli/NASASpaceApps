@@ -52,6 +52,7 @@ class MeasureResult:
     reference_n: int                      # readings averaged into the reference
     previous_change_pct: float | None     # change at the reading before the last one, from launch on
     previous_mission_day: float | None
+    previous_value: float | None
     score: float | None                   # only for measures coloured on the body
     typical_no_exercise_pct: float | None
     typical_exercise_pct: float | None
@@ -112,7 +113,8 @@ def compute_results(reference: Reference, mission: MissionInfo, crew: CrewInfo, 
             last_mission_day=last.mission_day if last else None, change_pct=change,
             reference_n=len(reference_readings(rs)),
             previous_change_pct=round(100 * (prev.value / ref - 1), 1) if prev else None,
-            previous_mission_day=prev.mission_day if prev else None, score=score,
+            previous_mission_day=prev.mission_day if prev else None,
+            previous_value=prev.value if prev else None, score=score,
             typical_no_exercise_pct=no_ex, typical_exercise_pct=ex,
             extrapolated=any(r.extrapolated for r in rs), synthetic=any(r.synthetic for r in rs),
             model_version=reference.model_version))

@@ -19,7 +19,7 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 
 1. **Lee** las lecturas de cada tripulante desde el DataService, y recalcula cuando el DataService anuncia datos nuevos en la cola de eventos.
 2. **Procesa:** calcula la referencia previa al vuelo, el cambio de cada medida y su score, y lo compara con lo que se vio en los estudios de reposo en cama.
-3. **Sirve al front** `GET /api/v1/dashboard`, con la versión 1 del contrato de Enzo (`docs/frontend-backend.md` en `design-body`).
+3. **Sirve al front** `GET /api/v1/dashboard`, con la versión 1 del contrato de Enzo ([frontend-backend.md](frontend-backend.md), en `main`).
 4. **Guarda lo que calcula** a través del DataService, para poder compararlo después.
 5. **Publica hallazgos** en la cola de eventos, así el planificador de análisis puede pedir un estudio extra.
 6. **Decide a quién avisar** según el contexto del tripulante (dónde está y qué está haciendo), y publica la alerta ya ruteada en la cola de notificaciones. Ejemplo de la arquitectura: si el astronauta está en una caminata espacial o en el baño, se le avisa a otro tripulante.

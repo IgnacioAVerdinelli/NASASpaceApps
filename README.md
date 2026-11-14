@@ -25,13 +25,14 @@ npm run preview
 - **Músculos:** muestra las 41 estructuras del modelo. El mismo valor de cada grupo controla la piel y su malla interna; los grupos profundos se pueden editar desde el panel y visualizar aquí.
 - **Huesos:** muestra el esqueleto como referencia, sin aplicar intensidades musculares.
 - **Aislar selección:** en la vista muscular, deja visible el grupo seleccionado junto al esqueleto. Al salir de esa capa se desactiva.
+- **Modo de testeo:** pinta todas las estructuras con intensidades variadas. Podés editar o limpiar esos valores; al salir se restauran los valores anteriores.
 - **Centrar selección:** acerca la cámara a la región elegida. Arrastrá para girar y usá rueda o pellizco para acercar o alejar.
 
-Los modelos masculino y femenino comparten selección y valores; cambiar de cuerpo reencuadra la cámara. Cambiar de capa mantiene la orientación. El contorno marca la selección sin sustituir el color de intensidad. Los datos permanecen únicamente mientras la página está abierta; «Limpiar valores» los vuelve a cero.
+Los modelos masculino y femenino comparten selección y valores; cambiar de cuerpo reencuadra la cámara. Cambiar de capa mantiene la orientación. La región seleccionada se identifica en el panel sin dibujar un borde sobre la piel. Los datos permanecen únicamente mientras la página está abierta; «Limpiar valores» los vuelve a cero.
 
 ## Mapas de piel
 
-Los mapas asignan una región por triángulo de piel y se usan tanto para pintar como para resolver clics. Son independientes para ambos cuerpos y no usan proyecciones frontales/posteriores. El modelo está fijado en `open-anatomy-3d@0.1.0` porque los mapas dependen del orden de sus triángulos.
+Los mapas asignan una región por triángulo de piel. El visor suaviza esas etiquetas sobre vértices vecinos y usa los mismos pesos interpolados para pintar y resolver clics. Son independientes para ambos cuerpos y no usan proyecciones frontales/posteriores. El modelo está fijado en `open-anatomy-3d@0.1.0` porque los mapas dependen del orden de sus triángulos.
 
 ```bash
 npm run generate:surfaces

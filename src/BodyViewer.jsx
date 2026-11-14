@@ -9,6 +9,7 @@ import maleRegions from './assets/surface-male.json';
 import femaleRegions from './assets/surface-female.json';
 import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, intensityColor, visibleSystems } from './anatomy.js';
 import { buildSurfaceWeights, pickSurfaceRegion } from './surfaceWeights.js';
+import { softenMaleGroin } from './surfaceShape.js';
 
 export { SURFACE_MUSCLE_KEYS };
 const muscleKeys = new Set(muscles.map(item => item.key));
@@ -21,18 +22,17 @@ function ancestorKey(mesh, group) {
   return null;
 }
 
-function skinMaterial() {
-  const material = new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.9 });
+// Keep anatomical shading while reducing harsh highlights inside colored regions.
+function surfaceMaterial() {
+  const material = new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 1 });
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float atlasSelection;\nvarying float vAtlasSelection;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAtlasSelection = atlasSelection;');
+      .replace('#include <common>', '#include <common>\nattribute float paintStrength;\nvarying float vPaintStrength;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPaintStrength = paintStrength;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vAtlasSelection;')
-      .replace('#include <color_fragment>', `#include <color_fragment>
-        float edgeWidth = max(fwidth(vAtlasSelection), 0.0001);
-        float edge = 1.0 - smoothstep(edgeWidth * 0.35, edgeWidth * 1.3, abs(vAtlasSelection - 0.5));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.055, 0.115, 0.14), edge * 0.4);`);
+      .replace('#include <common>', '#include <common>\nvarying float vPaintStrength;')
+      .replace('#include <opaque_fragment>', `#include <opaque_fragment>
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.25 * clamp(vPaintStrength, 0.0, 1.0));`);
   };
   return material;
 }
@@ -44,22 +44,23 @@ function updateView(view, values) {
   view.muscleGroup.visible = visible.muscles;
   view.skeletonGroup.visible = visible.skeleton;
   const colors = view.skin.geometry.attributes.color;
-  const selection = view.skin.geometry.attributes.atlasSelection;
+  const paint = view.skin.geometry.attributes.paintStrength;
+  const active = [false, ...SURFACE_KEYS.map(key => scores[key] > 0)];
   const palette = [neutral, ...SURFACE_KEYS.map(key => scores[key] > 0 ? intensityColor(scores[key]) : neutral)];
-  const selectedId = layer === 'surface' ? SURFACE_KEYS.indexOf(selected) + 1 : 0;
   const { weights, stride, vertexCount } = view.surfaceWeights;
   for (let vertex = 0; vertex < vertexCount; vertex++) {
-    let r = 0, g = 0, b = 0;
+    let r = 0, g = 0, b = 0, strength = 0;
     for (let id = 0; id < stride; id++) {
       const weight = weights[vertex * stride + id];
       if (!weight) continue;
       r += palette[id].r * weight; g += palette[id].g * weight; b += palette[id].b * weight;
+      if (active[id]) strength += weight;
     }
     colors.setXYZ(vertex, r, g, b);
-    selection.setX(vertex, selectedId ? weights[vertex * stride + selectedId] : 0);
+    paint.setX(vertex, strength);
   }
   colors.needsUpdate = true;
-  selection.needsUpdate = true;
+  paint.needsUpdate = true;
   for (const item of view.muscleMeshes) {
     item.mesh.visible = !isolated || item.key === selected;
     const score = scores[item.key];
@@ -174,14 +175,18 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         const geometry = skin.geometry;
         const triangles = (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
         if (data.version !== 1 || data.body !== body || data.triangleCount !== triangles || data.regions.length !== triangles || JSON.stringify(data.keys) !== JSON.stringify(SURFACE_KEYS) || data.regions.some(id => !Number.isInteger(id) || id < 0 || id > SURFACE_KEYS.length)) throw new Error('assets');
+        if (body === 'male') {
+          root.updateMatrixWorld(true);
+          softenMaleGroin(geometry, skin.matrixWorld);
+        }
         const surfaceWeights = buildSurfaceWeights(geometry, data.regions, SURFACE_KEYS.length, {
           leftIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_l') ? [i + 1] : []),
           rightIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_r') ? [i + 1] : []),
         });
         geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 3), 3));
-        geometry.setAttribute('atlasSelection', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
+        geometry.setAttribute('paintStrength', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
         (Array.isArray(skin.material) ? skin.material : [skin.material]).forEach(material => originalMaterials.add(material));
-        skin.material = skinMaterial();
+        skin.material = surfaceMaterial();
         const muscleMeshes = [];
         const sourceMuscleMeshes = [];
         muscleGroup.traverse(mesh => { if (mesh.isMesh) sourceMuscleMeshes.push(mesh); });

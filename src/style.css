@@ -11,3 +11,5 @@
 
 /* Keep the canvas inside a bounded flex row when the viewport changes. */
 .viewer-panel{height:660px;min-height:0}.body-viewer{min-height:0;min-width:0}.sidebar{max-height:660px}@media(max-width:800px){.viewer-panel{height:600px}.body-viewer{min-height:0}.sidebar{max-height:none}}
+
+.viewer-actions .test-toggle[aria-pressed="true"]{background:#254c3c;color:#fff;box-shadow:none}

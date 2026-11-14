@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Eight local passes soften region boundaries without mixing disconnected limbs.
+// Smooth boundaries along the skin without mixing disconnected limbs.
 export function buildSurfaceWeights(geometry, regions, regionCount, { leftIds = [], rightIds = [] } = {}) {
   const positions = geometry.attributes.position;
   const index = geometry.index;

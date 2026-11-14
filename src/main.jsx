@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ATTRIBUTION } from 'open-anatomy-3d';
 import BodyViewer from './BodyViewer.jsx';
 import { muscles, SURFACE_MUSCLE_KEYS, intensityColor, intensityLabel } from './anatomy.js';
+import { scoresReducer } from './scores.js';
 import './style.css';
 
 const initialScores = { quadriceps_l: 78, quadriceps_r: 45, upper_arm_muscles_l: 25, back_muscles_r: 58 };
@@ -10,7 +11,8 @@ const label = item => item.label;
 
 function App() {
   const [body, setBody] = useState('male');
-  const [scores, setScores] = useState(initialScores);
+  const [{ scores, savedScores }, dispatchScores] = useReducer(scoresReducer, { scores: initialScores, savedScores: null });
+  const testing = savedScores !== null;
   const [selected, setSelected] = useState('quadriceps_l');
   const [search, setSearch] = useState('');
   const [layer, setLayer] = useState('surface');
@@ -23,7 +25,7 @@ function App() {
   const activeCount = Object.values(scores).filter(Boolean).length;
 
   function changeLayer(next) { setLayer(next); if (next !== 'muscles') setIsolated(false); }
-  function setValue(next) { setScores(previous => ({ ...previous, [current.key]: Number(next) })); }
+  function setValue(next) { dispatchScores({ type: 'set', key: current.key, value: Number(next) }); }
 
   return <div className="app">
     <header className="topbar"><a className="brand" href="#inicio" aria-label="Atlas muscular, inicio"><span className="brand-mark">✳</span><span>atlas<span className="brand-light"> / muscular</span></span></a><div className="top-right"><span className="demo-pill"><span /> MODO DEMOSTRACIÓN</span><span className="top-caption">Explorador anatómico 3D</span></div></header>
@@ -34,7 +36,7 @@ function App() {
           <div className="viewer-top"><div><h2>Mapa muscular</h2></div><div className="body-switch" role="group" aria-label="Elegir modelo corporal"><button type="button" aria-pressed={body === 'male'} onClick={() => setBody('male')}>Masculino</button><button type="button" aria-pressed={body === 'female'} onClick={() => setBody('female')}>Femenino</button></div></div>
           <div className="viewer-controls">
             <div className="layer-switch" role="group" aria-label="Capa anatómica">{[['surface', 'Superficie'], ['muscles', 'Músculos'], ['skeleton', 'Huesos']].map(([key, name]) => <button type="button" key={key} aria-pressed={layer === key} onClick={() => changeLayer(key)}>{name}</button>)}</div>
-            <div className="viewer-actions">{layer === 'muscles' && <button type="button" aria-pressed={isolated} onClick={() => setIsolated(!isolated)}>Aislar selección</button>}<button type="button" disabled={layer === 'skeleton' || (layer === 'surface' && !isVisible)} onClick={() => setFocusRequest(previous => previous + 1)}>Centrar selección</button></div>
+            <div className="viewer-actions"><button type="button" className="test-toggle" aria-pressed={testing} onClick={() => dispatchScores({ type: 'toggle-test' })}>{testing ? 'Salir del testeo' : 'Modo de testeo'}</button>{layer === 'muscles' && <button type="button" aria-pressed={isolated} onClick={() => setIsolated(!isolated)}>Aislar selección</button>}<button type="button" disabled={layer === 'skeleton' || (layer === 'surface' && !isVisible)} onClick={() => setFocusRequest(previous => previous + 1)}>Centrar selección</button></div>
           </div>
           <div className="body-viewer"><BodyViewer body={body} scores={scores} selected={current?.key} onSelect={setSelected} layer={layer} isolated={isolated} focusRequest={focusRequest} /></div>
           <div className="viewer-bottom"><span>Arrastrá para girar <b>·</b> Desplazá para acercar</span><span>Seleccioná una región</span></div>
@@ -47,8 +49,8 @@ function App() {
           {current && <div className="editor"><div className="editor-title"><div><h3>{label(current)}</h3></div><span className="score">{value}<small>/ 100</small></span></div>{!isVisible && <p className="surface-hint">Esta región no tiene una zona definida en la superficie del modelo. {layer === 'surface' && <button type="button" className="text-button" onClick={() => changeLayer('muscles')}>Ver en músculos</button>}</p>}<label className="range-label" htmlFor="intensity"><span>Intensidad simulada</span><strong>{intensityLabel(value)}</strong></label><input id="intensity" type="range" min="0" max="100" value={value} onChange={event => setValue(event.target.value)} /><div className="range-ends"><span>Sin intensidad</span><span>Máxima</span></div></div>}
         </aside>
       </div>
-      <section className="foot-row"><div className="legend"><span className="legend-title">ESCALA VISUAL</span>{[0, 25, 50, 100].map(score => <span key={score}><i className="dot" style={{ background: `#${intensityColor(score).getHexString()}` }} /> {score} · {intensityLabel(score)}</span>)}</div><button className="reset" onClick={() => setScores({})}>Limpiar valores <span>↗</span></button></section>
-      <div className="notice"><strong>Datos de demostración.</strong> Los valores y colores son ilustrativos; no representan mediciones ni criterios clínicos. Las regiones son aproximadas; los músculos profundos pueden no verse en la superficie. <span>{activeCount} regiones con intensidad.</span></div>
+      <section className="foot-row"><div className="legend"><span className="legend-title">ESCALA VISUAL</span>{[0, 25, 50, 100].map(score => <span key={score}><i className="dot" style={{ background: `#${intensityColor(score).getHexString()}` }} /> {score} · {intensityLabel(score)}</span>)}</div><button className="reset" onClick={() => dispatchScores({ type: 'clear' })}>Limpiar valores <span>↗</span></button></section>
+      <div className="notice"><strong>{testing ? 'Modo de testeo activo.' : 'Datos de demostración.'}</strong> Los valores y colores son ilustrativos; no representan mediciones ni criterios clínicos. Las regiones son aproximadas; los músculos profundos pueden no verse en la superficie. <span>{activeCount} regiones con intensidad.</span></div>
     </main>
     <div className="credits">{ATTRIBUTION} Mapas de superficie y materiales adaptados para este visor. <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">Licencia CC BY 4.0</a>.</div><footer><span>ATLAS MUSCULAR <b> / </b> PROTOTIPO</span><span>Modelo: <a href="https://github.com/MervinR07/open-anatomy-3d" target="_blank" rel="noreferrer">Open Anatomy 3D</a> · <a href="https://github.com/Jsplice/MuscleMap" target="_blank" rel="noreferrer">MuscleMap</a></span></footer>
   </div>;

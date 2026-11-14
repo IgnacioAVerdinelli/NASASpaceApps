@@ -31,18 +31,20 @@ from .units import convert
 log = logging.getLogger(__name__)
 FIELDS = {f.name for f in fields(Reading)}
 
-# Values no living crew member produces, in canonical units. Wide on purpose: they catch sensor and unit
-# errors (a resting heart rate of 1.2 is beats per second sent as bpm), not unusual but real values.
+# Values no living crew member produces at rest, in canonical units: the hard physiological and device limits.
+# Wide on purpose: they catch sensor and unit errors (a resting heart rate of 1.2 is beats per second sent
+# as bpm), not unusual but real values. gravsim clamps every reading to these same limits, faults included,
+# so the generator and the DataService share one table.
 LIMITS = {
     **{m: (1, 1000) for m in GROUPS["strength"]},                           # peak torque, ft-lb
     **{m: (0.1, 2.5) for m in GROUPS["bone"]},                              # g/cm²
     **{m: (300, 80_000) for m in ("lean_legs", "lean_arms", "lean_trunk")},   # g of lean mass in one region
     "vo2peak": (5, 100),         # ml/kg/min; the highest ever recorded is just under 100
-    "resting_hr": (20, 220),     # bpm
-    "resting_sbp": (50, 260),    # mmHg
-    "resting_dbp": (20, 160),    # mmHg
-    "spo2": (50, 100),           # %
-    "hrv_rmssd": (1, 500),       # ms
+    "resting_hr": (30, 220),     # bpm; awake and under 30 needs a medical review (OCHMO-STD-100.1A Rev A, App. A)
+    "resting_sbp": (60, 250),    # mmHg
+    "resting_dbp": (30, 150),    # mmHg
+    "spo2": (70, 100),           # %; a saturation can't pass 100, and pulse oximeters are not accurate under 70
+    "hrv_rmssd": (1, 300),       # ms
 }
 
 

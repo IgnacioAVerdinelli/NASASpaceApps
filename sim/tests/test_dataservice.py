@@ -123,8 +123,8 @@ def test_generator_readings_go_through_the_pipeline_unchanged(mission_and_data):
     assert len(kept) == len(generated)                       # nothing dropped or merged, same order
     for g, k in zip(generated, kept):
         assert k.to_dict() == {**g.to_dict(), "quality": k.quality}
-    # the only flags: gravsim's SpO2 can exceed 100 %, which the limits catch
-    assert all(r.measure == "spo2" and r.value > 100 for r in kept if r.quality == "out_of_range")
+    # gravsim clamps every reading to the same LIMITS the pipeline checks, so nothing it makes is flagged
+    assert all(r.quality == "ok" for r in kept)
 
 
 def test_readings_filter_by_crew_measure_and_time(mission_and_data):
@@ -174,8 +174,8 @@ def test_computing_a_result_again_replaces_it_and_a_new_model_version_adds_one()
     data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 1})
     data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 2})
     assert [r.payload for r in data.results("CM-1")] == [{"n": 2}]
-    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 3}, model_version="0.2.0")
-    assert sorted(r.model_version for r in data.results("CM-1")) == [gs.MODEL_VERSION, "0.2.0"]
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 3}, model_version="9.9.9")
+    assert sorted(r.model_version for r in data.results("CM-1")) == [gs.MODEL_VERSION, "9.9.9"]
 
 
 def test_dashboard_saves_what_it_computes(mission_and_data):

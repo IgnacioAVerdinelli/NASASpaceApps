@@ -88,8 +88,8 @@ class HealthService:
             change = trend[mid][1]
             change = None if change is None else round(change, 1)
             if change is not None:
-                # "worse" is a fall for most measures and a rise for those that go up (loss_pct > 0)
-                worse = max(0.0, -change if (m.get("loss_pct") or -1) < 0 else change)
+                # "worse" is a fall for most measures and a rise for those that go up (direction +1)
+                worse = max(0.0, m["direction"] * change)
                 # at least 10%, so a measure that barely moves in the data doesn't turn its noise into a red body part
                 plateau = max(abs(m.get("loss_pct") or 0.0), 10.0)
                 for key in m["muscle_keys"]:

@@ -5,9 +5,16 @@ measure_all(crew, day)       -> one Reading per measure the instrument takes
 session(crew, day)           -> the whole session as the instrument records it (reps, scan sites, test stages,
                                 a 24-hour trace), with the headline Readings inside
 
-Every reading carries measurement noise fitted from repeat tests in the data, and the instrument's
-faults (offset, drift, dropout, spike, stuck) if any are active that day. The `truth` field holds the
-noise-free value and the active faults, so a monitoring system can be scored against it.
+How a reading is made, in order:
+1. the true value (the person's baseline and true % change, inside the hard limits);
+2. the person's day-to-day variation (bio_cv, the same for every reading of that measure that day) and the
+   instrument's own noise (device_cv), together never more than 2.5 times the fitted test-retest CV;
+3. clipped to the data range (CrewMember.reading_range): a fault-free reading inside the data's coverage
+   never shows a value no bed-rest subject produced;
+4. the instrument's faults (offset, drift, dropout, spike, stuck) active that day, listed in truth["faults"];
+   they may push a reading outside the data range;
+5. clamped to the hard limits (pipeline.LIMITS, the same table the DataService checks), faults or not.
+The `truth` field holds the noise-free value and the active faults, so a monitoring system can be scored against it.
 """
 from __future__ import annotations
 
@@ -16,7 +23,8 @@ from typing import Iterable
 
 import numpy as np
 
-from .core import MEASURES, MODEL_VERSION, CrewMember
+from .core import MEASURES, MODEL, MODEL_VERSION, CrewMember
+from .pipeline import LIMITS
 from .reading import Reading
 
 
@@ -70,9 +78,17 @@ class Instrument:
               true_value: float | None = None) -> Reading:
         m = MEASURES[measure]
         ms = crew.mission
+        hard_lo, hard_hi = LIMITS[measure]
         true = crew.true_value(measure, day) if true_value is None else true_value
-        # normal noise cut at 2.5 SD; larger outliers come from the "spike" fault
-        value = true * (1.0 + float(np.clip(self.rng.normal(), -2.5, 2.5)) * m["noise_cv"] * self.noise)
+        true = min(max(true, hard_lo), hard_hi)
+        # the person's day-to-day variation and the device's noise; larger outliers come from the "spike" fault
+        c = MODEL["device_noise_clip_sd"]
+        bio = crew.day_variation(measure, day) * m.get("bio_cv", 0.0)
+        dev = float(np.clip(self.rng.normal(), -c, c)) * m.get("device_cv", m["noise_cv"])
+        cap = c * m["noise_cv"]
+        value = true * (1.0 + float(np.clip(((1 + bio) * (1 + dev) - 1), -cap, cap)) * self.noise)
+        lo, hi = crew.reading_range(measure, day)
+        value = min(max(value, lo), hi)
         active, quality = [], "ok"
         for f in self.faults:
             if not f.active(day):
@@ -93,8 +109,9 @@ class Instrument:
             elif f.kind == "dropout" and self.rng.random() < f.prob:
                 value, quality = None, "missing"
                 active.append("dropout")
+                break                         # nothing left for later faults to act on
         if value is not None:
-            value = round(float(value), m["decimals"])
+            value = round(min(max(float(value), hard_lo), hard_hi), m["decimals"])
             self._last[(crew.id, measure)] = value
         phase = ms.phase(day)
         return Reading(
@@ -148,7 +165,7 @@ class DxaScanner(Instrument):
 
     def session(self, crew: CrewMember, day: float) -> dict:
         """A full scan report: both hips, spine, heel, whole-body lean mass by region."""
-        side_diff = 0.01 * crew.z["hip_bmd"]          # a fixed small left/right asymmetry per person
+        side_diff = crew.hip_asymmetry / 2           # the person's fixed left/right difference, split around the mean
         hip_true = crew.true_value("hip_bmd", day)
         report = {
             "hip_left": self._read(crew, day, "hip_bmd", side="left", true_value=hip_true * (1 + side_diff)).to_dict(),
@@ -166,6 +183,8 @@ class CycleErgometer(Instrument):
     VO2 = 7 + 10.8 * watts / mass (ACSM leg-cycling equation) and HRmax = 208 - 0.7 * age (Tanaka 2001).
     Heart rate rises with the share of VO2peak used, so after deconditioning the same workload costs
     more beats. The data check: Campaign 3 subjects needed a median 27.5 bpm more per workload.
+    The test ends part-way through a stage: the last row (partial=True) is the workload at which the person
+    reaches VO2peak, with the minutes of that stage they managed.
     """
     name = "cycle"
     device = "cycle ergometer + metabolic gas analyser"
@@ -182,12 +201,20 @@ class CycleErgometer(Instrument):
             vo2 = vo2_rest if watts == 0 else 7 + 10.8 * watts / crew.mass_kg
             frac = (vo2 - vo2_rest) / max(vo2peak - vo2_rest, 1.0)
             if watts and frac > 1.0:
+                # the stage the person can't finish: they stop where the ACSM equation reaches their VO2peak
+                peak_w = (vo2peak - 7) * crew.mass_kg / 10.8
+                done = (peak_w - (watts - step_watts)) / step_watts
+                if done > 0:
+                    stages.append({"stage": len(stages), "minute": round(t, 1), "watts": int(round(peak_w)),
+                                   "hr_bpm": round(hr_max + self.rng.normal(0, 3 * self.noise)),
+                                   "vo2_ml_kg_min": round(vo2peak * (1 + self.rng.normal(0, 0.03 * self.noise)), 1),
+                                   "rpe_borg": 20, "partial": True, "stage_minutes": round(done * stage_minutes, 1)})
                 break
             hr = hr_rest + (hr_max - hr_rest) * max(frac, 0.0)
             noise = self.rng.normal(0, 3 * self.noise)
             stages.append({"stage": len(stages), "minute": round(t, 1), "watts": watts,
                            "hr_bpm": round(hr + noise), "vo2_ml_kg_min": round(vo2 * (1 + self.rng.normal(0, 0.03 * self.noise)), 1),
-                           "rpe_borg": int(round(6 + 14 * max(frac, 0.0)))})
+                           "rpe_borg": int(round(6 + 14 * max(frac, 0.0))), "partial": False, "stage_minutes": stage_minutes})
             watts += step_watts
             t += stage_minutes
             if watts > 600:

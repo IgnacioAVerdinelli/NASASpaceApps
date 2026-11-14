@@ -29,7 +29,7 @@ from dataclasses import fields
 from datetime import datetime, timezone
 from typing import Iterable
 
-from .core import GROUPS, MEASURES, TIME_FORMAT
+from .measures import GROUPS, MEASURES, TIME_FORMAT
 from .reading import ACTIVITIES, ContextRecord, Reading
 from .units import canonical, convert
 

@@ -5,6 +5,7 @@
 At start-up gravsim generates the whole mission, readings and crew context, and sends it through the
 DataService, as the sensors would. Requests then see the data up to the mission clock ("now").
 
+GET  /api/v1/mission           the mission: name, launch date, phases with their gravity, the clock ("now") and the crew
 GET  /api/v1/readings          every reading so far
 GET  /api/v1/latest            the newest usable reading of each measure
 GET  /api/v1/context           context records under way between start and end (default: the 24 hours up to now)
@@ -15,7 +16,9 @@ POST /api/v1/results           save a processed result: a JSON object with crew_
 
 Query parameters, all optional: crew=CM-2 (default: the first), day=120 (the mission day used as now;
 default: the mission clock), measures=bone,vo2peak (ids or groups; /readings and /latest), start and end
-(ISO times; /context and /results), at (an ISO time; /context/current), kind=study (/results).
+(ISO times; /context and /results), at (an ISO time; /context/current), kind=study (/results),
+truth=1 (/readings and /latest: also send each reading's `truth` and `status`, the simulator's hidden state,
+which a real monitor would never see; only for scoring a detector).
 
 With --speed N the mission clock advances N days per real minute, so a client that polls sees the
 mission unfold.
@@ -30,7 +33,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
-from .core import PRESETS, TIME_FORMAT, Mission
+from .core import PRESETS, Mission
+from .measures import TIME_FORMAT
 from .dataservice import DataService
 from .pipeline import utc_iso
 
@@ -131,11 +135,30 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
     def measures(q):
         return q["measures"].split(",") if "measures" in q else None
 
+    def sent(r, q) -> dict:
+        """A reading as the API sends it: `truth` and `status` (the simulator's hidden state) only with truth=1."""
+        d = r.to_dict()
+        if q.get("truth") != "1":
+            d.pop("truth", None)
+            d.pop("status", None)
+        return d
+
+    def mission_info(q, _):
+        day = float(q["day"]) if "day" in q else clock()
+        return 200, {
+            "name": mission.name,
+            "launch_date": mission.timestamp(0),
+            "now_day": round(day, 3),
+            "now": mission.timestamp(day),
+            "phases": [{"name": p.name, "start": p.start, "end": p.end, "gravity_g": p.gravity_g} for p in mission.phases],
+            "crew": [{"id": c.id, "sex": c.sex} for c in mission.crew],
+        }
+
     def readings(q, _):
-        return 200, [r.to_dict() for r in data.readings(who(q), measures(q), end=now(q))]
+        return 200, [sent(r, q) for r in data.readings(who(q), measures(q), end=now(q))]
 
     def latest(q, _):
-        return 200, {m: r.to_dict() for m, r in data.latest(who(q), measures(q), at=now(q)).items()}
+        return 200, {m: sent(r, q) for m, r in data.latest(who(q), measures(q), at=now(q)).items()}
 
     def context(q, _):
         end = utc_iso(q.get("end") or now(q))
@@ -162,7 +185,8 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
         who({"crew": body["crew_id"]})      # an unknown crew member answers 404, as on the GET endpoints
         return 201, data.save_result(**body).to_dict()
 
-    return {("GET", "/api/v1/readings"): readings, ("GET", "/api/v1/latest"): latest,
+    return {("GET", "/api/v1/mission"): mission_info,
+            ("GET", "/api/v1/readings"): readings, ("GET", "/api/v1/latest"): latest,
             ("GET", "/api/v1/context"): context, ("GET", "/api/v1/context/current"): current_context,
             ("GET", "/api/v1/results"): results, ("POST", "/api/v1/results"): save_result}
 

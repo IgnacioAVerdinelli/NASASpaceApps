@@ -27,21 +27,17 @@ add_eva(). It is the crew context the DataService holds, and the wearable's 24-h
 """
 from __future__ import annotations
 
-import json
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 import numpy as np
 
-PARAMS: dict = json.loads(Path(__file__).with_name("params.json").read_text(encoding="utf-8"))
-MEASURES: dict = PARAMS["measures"]
-MODEL_VERSION: str = PARAMS["model_version"]
+from .measures import GROUPS, MEASURES, MODEL_VERSION, PARAMS, TIME_FORMAT, expand  # noqa: F401 (re-exported)
+
 MAX_DATA_DAYS: float = PARAMS["max_unloading_days_in_data"]
 MODEL: dict = PARAMS["model"]
-TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"    # UTC to the second: sorts correctly as text, and the frontend accepts it
 Z_MAX: float = MODEL["z_max"]         # responses further than this many SD from the median are not generated
 Z90, Z_FAST_MAX = MODEL["fast_z"]     # a fast responder sits between the 90th percentile and Z_MAX
 QUANTILES = np.arange(0, 101, 5)      # the percentiles at which params.json stores each baseline distribution
@@ -50,34 +46,6 @@ LOADINGS = {mid: (factor, lam) for factor, f in PARAMS["baseline_factors"].items
 # Measures with a personal baseline and response. A "derived" measure (the spacesuit's heart rate) is computed
 # by its instrument from the others, so it draws nothing: adding it left every crew member's numbers unchanged.
 PERSONAL = [mid for mid, m in MEASURES.items() if m["model"] != "derived"]
-
-# Handy groups for events and filters
-GROUPS = {
-    "legs": ["knee_extension_60", "knee_flexion_60", "ankle_plantarflexion_30", "ankle_dorsiflexion_30", "lean_legs"],
-    "trunk": ["trunk_extension_60", "trunk_flexion_60", "lean_trunk"],
-    "arms": ["lean_arms"],
-    "bone": ["hip_bmd", "spine_bmd", "heel_bmd"],
-    "cardio": ["vo2peak", "resting_hr", "resting_sbp", "resting_dbp"],
-    "strength": ["knee_extension_60", "knee_flexion_60", "ankle_plantarflexion_30", "ankle_dorsiflexion_30",
-                 "trunk_extension_60", "trunk_flexion_60"],
-}
-
-
-def expand(measures: str | Iterable[str] | None) -> list[str]:
-    """Measure ids from ids and/or group names ("legs", "bone", ...). None means every measure."""
-    if measures is None:
-        return list(MEASURES)
-    if isinstance(measures, str):
-        measures = [measures]
-    out: list[str] = []
-    for m in measures:
-        if m in GROUPS:
-            out += GROUPS[m]
-        elif m in MEASURES:
-            out.append(m)
-        else:
-            raise KeyError(f"unknown measure or group {m!r}; measures: {sorted(MEASURES)}, groups: {sorted(GROUPS)}")
-    return list(dict.fromkeys(out))
 
 
 # --------------------------------------------------------------------------- mission

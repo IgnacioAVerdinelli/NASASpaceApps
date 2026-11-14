@@ -12,7 +12,7 @@ Este documento resume el trabajo de la rama `Feat/gravityEffectsInvestigation`: 
 
 | Ruta | Qué es | Estado |
 |---|---|---|
-| `data/nlsp/` | Datos abiertos de reposo en cama del NASA Life Sciences Portal: 4 experimentos, 3.107 archivos, ~27 MB | Sin commit |
+| `data/nlsp/` | Datos abiertos de reposo en cama del NASA Life Sciences Portal: 4 experimentos (de MR079G solo CFT70), 2.716 archivos, ~13 MB | En commit; carpetas no-CFT70 de MR079G quitadas sin commit |
 | `data/nlsp/README.md` | Descripción de los datasets, sus estudios, formato y DOI | Sin commit |
 | `prototype/index.html` | Prototipo descartable "GravTrack" (HTML + Chart.js) **con datos falsos** | En stage, sin commit |
 | `docs/investigacion-gravedad.md` | Este documento | Sin commit |
@@ -65,7 +65,7 @@ Los cuatro experimentos son de acceso abierto en NLSP (*"All datasets are public
 | Carpeta | Experimento | Mide | Archivos | DOI |
 |---|---|---|---|---|
 | `MR035G_bone_densitometry/` | Bone Densitometry Assessment | Densidad mineral ósea por DXA (cadera, cuello femoral, columna lumbar, talón, antebrazo, cuerpo entero), T-score y Z-score, masa magra y grasa por segmento | 1.063 | [10.83263/7myc-5j86](https://doi.org/10.83263/7myc-5j86) |
-| `MR079G_isokinetic_muscle/` | Isokinetic Muscle Function | Fuerza concéntrica y excéntrica y resistencia de rodilla y tobillo (60°/s y 180°/s) | 400 | [10.83263/bk5h-r757](https://doi.org/10.83263/bk5h-r757) |
+| `MR079G_isokinetic_muscle/MR079G_CFT70/` (solo CFT70; las demás carpetas se quitaron) | Isokinetic Muscle Function | Torque máximo, resistencia e isométrico de rodilla, tobillo y tronco (N·m), grupos control / ejercicio / FLY | 9 (de 400) | [10.83263/bk5h-r757](https://doi.org/10.83263/bk5h-r757) |
 | `MR080G_aerobic_capacity/` | Aerobic Capacity | VO₂pico, frecuencia cardíaca, presión, VCO₂, RER, ventilación y Borg por etapa en cicloergómetro (50–350 W) | 1.505 | [10.83263/w056-8t76](https://doi.org/10.83263/w056-8t76) |
 | `MR001G_tilt_orthostatic/` | Neuroendocrine and Cardiovascular Response to Tilt | Frecuencia cardíaca, presión, volumen sistólico, gasto cardíaco y resistencia periférica minuto a minuto, acostado y luego a 80°; hormonas (noradrenalina, adrenalina, renina, aldosterona, angiotensina, vasopresina, ANP, ACTH) | 139 | [10.83263/gz1q-a824](https://doi.org/10.83263/gz1q-a824) |
 

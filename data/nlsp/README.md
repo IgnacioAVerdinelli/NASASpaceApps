@@ -11,14 +11,14 @@ Voluntarios sanos pasan entre 30 y 90 días acostados con la cabeza inclinada 6�
 | Carpeta | Experimento | Mide | Equipo | DOI |
 |---|---|---|---|---|
 | `MR035G_bone_densitometry/` | MR035G, Bone Densitometry Assessment | Densidad mineral ósea (cadera, cuello femoral, trocánter, columna lumbar, talón, antebrazo, cuerpo entero), T-score y Z-score, masa magra y grasa por brazo y pierna | DXA Hologic Discovery; GE Lunar iDXA desde la Campaign 11 | [10.83263/7myc-5j86](https://doi.org/10.83263/7myc-5j86) |
-| `MR079G_isokinetic_muscle/` | MR079G, Isokinetic Muscle Function | Fuerza concéntrica y excéntrica y resistencia de rodilla y tobillo (extensión y flexión a 60°/s y 180°/s) | Dinamómetro isocinético | [10.83263/bk5h-r757](https://doi.org/10.83263/bk5h-r757) |
+| `MR079G_isokinetic_muscle/MR079G_CFT70/` | MR079G, Isokinetic Muscle Function (**solo el estudio CFT70**) | Torque máximo, trabajo total e isométrico de rodilla, tobillo y tronco, en N·m (ver sección "Fuente de datos de músculo") | Dinamómetro isocinético Biodex | [10.83263/bk5h-r757](https://doi.org/10.83263/bk5h-r757) |
 | `MR080G_aerobic_capacity/` | MR080G, Aerobic Capacity | VO₂pico, frecuencia cardíaca, presión arterial, VCO₂, RER, ventilación y esfuerzo percibido (Borg) por etapa de una prueba en cicloergómetro de 50 a 350 W | Cicloergómetro, analizador de gases (MGAS), ECG | [10.83263/w056-8t76](https://doi.org/10.83263/w056-8t76) |
 | `MR001G_tilt_orthostatic/` | MR001G, Neuroendocrine and Cardiovascular Response to Tilt | Frecuencia cardíaca, presión, volumen sistólico, gasto cardíaco y resistencia periférica minuto a minuto, acostado y luego inclinado a 80° durante 30 min; tiempo tolerado de pie; hormonas en sangre (noradrenalina, adrenalina, renina, aldosterona, angiotensina, vasopresina, ANP, ACTH) | Mesa basculante, Doppler/ecocardiografía, manguito de presión | [10.83263/gz1q-a824](https://doi.org/10.83263/gz1q-a824) |
 
 | Carpeta | Archivos | Tamaño |
 |---|---|---|
 | MR035G | 1.063 | 4,1 MB |
-| MR079G | 400 | 14 MB |
+| MR079G (solo CFT70) | 9 | 0,2 MB |
 | MR080G | 1.505 | 8,0 MB |
 | MR001G | 139 | 0,6 MB |
 
@@ -36,6 +36,39 @@ Cada carpeta interna lleva el nombre del estudio de origen:
 | HDT30 | 30 días |
 | MEDES (WISE) | Reposo en cama solo con mujeres (Toulouse, Francia), con ejercicio y nutrición como contramedidas |
 | AG Pilot | 21 días; grupo con **1 h diaria de centrífuga (gravedad artificial)** frente a control |
+
+## Fuente de datos de músculo: CFT70
+
+La web usa **un solo dataset de músculo: CFT70** (`MR079G_isokinetic_muscle/MR079G_CFT70/`). Las demás carpetas de MR079G (Campaigns 1, 3, 11 y 17, HDT30, MEDES y AG) se quitaron del repositorio el 14-11-2026. Siguen en el historial de git y en NLSP (DOI 10.83263/bk5h-r757).
+
+**Por qué CFT70:** es el de más personas (42), con 70 días de reposo y grupos identificados (CONTROL 12, EXERCISE 21, FLY 9). Tiene dos mediciones antes y dos después (R+2–4 y R+10–13), y cubre 6 grupos musculares. Usa las mismas unidades (N·m), la misma máquina (Biodex) y el mismo set de pruebas que NASA aplica a los astronautas de la ISS (protocolo *Medical Volume B 5.3*, estudio Sprint). El 86 % de los pares antes/después está completo.
+
+**Archivos:**
+
+| Archivo | Contenido |
+|---|---|
+| `MR079G_CFT70_PRE1/PRE2/POST1/POST2_strength_ALL` | `Subject, Group, Test_Type, Angle, Value`: una fila por persona, prueba y velocidad |
+| `MR079G_CFT70_Demographics_ALL` | Grupo, sexo, edad, altura, peso y día de reposo de cada medición (`Test`, `Iteration`, `BR_Day`) |
+| `MR079G_CFT70_*_verifiers_ALL` | Control de calidad (quién verificó cada registro) |
+
+**Métrica.** `Value` es el torque máximo en N·m: la mayor fuerza de giro en 3–5 repeticiones a velocidad fija. En las pruebas `KEE` y `KFE` es el trabajo total de 20 repeticiones a 180°/s (resistencia). `Angle` es la velocidad en °/s: 0 = isométrico.
+
+**Códigos:**
+
+| Código | Prueba | Grupo muscular |
+|---|---|---|
+| `KES` / `KFS` | Rodilla, extensión / flexión (concéntrica) | Cuádriceps / isquiotibiales |
+| `KEE` / `KFE` | Rodilla, resistencia (trabajo total, 180°/s) | Cuádriceps / isquiotibiales |
+| `APFCS` / `APFES` | Tobillo, flexión plantar concéntrica / excéntrica | Pantorrilla |
+| `ADFCS` / `ADFES` | Tobillo, flexión dorsal concéntrica / excéntrica | Tibial anterior |
+| `TES` / `TFS` | Tronco, extensión / flexión | Espalda / abdominales |
+
+Las definiciones y unidades salen del archivo de referencia de parámetros de la Campaign 17, que usa los mismos códigos (Biodex, N·m).
+
+**Cuidados:**
+- 41 de las 42 personas son hombres.
+- No hay mediciones durante el reposo.
+- El grupo `FLY` no está descrito en los archivos. Probablemente es un grupo que entrenó con un equipo compacto de volante de inercia (*flywheel*); hay que confirmarlo en la ficha de NLSP antes de rotularlo.
 
 ## Formato
 

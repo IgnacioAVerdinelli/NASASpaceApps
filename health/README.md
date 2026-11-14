@@ -1,5 +1,7 @@
 # HealthService
 
+**Local demo update:** `python -m healthservice.demo --queue PATH` consumes DataService events, processes all crew members, schedules the supported studies and records simulated deliveries. Start all components as described in the [root README](../README.md). `python -m healthservice --queue PATH` exposes the delivery log at `/api/v1/deliveries`. In this mode processing is not limited to dashboard requests; the known limitation below applies to running the HealthService without the demo worker.
+
 The "HealthService (Python)" of [docs/architecture.md](../docs/architecture.md): it reads the crew's readings from the
 DataService, works out how each measure changed against the person's pre-flight reference, compares it with the NASA
 bed-rest studies, serves the 3D page, saves its results through the DataService and raises alerts. Design and open
@@ -32,7 +34,7 @@ health/.venv/bin/python -m healthservice                          # HealthServic
 ```
 
 ```bash
-cd src/front/sketch && npm install && VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
+cd src/front/sketch && npm install && npm run dev
 ```
 
 `--speed 20` advances the mission 20 days per real minute, so the page (which polls every 3 seconds) shows it

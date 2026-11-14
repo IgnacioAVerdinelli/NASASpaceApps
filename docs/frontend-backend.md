@@ -1,15 +1,15 @@
 # Contrato frontend–backend
 
-La página Trama consume un único estado completo del dashboard. El backend todavía no está implementado en este repositorio: esta especificación es el acuerdo para quien lo desarrolle. Para trabajar sin backend, el frontend usa el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json), con valores simulados; no inicia ningún servidor de datos.
+La página Trama consume un único estado completo del dashboard servido por [HealthService](../health/README.md), que a su vez lee el DataService. El frontend consulta la lista de tripulantes en `GET /api/v1/health` y solicita el dashboard elegido con `?crew=...`. Para trabajar sin backend se puede activar explícitamente el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json) con `VITE_DASHBOARD_MODE=example`.
 
 ## Transporte
 
-- Método: `GET` a la URL definida en `VITE_DASHBOARD_URL`; ruta sugerida: `/api/v1/dashboard`.
+- Método: `GET` a `VITE_DASHBOARD_URL`, o `/api/v1/dashboard` por defecto. La URL debe terminar en `/dashboard`; el cliente usa la ruta hermana `/health` para obtener la tripulación.
 - Respuesta: `200 OK`, `Content-Type: application/json`, con el objeto completo de la versión 1. No se usan parches parciales. Un ejemplo completo y válido está en [dashboard.example.json](../src/front/sketch/data/dashboard.example.json).
 - Errores: códigos HTTP no 2xx, respuesta no JSON o contenido inválido se consideran error. El backend puede devolver un cuerpo de error propio; el frontend no muestra sus detalles como texto de producto.
 - El frontend solicita `Accept: application/json` y desactiva el caché de la solicitud. Consulta al abrir y vuelve a consultar 3 segundos después de que termina cada intento, sin peticiones superpuestas. Una petición se cancela después de 8 segundos. Si hay un último estado válido, se conserva con un aviso de desconexión; antes de la primera respuesta se muestra carga o error y se reintenta.
-- La variable `VITE_DASHBOARD_URL` debe establecerse al arrancar Vite o al generar el build. Al omitirla se usan datos locales de ejemplo, claramente marcados. Una URL configurada que falla **no** vuelve al ejemplo. Para orígenes diferentes, el backend debe configurar CORS para el origen real de la página. No se define autenticación en este prototipo.
-- Para revisar una respuesta del backend cuando exista: `curl -i http://localhost:3000/api/v1/dashboard`. La dirección es solo un ejemplo, no implica que haya un servidor disponible aquí.
+- La variable `VITE_DASHBOARD_URL` es opcional y se establece al arrancar Vite o generar el build. En desarrollo Vite redirige `/api` al HealthService local; el build necesita un proxy equivalente o una URL accesible. Los errores no vuelven al ejemplo. Para orígenes diferentes, el backend debe configurar CORS para el origen real de la página. No se define autenticación en este prototipo.
+- Para revisar la respuesta del backend: `curl -i http://localhost:3000/api/v1/dashboard`.
 
 ## Respuesta
 
@@ -40,7 +40,7 @@ Los textos admiten hasta 1000 caracteres. Las listas de resultados y gráficos a
 
 ## Puesta en marcha del frontend
 
-Desde la raíz del proyecto, instalar las dependencias raíz con `npm install`. Luego ejecutar `cd src/front/sketch`, `npm install` y `npm run dev`. Para utilizar la API en vez del ejemplo, iniciar el último comando con `VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev`, usando la dirección real que implemente el equipo.
+Seguir las instrucciones de arranque del [README](../README.md) para levantar DataService, HealthService y Vite. Para usar el ejemplo sin backend, iniciar Vite con `VITE_DASHBOARD_MODE=example npm run dev`.
 
 La integración es solo de lectura: el frontend no envía cambios al backend. La rotación y el zoom hechos por la persona son locales. Ningún dato de ejemplo ni color constituye una medición o interpretación clínica.
 

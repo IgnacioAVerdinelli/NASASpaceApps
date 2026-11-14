@@ -36,15 +36,38 @@ npm run dev
 
 La demostración de alertas para wearable está disponible en `/alerts/` desde el mismo servidor. Sus alertas son ejemplos simulados y se pueden seleccionar para explorar el reloj.
 
-La página usa por defecto [datos de ejemplo](src/front/sketch/data/dashboard.example.json), sin requerir un backend. Para conectarla a una API implementada por otro integrante, iniciá Vite con la URL completa:
+La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
 
 ```bash
-VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
+python3 -m venv health/.venv
+health/.venv/bin/pip install -e ./sim -e './health[dev]'
+health/.venv/bin/python -m gravsim.serve --day 95 --speed 20 --db /tmp/nasa-data.sqlite --queue /tmp/nasa-queue.sqlite
 ```
 
-El comando anterior se ejecuta desde `src/front/sketch`. La página consulta cada 3 segundos después de completar la solicitud anterior; si la API falla conserva los últimos datos y muestra un aviso. Si `VITE_DASHBOARD_URL` está configurada, nunca reemplaza silenciosamente un error con datos de ejemplo. Si API y frontend usan distintos orígenes, el backend debe habilitar CORS para el origen del frontend.
+En otra terminal:
 
-El contrato, ejemplos, errores y claves disponibles están documentados en [Integración frontend–backend](docs/frontend-backend.md). Esta implementación **no incluye un servidor** ni una conexión real: otra persona puede implementar el endpoint siguiendo ese contrato.
+```bash
+health/.venv/bin/python -m healthservice --queue /tmp/nasa-queue.sqlite
+```
+
+En otra terminal, iniciar los consumidores de eventos, el planificador y las entregas simuladas:
+
+```bash
+health/.venv/bin/python -m healthservice.demo --queue /tmp/nasa-queue.sqlite
+```
+
+En otra terminal, después de instalar las dependencias de Node indicadas arriba:
+
+```bash
+cd src/front/sketch
+npm run dev
+```
+
+Vite redirige `/api` al HealthService local en el puerto 3000; el DataService escucha en el puerto 8000. Los datos de gravsim son sintéticos. Para usar solo los [datos de ejemplo](src/front/sketch/data/dashboard.example.json), iniciar Vite con `VITE_DASHBOARD_MODE=example npm run dev`. Para otro servidor, usar `VITE_DASHBOARD_URL=https://servidor/api/v1/dashboard npm run dev`; definir la misma variable al generar el build. El servidor remoto debe habilitar CORS para el origen del frontend. El proxy de Vite solo funciona en desarrollo; el build requiere una URL accesible o un proxy del servidor de despliegue.
+
+Las entregas simuladas se consultan en `http://localhost:3000/api/v1/deliveries`; no se envían a dispositivos. El planificador cubre fuerza, densidad ósea y capacidad aeróbica. Los archivos SQLite conservan datos y cursores entre reinicios: para comenzar otra misión desde cero, detené todos los servicios y usá rutas nuevas para ambos archivos. No reutilices la misma base con otra semilla, misión o tripulación.
+
+La página consulta cada 3 segundos después de completar la solicitud anterior; si la API falla conserva los últimos datos del tripulante seleccionado y muestra un aviso, sin sustituirlos por el ejemplo. El contrato y las claves disponibles están documentados en [Integración frontend–backend](docs/frontend-backend.md).
 
 ## Explorar
 

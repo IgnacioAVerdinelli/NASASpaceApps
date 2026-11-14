@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import example from '../src/front/sketch/data/dashboard.example.json' with { type: 'json' };
 import { validateDashboard } from '../src/front/sketch/data/contract.js';
-import { loadDashboard } from '../src/front/sketch/data/dashboard.js';
+import { dashboardUrl, healthUrl, loadCrew, loadDashboard } from '../src/front/sketch/data/dashboard.js';
 import { chartGeometry } from '../src/front/sketch/data/chart.js';
 
 const copy = () => structuredClone(example);
@@ -29,6 +29,18 @@ test('dashboard client uses a configured API and never silently substitutes demo
   assert.equal(requested[1].cache, 'no-store');
   await assert.rejects(() => loadDashboard({ url: '/api', fetchImpl: async () => ({ ok: false, status: 503 }) }), /503/);
   await assert.rejects(() => loadDashboard({ url: '/api', fetchImpl: async () => ({ ok: true, json: async () => ({}) }) }), /Invalid dashboard/);
+});
+
+test('crew selection preserves dashboard parameters and reads the matching health endpoint', async () => {
+  assert.equal(dashboardUrl('/api/v1/dashboard?day=95', 'CM 2'), '/api/v1/dashboard?day=95&crew=CM+2');
+  assert.equal(dashboardUrl('https://example.com/api/v1/dashboard?crew=old', 'CM-2'), 'https://example.com/api/v1/dashboard?crew=CM-2');
+  assert.equal(healthUrl('https://example.com/api/v1/dashboard?day=95'), 'https://example.com/api/v1/health');
+  let requested;
+  const crew = await loadCrew({ url: '/api/v1/dashboard', fetchImpl: async url => { requested = url; return { ok: true, json: async () => ({ crew: ['CM-1', 'CM-2'] }) }; } });
+  assert.equal(requested, '/api/v1/health');
+  assert.deepEqual(crew, ['CM-1', 'CM-2']);
+  await assert.rejects(() => loadCrew({ url: '/api/v1/dashboard', fetchImpl: async () => ({ ok: true, json: async () => ({ crew: [] }) }) }), /Invalid crew/);
+  await assert.rejects(() => loadCrew({ url: '/api/v1/dashboard', fetchImpl: async () => ({ ok: false, status: 503 }) }), /503/);
 });
 
 test('chart handles no points, a single point and missing values without connecting gaps', () => {

@@ -18,7 +18,7 @@ from .service import HealthService
 from .sources import DataServiceError
 
 
-def create_app(service: HealthService, allow_origin: str = "*") -> FastAPI:
+def create_app(service: HealthService, allow_origin: str = "*", delivery_queue=None) -> FastAPI:
     app = FastAPI(title="HealthService", version="0.2.0")
     app.add_middleware(CORSMiddleware, allow_origins=[allow_origin], allow_methods=["GET"], allow_headers=["*"])
 
@@ -49,5 +49,9 @@ def create_app(service: HealthService, allow_origin: str = "*") -> FastAPI:
         return {"status": "ok", "crew": [c.id for c in service.source.crew()],
                 "mission_day": round(service.source.current_day(), 2),
                 "reference_curves": service.reference.model_version}
+
+    @app.get("/api/v1/deliveries")
+    def deliveries():
+        return [] if delivery_queue is None else delivery_queue.deliveries()
 
     return app

@@ -270,7 +270,7 @@ def test_context_window_includes_both_ends(mission, data):
     assert len(data.context("CM-2")) == len([r for r in mission.context() if r.crew_id == "CM-2"])
 
 
-def test_context_table_is_defined_but_inert():
+def test_context_table_persists_records():
     store = gs.SqliteStore()
     assert [row[1] for row in store.db.execute("PRAGMA table_info(context)")] == \
         ["crew_id", "start", "end", "activity", "location", "source", "synthetic"]
@@ -278,7 +278,7 @@ def test_context_table_is_defined_but_inert():
     assert pk == ["crew_id", "source", "start"]
     data = gs.DataService(store=store)
     kept = data.ingest_context([record()])
-    assert store.query_context("CM-1") == [] and store.db.execute("SELECT COUNT(*) FROM context").fetchone() == (0,)
+    assert store.query_context("CM-1") == kept and store.db.execute("SELECT COUNT(*) FROM context").fetchone() == (1,)
     assert data.context("CM-1") == kept                      # the DataService keeps it in memory
 
 

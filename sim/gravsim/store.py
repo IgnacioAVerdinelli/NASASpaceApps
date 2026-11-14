@@ -1,13 +1,13 @@
 """The database behind the DataService: where real sensor data, imported historical data, crew context and
 the HealthService's processed results would live, in three tables, `readings`, `context` and `processed`.
 
-For the challenge it is inert on purpose. The schema exists and is created, but the save methods write
-nothing and the query methods find nothing; the demo's data stays in the DataService's memory.
-To make it real, insert in the save methods and select in the query methods; the tables are ready.
+Records are stored in SQLite and survive restarts when a file path is supplied.
 """
 from __future__ import annotations
 
 import sqlite3
+import json
+import threading
 from typing import Iterable
 
 from .reading import ContextRecord, Reading, Result
@@ -55,27 +55,42 @@ class SqliteStore:
     def __init__(self, path: str = ":memory:"):
         # check_same_thread=False: serve.py answers each request in its own thread
         self.db = sqlite3.connect(path, check_same_thread=False)
+        self.lock = threading.RLock()
         self.db.executescript(SCHEMA)
 
+    def close(self) -> None:
+        with self.lock:
+            self.db.close()
+
     def save(self, readings: Iterable[Reading]) -> None:
-        """Does nothing yet. A real store would INSERT OR REPLACE each reading into `readings`."""
+        with self.lock, self.db:
+            self.db.executemany("INSERT OR REPLACE INTO readings VALUES (?,?,?,?,?,?,?,?,?,?)", [
+                (r.crew_id, r.measure, r.timestamp, r.instrument, r.side or '', r.value, r.unit,
+                 r.quality, int(r.synthetic), json.dumps(r.to_dict())) for r in readings])
 
     def query(self, crew_id: str, measures: list[str] | None = None, start: str | None = None,
               end: str | None = None) -> list[Reading]:
-        """Finds nothing yet: always []. Same arguments as DataService.readings()."""
-        return []
+        with self.lock:
+            rows = self.db.execute("SELECT extra FROM readings WHERE crew_id=? AND (? IS NULL OR timestamp>=?) AND (? IS NULL OR timestamp<=?) ORDER BY timestamp", (crew_id, start, start, end, end)).fetchall()
+        return [r for r in (Reading(**json.loads(row[0])) for row in rows) if measures is None or r.measure in measures]
 
     def save_context(self, records: Iterable[ContextRecord]) -> None:
-        """Does nothing yet. A real store would INSERT OR REPLACE each record into `context`."""
+        with self.lock, self.db:
+            self.db.executemany('INSERT OR REPLACE INTO context VALUES (?,?,?,?,?,?,?)', [
+                (c.crew_id, c.start, c.end, c.activity, c.location, c.source, int(c.synthetic)) for c in records])
 
     def query_context(self, crew_id: str, start: str | None = None, end: str | None = None) -> list[ContextRecord]:
-        """Finds nothing yet: always []. Same arguments as DataService.context()."""
-        return []
+        with self.lock:
+            rows = self.db.execute('SELECT crew_id,start,"end",activity,location,source,synthetic FROM context WHERE crew_id=? AND (? IS NULL OR "end">?) AND (? IS NULL OR start<=?) ORDER BY start', (crew_id, start, start, end, end)).fetchall()
+        return [ContextRecord(crew_id=r[0], start=r[1], end=r[2], activity=r[3], location=r[4], source=r[5], synthetic=bool(r[6])) for r in rows]
 
     def save_results(self, results: Iterable[Result]) -> None:
-        """Does nothing yet. A real store would INSERT OR REPLACE each result into `processed`."""
+        with self.lock, self.db:
+            self.db.executemany('INSERT OR REPLACE INTO processed VALUES (?,?,?,?,?,?)', [
+                (r.crew_id, r.kind, r.timestamp, r.computed_at, r.model_version, json.dumps(r.payload)) for r in results])
 
     def query_results(self, crew_id: str, kind: str | None = None, start: str | None = None,
                       end: str | None = None) -> list[Result]:
-        """Finds nothing yet: always []. Same arguments as DataService.results()."""
-        return []
+        with self.lock:
+            rows = self.db.execute('SELECT crew_id,kind,timestamp,computed_at,model_version,payload FROM processed WHERE crew_id=? AND (? IS NULL OR kind=?) AND (? IS NULL OR timestamp>=?) AND (? IS NULL OR timestamp<=?) ORDER BY timestamp', (crew_id, kind, kind, start, start, end, end)).fetchall()
+        return [Result(crew_id=r[0], kind=r[1], timestamp=r[2], computed_at=r[3], model_version=r[4], payload=json.loads(r[5])) for r in rows]

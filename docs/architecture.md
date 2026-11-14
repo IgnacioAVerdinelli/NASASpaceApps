@@ -4,21 +4,56 @@ How the pieces of our astronaut health monitor fit together. This page follows J
 
 ```mermaid
 flowchart LR
-    S1[Sensor 1] --> DS
-    S2[Sensor 2] --> DS
-    S3[Sensor 3] --> DS
-    GEN["Generator (gravsim)<br/>curves fitted to NASA bed-rest data"] -.->|"for the challenge:<br/>stands in for the sensors"| DS
-    DS["DataService<br/>holds all data<br/>cleans it, one unit per measure"] <--> DB[(Database)]
-    DS --> HS["HealthService (Python)<br/>processes the data"]
-    HS -->|"processed results"| DS
-    HS --> FE["Frontend<br/>3D body view, bone view"]
-    HS -.-> TL["Timeline / analysis schedule<br/>(possibly its own service)"]
-    HS --> Q[[Queue]] --> NS[Notification system]
-    NS --> ESC[Earth space center]
-    NS --> SHIP[Ship center]
-    NS --> AST["Astronauts<br/>(wearables, rooms)"]
-    NS --> RADIO[Radio system]
+    subgraph SC["Spacecraft: everything here runs on board"]
+        direction LR
+        subgraph SRC["Sources"]
+            direction TB
+            SENS["<b>Sensors 1…n</b><br/>[instruments]<br/>dynamometer · DXA · cycle · wearables"]
+            GEN["<b>Generator</b><br/>[Python · gravsim]<br/>demo only, fitted to NASA bed-rest data"]
+        end
+        subgraph SYS["Health monitor: our system"]
+            DS["<b>DataService</b><br/>[Python]<br/>cleans, converts units<br/>holds raw + processed data"]
+            DB[("<b>Database</b><br/>[SQLite]<br/>readings + results<br/>inert in the demo")]
+            HS["<b>HealthService</b><br/>[Python]<br/>processes the data<br/>model: clean, train, I/O"]
+            FE["<b>Frontend</b><br/>[React · three.js]<br/>3D body view, bone view"]
+            TL["<b>Analysis schedule</b><br/>[possible service]<br/>when each test is due"]
+            Q[["<b>Queue</b><br/>[message queue]"]]
+            NS["<b>Notification system</b><br/>[service]"]
+        end
+        AST["<b>Astronauts</b><br/>wearables, room displays"]
+        SHIP["<b>Ship center</b>"]
+        RADIO["<b>Radio system</b>"]
+    end
+    EARTH["<b>Earth space center</b><br/>on the ground"]
+
+    SENS -->|readings| DS
+    GEN -.->|simulated readings| DS
+    DS <-->|stores, queries| DB
+    DS -->|timelines| HS
+    HS -->|processed results| DS
+    HS -->|dashboard JSON, HTTP| FE
+    HS -.->|test plan| TL
+    HS -.->|alerts| Q
+    Q -.-> NS
+    NS -.-> AST
+    NS -.-> SHIP
+    NS -.-> RADIO
+    NS -.-> EARTH
+
+    classDef built fill:#edf3fc,stroke:#1c5dc2,stroke-width:1.5px,color:#141920
+    classDef planned fill:#ffffff,stroke:#7b8494,stroke-dasharray:5 4,color:#141920
+    classDef demo fill:#fdf1ea,stroke:#c2410c,stroke-dasharray:5 4,color:#141920
+    classDef ext fill:#ffffff,stroke:#7b8494,color:#141920
+    class DS,DB,HS,FE built
+    class TL,Q,NS planned
+    class GEN demo
+    class SENS,AST,SHIP,RADIO,EARTH ext
+    style SC fill:#f8f9fb,stroke:#7b8494,stroke-dasharray:2 5,color:#4a5262
+    style SYS fill:#f3f7fd,stroke:#1c5dc2,stroke-dasharray:7 5,color:#1c5dc2
+    style SRC fill:#f8f9fb,stroke:#c1c7d1,color:#4a5262
 ```
+
+Legend: blue boxes are our system and built; dashed grey boxes are planned; the dashed orange box exists only for the demo; white boxes are outside our system. Solid arrows carry data today; dashed arrows are planned or demo only.
 
 ## The parts
 

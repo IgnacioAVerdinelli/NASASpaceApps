@@ -10,6 +10,7 @@ flowchart LR
     GEN["Generator (gravsim)<br/>curves fitted to NASA bed-rest data"] -.->|"for the challenge:<br/>stands in for the sensors"| DS
     DS["DataService<br/>holds all data<br/>cleans it, one unit per measure"] <--> DB[(Database)]
     DS --> HS["HealthService (Python)<br/>processes the data"]
+    HS -->|"processed results"| DS
     HS --> FE["Frontend<br/>3D body view, bone view"]
     HS -.-> TL["Timeline / analysis schedule<br/>(possibly its own service)"]
     HS --> Q[[Queue]] --> NS[Notification system]
@@ -25,9 +26,9 @@ flowchart LR
 |---|---|---|
 | **Sensors** | Instruments on board that measure the crew: dynamometer, DXA scanner, cycle ergometer with gas analyser, wearables. | We have none. The generator stands in for them. |
 | **Generator** (`gravsim`) | Produces readings for a crew member on any mission day. It follows curves fitted from the NASA bed-rest data in `data/nlsp/` (the distribution in the sketch). You can set each person's exercise routine, make them lose faster than most, add an injury, or break an instrument. | Built: `sim/` on branch `feat/sensor-simulator`. |
-| **DataService** | Holds all the data. Every reading, from a real sensor or from the generator, goes through the same steps: clean it (missing values, duplicates, impossible values, timestamps) and convert it to one unit per measure (for example, beats per second become beats per minute). Answers requests for a crew member's timeline. | Built: `sim/` on `feat/sensor-simulator`, being polished now. |
-| **Database** | Stores real sensor data and imported historical data. | Exists but does nothing yet: the schema is defined, and for the challenge every reading comes from the generator. |
-| **HealthService** (Python) | Reads from the DataService and processes the data for the other parts. Today it builds the JSON the 3D page shows: changes per muscle group and charts over time. The model work lives here: data cleaning and processing, training, inputs and outputs. | First version built (the dashboard builder in `sim/`); the model is not started. |
+| **DataService** | Holds all the data, raw and processed. Every reading, from a real sensor or from the generator, goes through the same steps: clean it (missing values, duplicates, impossible values, timestamps) and convert it to one unit per measure (for example, beats per second become beats per minute). It also keeps what the HealthService computes. Answers requests for a crew member's timeline and for past results. | Built: `sim/` on `feat/sensor-simulator`, being polished now. |
+| **Database** | Stores real sensor data, imported historical data and the processed results (one table for readings, one for results). | Exists but does nothing yet: the schema is defined, and for the challenge every reading comes from the generator. |
+| **HealthService** (Python) | Reads from the DataService and processes the data for the other parts. Today it builds the JSON the 3D page shows: changes per muscle group and charts over time. Everything it computes is saved back through the DataService, so results are kept and can be compared later. The model work lives here: data cleaning and processing, training, inputs and outputs. | First version built (the dashboard builder in `sim/`); the model is not started. |
 | **Frontend** | 3D body that colours each muscle group by how much it has changed, with a bone view. Reads the HealthService's JSON (contract in `docs/frontend-backend.md` on branch `design-body`). | In progress on `design-body`. |
 | **Timeline / analysis schedule** | Decides when each test or analysis is due. Today the generator follows NASA's routine (strength every 30 days, VO2peak on flight days 14, 75, 165, bone scans only before and after flight). May become its own service. | Idea; the NASA routine exists inside the generator. |
 | **Queue and notification system** | Sends alerts from the HealthService to whoever needs them: the Earth space center, the ship's center, the astronauts (through wearables and room displays) and the radio system. | Planned, not built. |

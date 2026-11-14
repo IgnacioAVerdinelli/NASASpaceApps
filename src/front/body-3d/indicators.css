@@ -1,0 +1,11 @@
+.atlas-indicators{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2;font:600 11px/1.2 system-ui,sans-serif;color:#2e385b}
+.atlas-indicator-dot{position:absolute;left:var(--dot-x);top:var(--dot-y);width:8px;height:8px;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:50%;background:#645ba3;box-shadow:0 1px 4px #27304b66}
+.atlas-indicator-line{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.atlas-indicator-line path{fill:none;stroke:#7770ae;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.atlas-indicator-text{position:absolute;left:var(--label-x);top:var(--label-y);width:var(--label-width);height:30px;display:flex;align-items:center;gap:5px;padding:0 9px;border-radius:6px;background:#fff;box-shadow:0 2px 8px #30385824;white-space:nowrap}
+.atlas-indicator-name{min-width:0;white-space:nowrap}.atlas-indicator-value{flex:none;margin-left:auto;font-variant-numeric:tabular-nums}.atlas-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:500px){.atlas-indicators{font-size:10px}.atlas-indicator-text{padding:0 6px}}
+.atlas-checkpoint{position:absolute;pointer-events:auto;width:24px;height:24px;padding:0;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:50%;background:#786bb2;box-shadow:0 2px 8px #28234d66;cursor:pointer;touch-action:manipulation}
+.atlas-checkpoint::after{content:'';position:absolute;inset:6px;border-radius:50%;background:#fff}
+.atlas-checkpoint:hover,.atlas-checkpoint[aria-pressed="true"]{background:#423778;box-shadow:0 0 0 5px #766ab34d,0 2px 8px #28234d66}
+.atlas-checkpoint:focus-visible{outline:3px solid #30245f;outline-offset:5px}

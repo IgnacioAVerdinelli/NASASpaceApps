@@ -16,9 +16,9 @@ flowchart LR
             DB[("<b>Database</b><br/>[SQLite]<br/>readings + results<br/>inert in the demo")]
             HS["<b>HealthService</b><br/>[Python]<br/>processes the data<br/>model: clean, train, I/O"]
             FE["<b>Frontend</b><br/>[React · three.js]<br/>3D body view, bone view"]
-            TL["<b>Analysis schedule</b><br/>[possible service]<br/>when each test is due"]
-            Q[["<b>Queue</b><br/>[message queue]"]]
-            NS["<b>Notification system</b><br/>[service]"]
+            TL["<b>Analysis scheduler</b><br/>[service]<br/>NASA protocol: when each study is due"]
+            Q[["<b>Queue</b><br/>[publish / subscribe]<br/>alerts and study requests"]]
+            NS["<b>Notification system</b><br/>[service]<br/>subscribes, routes each message"]
         end
         AST["<b>Astronauts</b><br/>wearables, room displays"]
         SHIP["<b>Ship center</b>"]
@@ -32,9 +32,10 @@ flowchart LR
     DS -->|timelines| HS
     HS -->|processed results| DS
     HS -->|dashboard JSON, HTTP| FE
-    HS -.->|test plan| TL
+    TL <-.->|reads past studies, records new ones| DS
     HS -.->|alerts| Q
-    Q -.-> NS
+    TL -.->|study due| Q
+    Q -.->|subscribes| NS
     NS -.-> AST
     NS -.-> SHIP
     NS -.-> RADIO
@@ -65,8 +66,8 @@ Legend: blue boxes are our system and built; dashed grey boxes are planned; the 
 | **Database** | Stores real sensor data, imported historical data and the processed results (one table for readings, one for results). | Exists but does nothing yet: the schema is defined, and for the challenge every reading comes from the generator. |
 | **HealthService** (Python) | Reads from the DataService and processes the data for the other parts. Today it builds the JSON the 3D page shows: changes per muscle group and charts over time. Everything it computes is saved back through the DataService, so results are kept and can be compared later. The model work lives here: data cleaning and processing, training, inputs and outputs. | First version built (the dashboard builder in `sim/`); the model is not started. |
 | **Frontend** | 3D body that colours each muscle group by how much it has changed, with a bone view. Reads the HealthService's JSON (contract in `docs/frontend-backend.md` on branch `design-body`). | In progress on `design-body`. |
-| **Timeline / analysis schedule** | Decides when each test or analysis is due. Today the generator follows NASA's routine (strength every 30 days, VO2peak on flight days 14, 75, 165, bone scans only before and after flight). May become its own service. | Idea; the NASA routine exists inside the generator. |
-| **Queue and notification system** | Sends alerts from the HealthService to whoever needs them: the Earth space center, the ship's center, the astronauts (through wearables and room displays) and the radio system. | Planned, not built. |
+| **Analysis scheduler** | Its own service. Holds what NASA requires of each astronaut and when: which studies, at which points of the mission. The protocol comes from OCHMO-STD-100.1A (NASA's astronaut medical standards). It reads past studies and their data from the DataService to decide when a new study is due, records the studies it schedules, and publishes a "study due" message to the queue. | Planned. Today a simplified NASA routine lives inside the generator (strength every 30 days, VO2peak on flight days 14, 75 and 165, bone scans only before and after flight). |
+| **Queue and notification system** | Publish/subscribe. The HealthService publishes alerts and the analysis scheduler publishes study requests; the notification system subscribes and tells whoever needs to know: the Earth space center, the ship's center, the astronauts (through wearables and room displays) and the radio system. Neither publisher needs to know who receives the message. | Planned, not built. |
 
 ## What we can measure
 

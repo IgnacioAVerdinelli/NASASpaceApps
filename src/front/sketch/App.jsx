@@ -2,7 +2,7 @@ import React, { useEffect, useReducer, useRef, useState } from 'react';
 import { ATTRIBUTION } from 'open-anatomy-3d';
 import BodyViewer from '../body-3d/BodyViewer.jsx';
 import { muscles, SURFACE_MUSCLE_KEYS } from '../body-3d/anatomy.js';
-import Chart from './Chart.jsx';
+import Trends from './Chart.jsx';
 import { testModeReducer } from './data/testMode.js';
 import './style.css';
 
@@ -45,9 +45,9 @@ export function App({ dashboard, stale = false }) {
         <div className="insight-list" role="group" aria-label="Areas to explore">{summary.items.map(item => { const active = Boolean(selected && item.muscleKeys.includes(selected)); return <button type="button" key={item.id} className={'insight-row'+(active?' is-selected':'')} aria-pressed={active} disabled={!item.muscleKeys.length} onClick={() => chooseArea(active ? selected : item.muscleKeys[0])}><span className="insight-marker" aria-hidden="true"/><span className="insight-main"><span className="insight-name">{item.title}</span><span className="insight-detail">{item.description}</span></span><span className="insight-change">{item.changePercent === null ? 'No data' : `${item.changePercent > 0 ? '+' : ''}${item.changePercent}%`}</span></button>; })}</div>
         {muscle && <p className="selected-detail"><strong>{muscle.label}</strong><br/>{testMode ? 'Test intensity' : 'Intensity'}: {value == null ? 'No data' : `${value} / 100`}</p>}
         <p className="note">{simulated ? 'Simulated data. ' : ''}{summary.notice}</p>
-        {relevant.length > 0 && <a className="explore" href="#trends">View trends <span aria-hidden="true">↓</span></a>}
+        <a className="explore" href="#trends">View trends <span aria-hidden="true">↓</span></a>
       </div><div className="summary-footer"><span>{simulated ? 'SIMULATED DATA' : 'DATA'}</span><span>UPDATED {new Date(updatedAt).toLocaleString('en-GB', { timeZone: 'UTC' })} UTC</span></div></div>
     </section>
-    <section className="trends" id="trends"><div className="section-heading"><div><h2>Trends</h2></div></div>{relevant.length ? relevant.map(chart => <Chart key={chart.id} chart={chart}/>) : <p className="no-trend">No chart data available for this selection.</p>}</section>
+    <Trends charts={relevant} summary={summary} scores={scores} simulated={simulated}/>
   </main></>;
 }

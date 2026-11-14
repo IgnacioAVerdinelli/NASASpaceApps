@@ -40,3 +40,30 @@ for (const body of ['male', 'female']) test(`${body} eyes align with eyeballs an
   assert.equal(visibleSystems('muscles').skin, false);
   assert.equal(visibleSystems('skeleton').skin, false);
 });
+
+test('male surface eyes are smooth, symmetric and do not intercept selection', async () => {
+  const bytes = await readFile('node_modules/open-anatomy-3d/models/anatomy-male.glb');
+  const { scene: root } = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
+  const skin = root.getObjectByName('skin');
+  const eyes = addSurfaceEyes(root, skin, 'male');
+  root.updateMatrixWorld(true);
+  const left = eyes.getObjectByName('surface-eye-l');
+  const right = eyes.getObjectByName('surface-eye-r');
+  const l = new THREE.Vector3(), r = new THREE.Vector3();
+  left.getWorldPosition(l); right.getWorldPosition(r);
+  assert.ok(Math.abs(l.x + r.x) < 1e-6);
+  assert.ok(Math.abs(l.y - r.y) < 1e-6 && Math.abs(l.z - r.z) < 1e-6);
+  assert.equal(left.geometry.type, 'SphereGeometry');
+  assert.equal(left.geometry, right.geometry);
+  assert.equal(new THREE.Raycaster(new THREE.Vector3(l.x, l.y, 2), new THREE.Vector3(0, 0, -1)).intersectObject(left).length, 0);
+  let skinMesh;
+  skin.traverse(node => { if (node.isMesh && node !== left && node !== right) skinMesh = node; });
+  for (const [eye, center] of [[left, l], [right, r]]) {
+    eye.raycast = THREE.Mesh.prototype.raycast;
+    const ray = new THREE.Raycaster(new THREE.Vector3(center.x, center.y + 0.005, 2), new THREE.Vector3(0, 0, -1));
+    const eyeHit = ray.intersectObject(eye)[0];
+    const skinHit = ray.intersectObject(skinMesh)[0];
+    assert.ok(eyeHit && (!skinHit || eyeHit.point.z > skinHit.point.z), 'eye fills the opening');
+  }
+  assert.equal(eyes.parent, skin);
+});

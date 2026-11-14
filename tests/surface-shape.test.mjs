@@ -33,3 +33,33 @@ test('keeps the original quantized normals used by the male model', async () => 
     assert.deepEqual([normals.getX(i), normals.getY(i), normals.getZ(i)], before[i]);
   }
 });
+
+test('smooths the male face without changing the skin topology or the rest of the body', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+  const { MeshoptDecoder } = await import('three/addons/libs/meshopt_decoder.module.js');
+  const { Vector3 } = await import('three');
+  const { softenMaleFace } = await import('../src/front/body-3d/surfaceShape.js');
+  const bytes = await readFile('node_modules/open-anatomy-3d/models/anatomy-male.glb');
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
+  gltf.scene.updateMatrixWorld(true);
+  let skin;
+  gltf.scene.getObjectByName('skin').traverse(node => { if (node.isMesh) skin = node; });
+  const { position } = skin.geometry.attributes;
+  const before = Float32Array.from({ length: position.count * 3 }, (_, i) => [position.getX(i / 3 | 0), position.getY(i / 3 | 0), position.getZ(i / 3 | 0)][i % 3]);
+  const indices = skin.geometry.index.array.slice();
+  softenMaleFace(skin.geometry, skin.matrixWorld);
+  assert.deepEqual(skin.geometry.index.array, indices);
+  let changed = 0;
+  const point = new Vector3();
+  for (let i = 0; i < position.count; i++) {
+    const distance = Math.hypot(position.getX(i) - before[i * 3], position.getY(i) - before[i * 3 + 1], position.getZ(i) - before[i * 3 + 2]);
+    assert.ok(Number.isFinite(distance) && distance < 0.0021);
+    if (distance > 1e-7) {
+      changed++;
+      point.fromArray(before, i * 3).applyMatrix4(skin.matrixWorld);
+      assert.ok(point.y > 1.49 && point.y < 1.67 && point.z > 0.025 && Math.abs(point.x) < 0.085);
+    }
+  }
+  assert.ok(changed > 100);
+});

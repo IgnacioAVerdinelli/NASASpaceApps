@@ -1,6 +1,6 @@
 # Contrato frontend–backend
 
-La página HBARAI consume un único estado completo del dashboard. El backend todavía no está implementado en este repositorio: esta especificación es el acuerdo para quien lo desarrolle. Para trabajar sin backend, el frontend usa el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json), con valores simulados; no inicia ningún servidor de datos.
+La página Trama consume un único estado completo del dashboard. El backend todavía no está implementado en este repositorio: esta especificación es el acuerdo para quien lo desarrolle. Para trabajar sin backend, el frontend usa el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json), con valores simulados; no inicia ningún servidor de datos.
 
 ## Transporte
 

@@ -160,7 +160,8 @@ class Instrument:
 
 
 class Dynamometer(Instrument):
-    """Isokinetic dynamometer: peak torque (ft-lb) for knee, ankle and trunk tests (MR079G)."""
+    """Isokinetic dynamometer: peak torque for knee, ankle and trunk tests (MR079G). It reports ft-lb, as NASA's
+    files do; the DataService converts it to N·m on the way in."""
     name = "dynamometer"
     device = "isokinetic dynamometer (Biodex-type)"
     measures = ("knee_extension_60", "knee_flexion_60", "ankle_plantarflexion_30", "ankle_dorsiflexion_30",

@@ -18,7 +18,7 @@ from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, 
 from .dataservice import DataService
 from .events import TOPICS, MockPublisher
 from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Spacesuit, Wearable
-from .pipeline import LIMITS, clean, clean_context
+from .pipeline import LIMITS, STORED_UNITS, clean, clean_context
 from .reading import ACTIVITIES, SOURCES, ContextRecord, Reading, Result, to_dataframe
 from .routine import LOCATIONS, context_timeline, routine
 from .schedule import default_instruments, nasa_days, timeline
@@ -34,5 +34,5 @@ __all__ = [
     # the records: raw readings, crew context and processed results
     "Reading", "ContextRecord", "Result", "ACTIVITIES", "SOURCES", "to_dataframe",
     # DataService
-    "DataService", "SqliteStore", "clean", "clean_context", "LIMITS", "UNITS", "convert", "MockPublisher", "TOPICS",
+    "DataService", "SqliteStore", "clean", "clean_context", "LIMITS", "STORED_UNITS", "UNITS", "convert", "MockPublisher", "TOPICS",
 ]

@@ -7,8 +7,9 @@ and unit; the other Reading fields are optional and kept, unknown keys are ignor
 1. Records without a crew member, a known measure or a readable time are dropped, with a logged warning.
 2. Times become UTC ISO text, "2027-03-01T12:00:00Z". Any offset is accepted; no offset means UTC.
 3. A missing or unreadable value becomes None, with quality "missing".
-4. Values are converted to their measure's canonical unit (units.py). An unknown unit, or one of
-   the wrong kind, keeps the value and unit as sent, with quality "bad_unit".
+4. Values are converted to the unit their measure is stored in (STORED_UNITS: the canonical unit of its
+   kind in units.py; N·m for strength). An unknown unit, or one of the wrong kind, keeps the value and
+   unit as sent, with quality "bad_unit". gravsim's `truth` value is converted with it.
 5. Values outside LIMITS get quality "out_of_range" and are kept unrounded, as evidence of what went
    wrong. The rest are rounded to their measure's decimals.
 6. Of several readings with the same crew member, measure, time, instrument and side, the last one
@@ -30,18 +31,23 @@ from typing import Iterable
 
 from .core import GROUPS, MEASURES, TIME_FORMAT
 from .reading import ACTIVITIES, ContextRecord, Reading
-from .units import convert
+from .units import canonical, convert
 
 log = logging.getLogger(__name__)
 FIELDS = {f.name for f in fields(Reading)}
 CONTEXT_FIELDS = {f.name for f in fields(ContextRecord)}
 
-# Values no living crew member produces at rest, in canonical units: the hard physiological and device limits.
+# The unit the DataService stores each measure in: the canonical unit of the unit params.json gives it.
+# Strength is fitted and generated in ft-lb, as in NASA's files, and stored in N·m.
+STORED_UNITS = {mid: canonical(m["unit"]) for mid, m in MEASURES.items()}
+
+# Values no living crew member produces at rest: the hard physiological and device limits, in each measure's
+# params.json unit (ft-lb for strength; the pipeline converts them to the stored unit before checking).
 # Wide on purpose: they catch sensor and unit errors (a resting heart rate of 1.2 is beats per second sent
 # as bpm), not unusual but real values. gravsim clamps every reading to these same limits, faults included,
 # so the generator and the DataService share one table.
 LIMITS = {
-    **{m: (1, 1000) for m in GROUPS["strength"]},                           # peak torque, ft-lb
+    **{m: (1, 1000) for m in GROUPS["strength"]},                           # peak torque, ft-lb (1.4 to 1356 N·m)
     **{m: (0.1, 2.5) for m in GROUPS["bone"]},                              # g/cm²
     **{m: (300, 80_000) for m in ("lean_legs", "lean_arms", "lean_trunk")},   # g of lean mass in one region
     "vo2peak": (5, 100),         # ml/kg/min; the highest ever recorded is just under 100
@@ -69,6 +75,8 @@ def clean(records: Iterable[Reading | dict]) -> list[Reading]:
             continue
         value, unit, quality = check_value(data["measure"], data.get("value"), data.get("unit"))
         known = {k: v for k, v in data.items() if k in FIELDS}
+        if known.get("truth"):
+            known["truth"] = _truth_in(known["truth"], data.get("unit"), unit, MEASURES[data["measure"]]["decimals"])
         r = Reading(**{**known, "timestamp": timestamp, "value": value, "unit": unit, "quality": quality})
         kept[key(r)] = r
     if dropped:
@@ -99,22 +107,33 @@ def clean_context(records: Iterable[ContextRecord | dict]) -> list[ContextRecord
 
 
 def check_value(measure: str, value, unit: str | None) -> tuple[float | None, str | None, str]:
-    """Rules 3 to 5 for one value: (value in the canonical unit, its unit, quality)."""
-    m = MEASURES[measure]
+    """Rules 3 to 5 for one value: (value in the stored unit, its unit, quality)."""
+    m, stored = MEASURES[measure], STORED_UNITS[measure]
     try:
         value = float(value)
     except (TypeError, ValueError):
         value = math.nan
     if not math.isfinite(value):
-        return None, m["unit"], "missing"
+        return None, stored, "missing"
     try:
-        value = convert(value, unit, m["unit"])
+        value = convert(value, unit, stored)
     except ValueError:
         return value, unit, "bad_unit"
-    lo, hi = LIMITS.get(measure, (-math.inf, math.inf))
+    lo, hi = (convert(x, m["unit"], stored) for x in LIMITS.get(measure, (-math.inf, math.inf)))
     if not lo <= value <= hi:
-        return value, m["unit"], "out_of_range"
-    return round(value, m["decimals"]), m["unit"], "ok"
+        return value, stored, "out_of_range"
+    return round(value, m["decimals"]), stored, "ok"
+
+
+def _truth_in(truth: dict, sent: str | None, stored: str | None, decimals: int) -> dict:
+    """gravsim's truth with its noise-free value in the stored unit, as a copy. The value is in the unit the
+    reading was sent in; with a bad unit both stay as sent."""
+    if truth.get("value") is None or sent == stored:
+        return truth
+    try:
+        return {**truth, "value": round(convert(truth["value"], sent, stored), decimals + 2)}
+    except ValueError:
+        return truth
 
 
 def utc_iso(t) -> str:

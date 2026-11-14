@@ -887,9 +887,14 @@ def short(assumed: str) -> str:
     return assumed
 
 
+NM_PER_FT_LB = 1.3558179483      # as in gravsim/units.py
+
+
 def readme_table(params=None):
-    """The parameter table in sim/README.md, from params.json:  python sim/fit/fit_params.py --table"""
+    """The parameter table in sim/README.md, from params.json:  python sim/fit/fit_params.py --table
+    Strength is fitted in ft-lb, as in NASA's files; the table shows it in N·m, the unit the DataService stores."""
     params = params or json.loads(OUT.read_text(encoding="utf-8"))
+    shown = {"ft-lb": ("N·m", NM_PER_FT_LB)}
     inst = {"dynamometer": "dynamometer", "dxa": "DXA", "cycle": "cycle", "wearable": "wearable", "suit": "spacesuit"}
     rows = ["| Measure | Instrument | Unit | Worse is | Shape without exercise | Loss prevented by full exercise "
             "| Spread between people | Recovery time constant | Noise: device + day to day | Baselines drawn from "
@@ -907,14 +912,15 @@ def readme_table(params=None):
         ex = f"{100 * m['exercise_effect']:.0f}%" if m.get("exercise_effect") is not None else ""
         rec = f"{m['recovery_tau_days']:g} d" if m.get("recovery_tau_days") else ""
         dec = m["decimals"]
+        unit, factor = shown.get(m["unit"], (m["unit"], 1.0))
         if "baseline" in m:
             b = m["baseline"]["all"]
-            base = f"{b['min']:.{dec}f} to {b['max']:.{dec}f}" + (f" ({b['n']} people)" if b.get("n") else " (assumed)")
+            base = f"{b['min'] * factor:.{dec}f} to {b['max'] * factor:.{dec}f}" + (f" ({b['n']} people)" if b.get("n") else " (assumed)")
         else:
             base = "none of its own"
         noise = f"{100 * m['device_cv']:.1f}% + {100 * m['bio_cv']:.1f}%"
         assumed = "; ".join(short(a) for a in m["assumed"]) or "none"
-        rows.append(f"| `{mid}` | {inst[m['instrument']]} | {m['unit']} | {'higher' if m['direction'] > 0 else 'lower'} "
+        rows.append(f"| `{mid}` | {inst[m['instrument']]} | {unit} | {'higher' if m['direction'] > 0 else 'lower'} "
                     f"| {shape} | {ex} | {spread} | {rec} | {noise} | {base} | {assumed} |")
     return "\n".join(rows)
 

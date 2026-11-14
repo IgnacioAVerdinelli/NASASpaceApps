@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS readings (
     timestamp   TEXT NOT NULL,              -- UTC, 'YYYY-MM-DDTHH:MM:SSZ', so text order is time order
     instrument  TEXT NOT NULL,
     side        TEXT NOT NULL DEFAULT '',   -- '' rather than NULL: NULLs never count as duplicates in a key
-    value       REAL,                       -- in the measure's canonical unit; NULL when missing
+    value       REAL,                       -- in the measure's stored unit (STORED_UNITS); NULL when missing
     unit        TEXT,
     quality     TEXT NOT NULL,              -- ok | missing | out_of_range | bad_unit
     synthetic   INTEGER NOT NULL,           -- 1 for gravsim output, 0 for real sensors and imports

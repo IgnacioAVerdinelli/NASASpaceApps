@@ -25,6 +25,8 @@ def sensor(**fields):
 
 @pytest.mark.parametrize("value,unit,to,expected", [
     (100, "N·m", "ft-lb", 73.756),
+    (1, "ft-lb", "N·m", 1.35582),
+    (135.582, "Nm", "ft-lb", 100),
     (17.5, "kg", "g", 17500),
     (950, "mg/cm²", "g/cm²", 0.95),
     (1.2, "beats/s", "bpm", 72),
@@ -43,8 +45,14 @@ def test_convert_refuses_unknown_units_and_other_kinds():
 
 def test_every_measure_has_a_known_unit_and_limits():
     for mid, m in gs.MEASURES.items():
-        assert gs.UNITS[m["unit"]] == (m["unit"], 1.0), mid           # its unit is a canonical one
+        stored = gs.STORED_UNITS[mid]
+        assert gs.UNITS[stored] == (stored, 1.0), mid                 # stored in a canonical unit
+        assert gs.UNITS[m["unit"]][0] == stored, mid                  # gravsim's unit converts to it
         assert mid in gs.LIMITS, mid
+    strength = set(gs.GROUPS["strength"])
+    assert {gs.STORED_UNITS[mid] for mid in strength} == {"N·m"}
+    assert {gs.MEASURES[mid]["unit"] for mid in strength} == {"ft-lb"}   # the fit and the dynamometer keep ft-lb
+    assert all(gs.STORED_UNITS[mid] == m["unit"] for mid, m in gs.MEASURES.items() if mid not in strength)
 
 
 # ---- cleaning -------------------------------------------------------------------------------
@@ -53,6 +61,16 @@ def test_wearable_in_beats_per_second_is_stored_in_bpm():
     [r] = gs.clean([sensor(value=1.2, unit="beats/s")])
     assert (r.value, r.unit, r.quality) == (72.0, "bpm", "ok")
     assert r.label == gs.MEASURES["resting_hr"]["label"] and r.synthetic is False
+
+
+def test_strength_is_stored_in_newton_metres():
+    dyno = {"measure": "knee_extension_60", "instrument": "dynamometer"}
+    [r] = gs.clean([sensor(**dyno, value=100, unit="ft-lb")])
+    assert (r.value, r.unit, r.quality) == (135.6, "N·m", "ok")
+    [r] = gs.clean([sensor(**dyno, value=135.6, unit="Nm")])
+    assert (r.value, r.unit, r.quality) == (135.6, "N·m", "ok")
+    [r] = gs.clean([sensor(**dyno, value=1200, unit="ft-lb")])         # 1627 N·m: over the 1000 ft-lb limit
+    assert (r.unit, r.quality) == ("N·m", "out_of_range") and r.value == pytest.approx(1627, abs=0.1)
 
 
 def test_times_become_utc_iso():
@@ -122,11 +140,19 @@ def mission_and_data():
     return m, data, generated, kept
 
 
-def test_generator_readings_go_through_the_pipeline_unchanged(mission_and_data):
+def test_generator_readings_go_through_the_pipeline_unchanged_but_strength_in_newton_metres(mission_and_data):
     m, data, generated, kept = mission_and_data
     assert len(kept) == len(generated)                       # nothing dropped or merged, same order
+    strength = set(gs.GROUPS["strength"])
+    assert any(g.measure in strength for g in generated)
     for g, k in zip(generated, kept):
-        assert k.to_dict() == {**g.to_dict(), "quality": k.quality}
+        expected = g.to_dict()
+        if g.measure in strength:                            # the dynamometer reports ft-lb, the DataService keeps N·m
+            assert (g.unit, k.unit) == ("ft-lb", "N·m")
+            nm = {"value": None if g.value is None else round(gs.convert(g.value, "ft-lb", "N·m"), 1), "unit": "N·m",
+                  "truth": {**g.truth, "value": round(gs.convert(g.truth["value"], "ft-lb", "N·m"), 3)}}
+            expected.update(nm)
+        assert k.to_dict() == {**expected, "quality": k.quality}
     # gravsim clamps every reading to the same LIMITS the pipeline checks, so nothing it makes is flagged
     assert all(r.quality == "ok" for r in kept)
 
@@ -213,7 +239,9 @@ def test_api_readings_and_latest_stop_at_the_mission_clock(api):
     m, data, call = api
     status, readings = call("/api/v1/readings?crew=CM-2&measures=knee_extension_60")
     assert status == 200 and readings == [r.to_dict() for r in data.readings("CM-2", "knee_extension_60", end=m.timestamp(100))]
-    assert readings[-1]["day_label"] == "FD75"
+    assert readings[-1]["day_label"] == "FD75" and {r["unit"] for r in readings} == {"N·m"}
+    status, strength = call("/api/v1/latest?crew=CM-2&measures=strength")
+    assert status == 200 and set(strength) == set(gs.GROUPS["strength"]) and {r["unit"] for r in strength.values()} == {"N·m"}
     status, latest = call("/api/v1/latest?crew=CM-2&measures=bone,vo2peak&day=300")
     assert status == 200 and set(latest) == {"hip_bmd", "spine_bmd", "heel_bmd", "vo2peak"}
     assert call("/api/v1/latest?crew=CM-9")[0] == 404

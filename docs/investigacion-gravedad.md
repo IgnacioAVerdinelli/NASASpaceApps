@@ -199,6 +199,16 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
 - **Cómo funciona:** el equipo emite rayos X con dos energías distintas. El hueso y el tejido blando los atenúan de forma diferente, y con esa diferencia se separa la masa mineral del resto. El resultado es la densidad mineral ósea en g/cm². Dos índices la comparan:
   - **T-score**, contra un adulto joven;
   - **Z-score**, contra personas de la misma edad.
+- **Detalle técnico:**
+  - **Principio físico (ley de Beer-Lambert):** la intensidad que atraviesa el cuerpo es I = I₀·e^(−μ·m), donde μ es el coeficiente de atenuación del tejido y m su masa por unidad de área. Con una sola energía hay dos incógnitas (hueso y tejido blando) y una sola ecuación. Con **dos energías** hay dos ecuaciones y se pueden despejar las dos masas. Hologic alterna el voltaje del tubo (~100/140 kVp); GE Lunar filtra el haz para obtener picos de ~40 y ~70 keV.
+  - **Calibración por píxel:** los píxeles sin hueso dan la relación de atenuación del tejido blando de ese sujeto. Con ella se resta el tejido blando en los píxeles con hueso.
+  - **Resultado:** contenido mineral óseo (BMC, en g) dividido por el área proyectada da la **densidad areal** (aBMD, g/cm²). Es una densidad **2D**: no separa hueso cortical de trabecular ni corrige por el tamaño del hueso. Por eso los estudios de vuelo agregan **QCT**, una tomografía que da densidad volumétrica (g/cm³) separando cortical y trabecular.
+  - **Índices clínicos:** T-score = (BMD − media de adulto joven) / desvío estándar. Se considera osteopenia entre −1 y −2,5, y osteoporosis desde ≤ −2,5. El Z-score usa la media de la misma edad y sexo.
+  - **Dosis y precisión:** la dosis es muy baja (unos pocos µSv, menos que un día de radiación natural). La precisión de medidas repetidas es de ~1–2 %. Una pérdida de 1–1,5 %/mes **queda dentro del error de medición durante los primeros meses**, así que una sola DXA no detecta cambios cortos. La herramienta tiene que trabajar con tendencias y modelos.
+  - **Mecanismo biológico:** la carga mecánica mueve el fluido dentro de los canalículos del hueso, y los **osteocitos** detectan ese flujo. Sin carga:
+    - aumenta la **esclerostina**, que bloquea la vía Wnt y frena la formación ósea (osteoblastos);
+    - sube la relación **RANKL/OPG**, que activa a los osteoclastos.
+  - **Datos de vuelo con QCT:** el hueso trabecular de la cadera pierde más que el promedio que mide la DXA, del orden de 2–2,5 %/mes (Lang y col., 2004).
 - **Qué hace el espacio:** sin peso, el hueso deja de recibir carga mecánica. Las células que la detectan (osteocitos) reaccionan, y aumenta la **resorción**, es decir, la destrucción de hueso, mientras la formación no aumenta. Se pierde **1–1,5 % por mes** en cadera y columna, sobre todo en hueso trabecular. El calcio liberado se elimina por la orina.
 - **Efecto en la salud:** mayor riesgo de **fractura**, por ejemplo al aterrizar o al trabajar en Marte, y osteoporosis temprana. La recuperación tarda meses o años y a veces no es completa. El calcio en la orina aumenta el riesgo de **cálculos renales**.
 
@@ -207,12 +217,44 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
   - En Tierra, **dinamómetro isocinético** (Biodex).
   - En vuelo, cargas en **ARED**, el equipo de pesas con cilindros de vacío.
 - **Cómo funciona:** el dinamómetro mantiene la articulación a una velocidad angular constante, por ejemplo 60°/s o 180°/s, y mide el **torque máximo** que genera el músculo en extensión y flexión de rodilla y tobillo.
+- **Detalle técnico:**
+  - **Dinamómetro isocinético:** un servomotor fija la velocidad angular. Si la persona empuja más, la máquina no acelera: aumenta la resistencia. Así el músculo trabaja al máximo en todo el rango de movimiento.
+  - **Medición:** un sensor de deformación (galga extensiométrica) en el brazo de palanca mide el **torque** (τ = F × r, en N·m o ft-lb; 1 ft-lb = 1,356 N·m). El software corrige el peso del propio miembro.
+  - **Variables:**
+    - **torque pico**;
+    - ángulo en que aparece;
+    - trabajo total (J);
+    - potencia (W);
+    - índice de fatiga, por ejemplo la caída del trabajo entre las primeras y las últimas repeticiones de una serie larga a 180°/s.
+  - **Modos:** el **concéntrico** mide el músculo al acortarse y el **excéntrico** al alargarse, como al frenar una caída. MR079G incluye los dos.
+  - **ARED (en vuelo):** cilindros de vacío dan una resistencia de hasta ~270 kg (600 lb), y unos volantes de inercia simulan la masa de una barra. La "evaluación de fuerza" en vuelo se basa en las cargas y repeticiones que el astronauta logra, no en un torque isocinético. **MARES** (ESA) es un dinamómetro que se usó en la ISS para investigación.
+  - **Mecanismo biológico:**
+    - sin carga cae la señalización anabólica (vía mTOR);
+    - se activan las enzimas de degradación de proteínas (MuRF1 y atrogina-1, sistema ubiquitina-proteasoma);
+    - disminuye el área de las fibras, sobre todo las lentas (tipo I) de los músculos posturales.
+  - **Fuerza frente a masa:** la fuerza cae **más que la masa**, porque también se pierde activación neural.
 - **Qué hace el espacio:** los músculos antigravitatorios (sóleo, gastrocnemio, cuádriceps y los de la columna) ya no sostienen el cuerpo. Baja la síntesis de proteínas y aparece **atrofia**. Aun con ejercicio, el sóleo pierde ~5,8 % y el gastrocnemio ~4 %. Sin ejercicio, en reposo en cama, la fuerza de rodilla cayó **27 %** en 70 días (Campaign 11).
 - **Efecto en la salud:** menos capacidad para tareas exigentes como caminatas espaciales (EVA), salida de emergencia de la nave o trabajo en superficie. También aumenta el riesgo de caídas y lesiones al volver a la gravedad.
 
 #### 3. Capacidad aeróbica (VO₂pico)
 - **Método:** prueba en cicloergómetro con carga creciente. A bordo se hace en el **CEVIS**: se registra la frecuencia cardíaca por etapa y, con el **PFS**, se miden los gases respirados.
 - **Cómo funciona:** se mide el O₂ consumido en cada respiración. El VO₂pico es el máximo alcanzado y depende de cuánta sangre bombea el corazón y de cuánto oxígeno extraen los músculos. Cuando no se miden gases, se estima por la relación entre frecuencia cardíaca y carga.
+- **Detalle técnico:**
+  - **Ecuación de Fick:** VO₂ = Q × (CaO₂ − CvO₂). El gasto cardíaco Q = FC × volumen sistólico es el componente **central**. La diferencia arteriovenosa de O₂, que indica cuánto extrae el músculo, es el componente **periférico**.
+  - **Medición directa (calorimetría indirecta respiración a respiración):**
+    - un flujómetro mide la ventilación;
+    - analizadores de gases miden las fracciones de O₂ y CO₂;
+    - VO₂ = V̇ᵢ·FᵢO₂ − V̇ₑ·FₑO₂, donde el volumen inspirado se obtiene del espirado con la **transformación de Haldane**, asumiendo que el N₂ no se consume.
+    - El **PFS** de la ISS usa un analizador fotoacústico de gases.
+  - **Criterios de esfuerzo máximo:**
+    - meseta del VO₂ pese a más carga;
+    - **RER** (VCO₂/VO₂) > 1,1;
+    - frecuencia cardíaca cercana a la máxima;
+    - Borg ≥ 17.
+  - **Protocolo:** cicloergómetro con aumentos de carga por etapa. MR080G va de 50 a 350 W. En el CEVIS la carga es independiente de la cadencia.
+  - **Estimación submáxima:** cuando no se miden gases, se usa la relación casi lineal entre frecuencia cardíaca y VO₂ por debajo del máximo y se extrapola a la FC máxima. Es menos precisa y en vuelo se altera, porque cambia la FC para una misma carga.
+  - **Mecanismo:** el volumen sistólico cae por menos plasma y menos llenado, lo que reduce el gasto cardíaco máximo; además disminuye la capacidad oxidativa del músculo.
+  - **Datos de la ISS:** la mayor caída se ve en las primeras semanas de vuelo, del orden de ~15–17 %, con recuperación parcial gracias al ejercicio (Moore y col., 2014).
 - **Qué hace el espacio:**
   - se pierde **10–15 % del volumen de plasma**;
   - el corazón se atrofia un poco y bombea menos sangre por latido;
@@ -225,6 +267,11 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
 #### 4. Masa corporal
 - **Método:** **SLAMMD**. En ingravidez una balanza no funciona.
 - **Cómo funciona:** aplica la 2.ª ley de Newton (m = F/a). Unos resortes ejercen una fuerza conocida sobre el astronauta, el equipo mide la aceleración que produce y de ahí calcula la masa.
+- **Detalle técnico:**
+  - **SLAMMD (Space Linear Acceleration Mass Measurement Device):** dos resortes generan una fuerza conocida en función del desplazamiento y empujan al astronauta a lo largo de un riel de ~1 m. Un sensor óptico registra la posición en el tiempo; derivándola se obtiene la aceleración, y m = F/a.
+  - **BMMD (equipo anterior):** era una silla oscilante con resortes. Medía el período de oscilación T = 2π·√(m/k), así que m = k·T²/(4π²).
+  - **Condiciones de medición:** el astronauta debe mantenerse rígido. Los movimientos y los fluidos que se desplazan dentro del cuerpo agregan error, por lo que se promedian varias mediciones.
+  - **Qué no mide:** no distingue músculo de grasa. Para la composición corporal hacen falta DXA (en Tierra) o ecografía muscular (en vuelo).
 - **Qué hace el espacio:** suele haber un **déficit calórico** por menos apetito, alteración del gusto y mucha carga de trabajo. Se suma a la pérdida de músculo y hueso.
 - **Efecto en la salud:** una pérdida de masa no planificada acelera la atrofia muscular y la pérdida ósea, y reduce el rendimiento. El **cuestionario semanal de dieta** sirve para corregirlo; vigila energía, proteína, vitamina D y sodio, ya que el exceso de sodio aumenta la pérdida ósea.
 
@@ -237,6 +284,22 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
 - **Cómo funciona:**
   - La OCT usa luz infrarroja de baja coherencia y mide cómo se refleja, como una "ecografía con luz". Así obtiene cortes de la retina y del nervio óptico con resolución de micrómetros.
   - La ecografía mide el diámetro de la vaina del nervio óptico, que indica la presión alrededor del cerebro.
+- **Detalle técnico:**
+  - **OCT de dominio espectral:** es un interferómetro de Michelson.
+    - La fuente es un diodo superluminiscente de banda ancha en el infrarrojo cercano (~840–870 nm; el Spectralis usa 870 nm).
+    - La luz reflejada por cada capa del ojo interfiere con la de un brazo de referencia.
+    - La transformada de Fourier del espectro de interferencia da el perfil de reflectividad en profundidad (A-scan); varios A-scans forman un corte (B-scan).
+    - La resolución axial depende del ancho de banda de la fuente: l_c ≈ (2 ln2/π)·λ₀²/Δλ, de unos 4–7 µm.
+  - **Variables de OCT que se siguen en SANS:**
+    - espesor de la capa de fibras nerviosas de la retina (RNFL);
+    - espesor retiniano total;
+    - **ancho mínimo del borde del nervio en la apertura de la membrana de Bruch (BMO-MRW)**, el marcador más sensible del edema del disco óptico;
+    - espesor de la coroides;
+    - pliegues coroideos y retinianos.
+  - **Fondo de ojo:** el edema del disco óptico se gradúa con la escala de **Frisén** (0 a 5).
+  - **Tonometría:** mide la presión intraocular (PIO, mmHg), con tonómetros de rebote o de aplanación portátiles.
+  - **Ecografía ocular:** mide el **diámetro de la vaina del nervio óptico** a 3 mm detrás del globo. Valores por encima de ~5–6 mm sugieren presión intracraneal elevada. También muestra el aplanamiento posterior del globo.
+  - **Mecanismo:** sin gravedad se desplazan unos ~2 L de fluido de las piernas hacia el tórax y la cabeza. La presión intracraneal en vuelo no es más alta que acostado en la Tierra, pero **nunca baja** como cuando uno está de pie, así que el ojo queda expuesto a una carga continua (Lawley y col., 2017). Cambia el gradiente de presión a través de la lámina cribosa (presión intracraneal − PIO) y se congestiona la coroides. Hay factores que agravan el cuadro: el CO₂ de cabina y diferencias genéticas en el metabolismo de vitaminas B (ciclo de un carbono).
 - **Qué hace el espacio:** sin gravedad, los fluidos se desplazan hacia la cabeza (**desplazamiento cefálico**). Aumenta la congestión venosa y desaparece la bajada de presión intracraneal que ocurre en la Tierra al estar de pie. Esto produce el **SANS** (Spaceflight-Associated Neuro-ocular Syndrome):
   - edema del disco óptico;
   - pliegues en la coroides;
@@ -249,6 +312,15 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
 - **Cómo funciona:**
   - Se presiona la vena con la sonda: si no colapsa, puede haber un coágulo.
   - El Doppler mide la velocidad y la dirección de la sangre por el cambio de frecuencia del ultrasonido reflejado.
+- **Detalle técnico:**
+  - **Efecto Doppler:** Δf = 2·f₀·v·cos θ / c, donde c ≈ 1540 m/s es la velocidad del sonido en tejido blando y θ el ángulo entre el haz y el vaso. De Δf se obtiene la velocidad v de la sangre.
+  - **Modos de ecografía:**
+    - **Doppler color:** muestra la dirección del flujo en el mapa.
+    - **Doppler pulsado:** da la curva de velocidad en un punto.
+    - **Modo B:** mide el área transversal de la vena.
+  - **Compresión:** si la vena no colapsa con presión suave, sugiere un trombo.
+  - **Operación en vuelo:** los astronautas no son ecografistas. Operan el ecógrafo con **guía remota** de un experto en Tierra, ayudados por marcas en la piel y tarjetas de referencia.
+  - **Estudio en la ISS:** Marshall-Goebel y col. (2019) estudiaron a 11 astronautas. 6 tenían flujo estancado o invertido en la yugular izquierda, y uno tenía un trombo oclusivo. Fue tratado con anticoagulantes enviados a la ISS.
 - **Qué hace el espacio:** por el desplazamiento de fluidos, las yugulares se dilatan. En un estudio de la ISS, varios astronautas tenían **flujo estancado o invertido**, y en uno se encontró un **trombo** que se descubrió de forma inesperada.
 - **Efecto en la salud:** riesgo de **embolia**. Tratarla en vuelo es difícil porque hay pocos anticoagulantes a bordo y no hay evacuación rápida.
 
@@ -258,6 +330,16 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
   - **Orina:** de 24 h, con calcio, oxalato, citrato y volumen.
   - En la ISS las muestras se congelan en el **MELFI** y se analizan en la Tierra.
 - **Cómo funciona:** son análisis clínicos estándar. En la orina se calcula la **sobresaturación**, la tendencia de las sales a cristalizar y formar cálculos.
+- **Detalle técnico:**
+  - **Hemograma:** los contadores cuentan y miden las células por **impedancia** (método Coulter: cada célula que pasa por un orificio cambia la resistencia eléctrica) y por **citometría óptica**. Dan hematocrito, hemoglobina y recuento de glóbulos rojos, blancos y plaquetas.
+  - **Marcadores óseos:**
+    - **de resorción:** CTX y NTX, fragmentos del colágeno tipo I que se liberan al destruir hueso;
+    - **de formación:** fosfatasa alcalina ósea y P1NP.
+    - Responden en días, mucho antes que la DXA, por eso sirven de **alerta temprana**.
+  - **Riesgo de cálculos:** a partir de la orina de 24 h (calcio, oxalato, citrato, ácido úrico, pH, volumen), un programa de equilibrio químico calcula la **sobresaturación relativa** de oxalato de calcio, fosfato de calcio y ácido úrico. Si es mayor que 1, hay tendencia a cristalizar.
+  - **Hemólisis en vuelo:** se midió por el **monóxido de carbono exhalado**, que se libera al degradarse la hemoglobina. En vuelo se destruyen ~54 % más glóbulos rojos que en Tierra (Trudel y col., 2022).
+  - **Calcio y hormonas:** la resorción ósea libera calcio a la sangre. Eso **baja la PTH y la vitamina D activa (1,25-OH₂-D)**, y con ellas cae la absorción intestinal de calcio, que termina en la orina.
+  - **Futuro:** para Marte se apunta a analizadores **portátiles en el punto de atención** (cartuchos tipo i-STAT, tiras de orina), porque no se pueden congelar muestras y esperar el regreso.
 - **Qué hace el espacio:**
   - Al principio la sangre se concentra, porque se pierde plasma.
   - Después aparece la **"anemia espacial"**, por mayor destrucción de glóbulos rojos.
@@ -273,6 +355,25 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
   - la presión latido a latido con un **Finapres**, un manguito de dedo que sigue la presión de forma continua mediante pletismografía;
   - el volumen sistólico por Doppler.
 - **Cómo funciona:** al pasar de acostado a de pie, la gravedad lleva sangre a las piernas. Normalmente el **barorreflejo** compensa: acelera el corazón y contrae los vasos. La prueba mide si esa compensación alcanza, con la caída de presión, la subida de frecuencia cardíaca y el tiempo que la persona tolera de pie.
+- **Detalle técnico:**
+  - **Finapres (método de pinzamiento de volumen, de Peñáz):**
+    - Un manguito en el dedo tiene un fotopletismógrafo infrarrojo que mide el volumen de la arteria.
+    - Un servocontrol ajusta la presión del manguito en cada instante para mantener ese volumen constante.
+    - Así, la presión del manguito es igual a la presión arterial, latido a latido. Luego se reconstruye la presión braquial.
+  - **Volumen sistólico (VS):**
+    - por **Modelflow**, un modelo de la forma de la onda de pulso;
+    - o por **Doppler** del flujo en la aorta.
+  - **Variables derivadas:**
+    - gasto cardíaco = FC × VS;
+    - resistencia periférica total (RPT) = presión arterial media / gasto cardíaco.
+    - MR001G trae todas estas variables minuto a minuto.
+  - **Fisiología de la prueba:** al ponerse de pie se desplazan unos **500–800 mL de sangre** hacia las piernas y el abdomen. Baja el retorno venoso, y con él el VS. Los barorreceptores del seno carotídeo y del arco aórtico detectan la caída de presión y activan el sistema simpático: sube la FC, sube la RPT y se libera noradrenalina. A más largo plazo responde el eje hormonal (renina, angiotensina, aldosterona, vasopresina), que también mide MR001G.
+  - **Criterios de fracaso:** presíncope, o una caída de la presión sistólica por debajo de ~70–80 mmHg. Se registra el tiempo tolerado de pie.
+  - **Por qué falla después del vuelo:**
+    - hipovolemia;
+    - menor VS;
+    - en algunos astronautas, una **vasoconstricción insuficiente**, con menos liberación de noradrenalina (Meck y col., 2004).
+  - **Contramedidas al regreso:** carga de líquidos y sal antes del reingreso, y prendas de compresión.
 - **Qué hace el espacio:**
   - hay menos volumen de sangre;
   - el corazón está algo atrofiado;
@@ -284,6 +385,14 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
   - **posturografía dinámica computarizada** (Sensory Organization Test);
   - pruebas de campo después del aterrizaje (Field Test): levantarse, caminar, esquivar obstáculos.
 - **Cómo funciona:** una plataforma con sensores de fuerza mide el balanceo del cuerpo. La plataforma y el entorno visual se mueven a la par con la persona para "anular" la información de los pies o de la vista, y así se aísla el **sistema vestibular**, el oído interno.
+- **Detalle técnico:**
+  - **Sensory Organization Test (SOT):** se hace en 6 condiciones, que combinan:
+    - ojos abiertos, ojos cerrados o entorno visual que se mueve con el cuerpo;
+    - plataforma fija o plataforma que se mueve con el cuerpo.
+  - **Puntaje:** los sensores de fuerza calculan el centro de presión y el ángulo de balanceo anteroposterior. El **puntaje de equilibrio** (0–100) compara el balanceo pico a pico con el límite teórico de estabilidad (~12,5°).
+  - **Condiciones clave:** las **5 y 6** (sin información fiable de la vista ni de los pies) dependen casi solo del sistema vestibular. Son las más afectadas después del vuelo.
+  - **Mecanismo:** en la Tierra los otolitos no pueden distinguir una inclinación de la cabeza de una aceleración lineal; el cerebro usa la gravedad como referencia. En ingravidez, todas las señales de los otolitos se interpretan como traslación (**reinterpretación inclinación-traslación**). Al volver, una inclinación de la cabeza se percibe como movimiento, lo que causa ilusiones, vértigo y ataxia.
+  - **Pruebas funcionales:** el **Field Test** se hace el mismo día del aterrizaje e incluye levantarse, caminar en tándem y recuperarse de una caída. El **Functional Task Test** simula tareas de exploración (subir una escalera, abrir una escotilla, cargar herramientas). Su rendimiento se relaciona con la fuerza de piernas y con la tolerancia ortostática.
 - **Qué hace el espacio:** los **otolitos** del oído interno detectan la gravedad y la aceleración lineal. Sin gravedad, el cerebro **reinterpreta** sus señales para adaptarse. Al volver, esa adaptación falla por un tiempo.
 - **Efecto en la salud:**
   - al principio de la misión, mareo espacial;
@@ -293,12 +402,31 @@ Son las que la herramienta puede seguir **en tiempo real** durante la misión.
 #### 10. Prueba funcional física
 - **Método:** una batería de pruebas: fuerza de prensión, flexiones, abdominales, flexibilidad (*sit-and-reach*), agilidad con conos y salto.
 - **Cómo funciona:** son pruebas de campo simples y repetibles que integran fuerza, potencia, coordinación y resistencia.
+- **Detalle técnico:**
+  - **Componentes de la evaluación:**
+    - fuerza de prensión con dinamómetro de mano (kg);
+    - repeticiones de flexiones y abdominales en tiempo fijo (resistencia muscular);
+    - *sit-and-reach* en cm (flexibilidad);
+    - tiempo en un circuito de conos (agilidad, que integra equilibrio y coordinación);
+    - salto vertical (**potencia**, que se pierde más rápido que la fuerza).
+  - **Interpretación:** cada resultado se compara con la propia línea base del astronauta, no con normas poblacionales. La recuperación se sigue en R+5/7 y R+30.
 - **Qué hace el espacio:** combina todos los efectos anteriores: músculo, hueso, corazón y equilibrio.
 - **Efecto en la salud:** indica si el astronauta está **apto para tareas físicas reales** y cuándo puede volver a la actividad normal.
 
 #### 11. Sueño
 - **Método:** **actígrafo**, un sensor en la muñeca con acelerómetro y sensor de luz, más diarios de sueño.
 - **Cómo funciona:** un algoritmo clasifica cada minuto como sueño o vigilia según el movimiento. Con eso estima la duración, la eficiencia y los despertares. El sensor de luz sirve para evaluar el ritmo circadiano.
+- **Detalle técnico:**
+  - **Registro:** un acelerómetro triaxial muestrea a decenas de Hz. La señal se resume en "cuentas" de actividad por intervalo (*epoch*) de 30 s o 1 min.
+  - **Clasificación:** algoritmos validados (Cole-Kripke, Sadeh) clasifican cada intervalo como sueño o vigilia según la actividad ponderada de los intervalos vecinos.
+  - **Variables:**
+    - tiempo total de sueño;
+    - eficiencia (tiempo dormido / tiempo en cama);
+    - latencia;
+    - despertares (WASO).
+  - **Limitación:** detecta bien el sueño pero mal la vigilia quieta, así que tiende a **sobreestimar el sueño**. Por eso se combina con diarios de sueño.
+  - **Sensor de luz (lux):** estima la exposición a la luz y la fase circadiana.
+  - **Datos de vuelo:** en la ISS el promedio fue de ~6 h por noche, y la mayoría de la tripulación reportó usar somníferos (Barger y col., 2014).
 - **Qué hace el espacio:** no lo causa la gravedad, pero afecta a todos los astronautas:
   - la ISS ve unos 16 amaneceres por día;
   - hay ruido, CO₂ y una agenda exigente;
@@ -422,3 +550,12 @@ Es un prototipo **descartable** para validar la idea. Es un único HTML con Char
 - [NASA HRP IWS 2026 – Tidy Data Presentation](https://ntrs.nasa.gov/api/citations/20260002548/downloads/IWS_Tidy_Data_Presentation_Update.pdf)
 - Spector ER, Smith SM, Sibonga JD. *Aviat Space Environ Med* 2009; 80(5 Suppl):A23-8.
 - Stenger MB y col. *Eur J Appl Physiol* 2012; 112(2):605-16.
+
+**Literatura fisiológica citada en la sección 5.5.** Son referencias de conocimiento general: no se descargaron en esta rama y conviene verificarlas antes de citarlas.
+- Lang T y col. Cortical and trabecular bone mineral loss from the spine and hip in long-duration spaceflight. *J Bone Miner Res* 2004; 19(6):1006-12.
+- Moore AD y col. Peak exercise oxygen uptake during and following long-duration spaceflight. *J Appl Physiol* 2014; 117(3):231-8.
+- Lawley JS y col. Effect of gravity and microgravity on intracranial pressure. *J Physiol* 2017; 595(6):2115-27.
+- Marshall-Goebel K y col. Assessment of jugular venous blood flow stasis and thrombosis during spaceflight. *JAMA Netw Open* 2019; 2(11):e1915011.
+- Trudel G y col. Hemolysis contributes to anemia during long-duration space flight. *Nat Med* 2022; 28:59-62.
+- Meck JV y col. Mechanisms of postspaceflight orthostatic hypotension. *Am J Physiol Heart Circ Physiol* 2004; 286(4):H1486-95.
+- Barger LK y col. Prevalence of sleep deficiency and use of hypnotic drugs in astronauts. *Lancet Neurol* 2014; 13(9):904-12.

@@ -1,0 +1,1093 @@
+{
+ "model_version": "0.1.0",
+ "fitted_at": "2026-11-14T19:11:08Z",
+ "data": "data/nlsp (NASA Life Sciences Portal: MR079G, MR035G, MR080G), head-down bed rest",
+ "max_unloading_days_in_data": 90,
+ "bed_days_used": {
+  "AG Pilot": 21,
+  "HDT30": 30,
+  "Campaign 1": 60,
+  "MEDES": 60,
+  "Campaign 3": 75,
+  "Campaign 11": 70
+ },
+ "notes": {
+  "strength_tau_days": 28.5,
+  "strength_recovery_estimates": 78
+ },
+ "instruments": {
+  "cycle": {
+   "age": {
+    "mean": 33.0,
+    "sd": 7.0,
+    "n": 38,
+    "p5": 25.0,
+    "p95": 46.0
+   },
+   "weight_kg": {
+    "all": {
+     "mean": 76.8,
+     "sd": 10.7,
+     "n": 38,
+     "p5": 61.6,
+     "p95": 93.3
+    }
+   },
+   "hr_seated_rest": {
+    "mean": 76.0,
+    "sd": 15.0,
+    "n": 38,
+    "p5": 59.0,
+    "p95": 107.0
+   }
+  }
+ },
+ "validation": {
+  "campaign3_extra_hr_same_workload_bpm": {
+   "median": 27.5,
+   "n_pairs": 38
+  }
+ },
+ "measures": {
+  "knee_extension_60": {
+   "instrument": "dynamometer",
+   "code": "KES60",
+   "label": "Knee extension, 60°/s",
+   "region": "Quadriceps",
+   "muscle_keys": [
+    "quadriceps_l",
+    "quadriceps_r"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -23.52,
+   "tau_days": 28.5,
+   "exercise_effect": 0.637,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 5.547,
+   "noise_cv": 0.0835,
+   "baseline": {
+    "all": {
+     "mean": 130.5,
+     "sd": 48.5,
+     "n": 93,
+     "p5": 73.9,
+     "p95": 217.4
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": -16.24,
+     "n": 12
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": -7.66,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -22.4,
+     "n": 23
+    },
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": -24.17,
+     "n": 6
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": -8.77
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": []
+  },
+  "knee_flexion_60": {
+   "instrument": "dynamometer",
+   "code": "KFS60",
+   "label": "Knee flexion, 60°/s",
+   "region": "Hamstrings",
+   "muscle_keys": [
+    "hamstrings_l",
+    "hamstrings_r"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -13.62,
+   "tau_days": 28.5,
+   "exercise_effect": 1.0,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 7.184,
+   "noise_cv": 0.1021,
+   "baseline": {
+    "all": {
+     "mean": 74.4,
+     "sd": 28.6,
+     "n": 93,
+     "p5": 37.9,
+     "p95": 115.4
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": -3.52,
+     "n": 12
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": 21.57,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -20.54,
+     "n": 23
+    },
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": -5.45,
+     "n": 6
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": 8.49
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": []
+  },
+  "ankle_plantarflexion_30": {
+   "instrument": "dynamometer",
+   "code": "APFCS30",
+   "label": "Ankle plantarflexion, 30°/s",
+   "region": "Calves",
+   "muscle_keys": [
+    "calf_l",
+    "calf_r"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -25.73,
+   "tau_days": 28.5,
+   "exercise_effect": 0.118,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 3.335,
+   "noise_cv": 0.1048,
+   "baseline": {
+    "all": {
+     "mean": 86.9,
+     "sd": 27.3,
+     "n": 93,
+     "p5": 49.1,
+     "p95": 137.2
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": -5.06,
+     "n": 12
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": -23.98,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -28.51,
+     "n": 23
+    },
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": -21.48,
+     "n": 6
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": -18.93
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": []
+  },
+  "ankle_dorsiflexion_30": {
+   "instrument": "dynamometer",
+   "code": "ADFCS30",
+   "label": "Ankle dorsiflexion, 30°/s",
+   "region": "Shins",
+   "muscle_keys": [
+    "shin_muscles_l",
+    "shin_muscles_r"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -6.84,
+   "tau_days": 28.5,
+   "exercise_effect": 0.704,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 3.78,
+   "noise_cv": 0.1021,
+   "baseline": {
+    "all": {
+     "mean": 22.9,
+     "sd": 6.0,
+     "n": 78,
+     "p5": 13.9,
+     "p95": 32.8
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": 0.09,
+     "n": 12
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": -3.36,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -8.33,
+     "n": 23
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": [
+    "exercise_effect (median of the other strength tests)"
+   ]
+  },
+  "trunk_extension_60": {
+   "instrument": "dynamometer",
+   "code": "TES60",
+   "label": "Trunk extension, 60°/s",
+   "region": "Back",
+   "muscle_keys": [
+    "back_muscles_l",
+    "back_muscles_r"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -17.69,
+   "tau_days": 28.5,
+   "exercise_effect": 0.77,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 13.436,
+   "noise_cv": 0.0875,
+   "baseline": {
+    "all": {
+     "mean": 262.4,
+     "sd": 112.2,
+     "n": 84,
+     "p5": 100.7,
+     "p95": 429.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": -1.85,
+     "n": 11
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": -20.19,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -18.84,
+     "n": 18
+    },
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": -19.18,
+     "n": 6
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": -4.41
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": []
+  },
+  "trunk_flexion_60": {
+   "instrument": "dynamometer",
+   "code": "TFS60",
+   "label": "Trunk flexion, 60°/s",
+   "region": "Abdominals",
+   "muscle_keys": [
+    "abdominal_muscles"
+   ],
+   "unit": "ft-lb",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -2.77,
+   "tau_days": 28.5,
+   "exercise_effect": 0.704,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 9.675,
+   "noise_cv": 0.123,
+   "baseline": {
+    "all": {
+     "mean": 135.9,
+     "sd": 58.1,
+     "n": 84,
+     "p5": 65.0,
+     "p95": 230.9
+    }
+   },
+   "observed": [
+    {
+     "cohort": "HDT30 (Not labelled)",
+     "days": 30,
+     "change_pct": 2.33,
+     "n": 11
+    },
+    {
+     "cohort": "Campaign 1 (Not labelled)",
+     "days": 60,
+     "change_pct": 9.08,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3 (Not labelled)",
+     "days": 75,
+     "change_pct": -6.16,
+     "n": 18
+    },
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": 8.83,
+     "n": 6
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": -5.66
+    }
+   ],
+   "source": "MR079G (doi:10.83263/bk5h-r757): HDT30, Campaign 1, Campaign 3, Campaign 11",
+   "assumed": [
+    "exercise_effect (median of the other strength tests)",
+    "Campaign 11 trunk flexion runs the wrong way (+18 % control), left out of the fit"
+   ]
+  },
+  "hip_bmd": {
+   "instrument": "dxa",
+   "code": "HTOT_BMD",
+   "label": "Total hip bone density",
+   "region": "Hip",
+   "muscle_keys": [],
+   "unit": "g/cm²",
+   "decimals": 3,
+   "model": "linear",
+   "rate_pct_per_day": -0.0484,
+   "exercise_effect": 0.5,
+   "recovery_tau_days": 385.6,
+   "responder_sd": 0.01657,
+   "noise_cv": 0.0077,
+   "baseline": {
+    "all": {
+     "mean": 0.997,
+     "sd": 0.108,
+     "n": 74,
+     "p5": 0.852,
+     "p95": 1.167
+    },
+    "F": {
+     "mean": 0.936,
+     "sd": 0.078,
+     "n": 35,
+     "p5": 0.824,
+     "p95": 1.064
+    },
+    "M": {
+     "mean": 1.053,
+     "sd": 0.102,
+     "n": 39,
+     "p5": 0.9,
+     "p95": 1.238
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -2.79,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": -3.05,
+     "n": 29
+    },
+    {
+     "cohort": "MEDES",
+     "days": 60,
+     "change_pct": -3.48,
+     "n": 24
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86): Campaign 1, Campaign 3, MEDES; recovery from Campaign 3 follow-up scans",
+   "assumed": [
+    "exercise_effect (no open DXA data with exercise groups; 0.5 is a placeholder)"
+   ]
+  },
+  "spine_bmd": {
+   "instrument": "dxa",
+   "code": "TOT_BMD",
+   "label": "Lumbar spine (L1-L4) bone density",
+   "region": "Lumbar spine",
+   "muscle_keys": [],
+   "unit": "g/cm²",
+   "decimals": 3,
+   "model": "linear",
+   "rate_pct_per_day": -0.00318,
+   "exercise_effect": 0.5,
+   "recovery_tau_days": 399.0,
+   "responder_sd": 0.02548,
+   "noise_cv": 0.0062,
+   "baseline": {
+    "all": {
+     "mean": 1.024,
+     "sd": 0.077,
+     "n": 74,
+     "p5": 0.904,
+     "p95": 1.16
+    },
+    "F": {
+     "mean": 1.016,
+     "sd": 0.079,
+     "n": 35,
+     "p5": 0.896,
+     "p95": 1.139
+    },
+    "M": {
+     "mean": 1.032,
+     "sd": 0.076,
+     "n": 39,
+     "p5": 0.932,
+     "p95": 1.185
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -2.34,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": -0.88,
+     "n": 29
+    },
+    {
+     "cohort": "MEDES",
+     "days": 60,
+     "change_pct": 0.7,
+     "n": 24
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86): Campaign 1, Campaign 3, MEDES; recovery from Campaign 3 follow-up scans",
+   "assumed": [
+    "exercise_effect (no open DXA data with exercise groups; 0.5 is a placeholder)"
+   ]
+  },
+  "heel_bmd": {
+   "instrument": "dxa",
+   "code": "NET_AVG_BMD",
+   "label": "Heel bone density",
+   "region": "Heel",
+   "muscle_keys": [],
+   "unit": "g/cm²",
+   "decimals": 3,
+   "model": "linear",
+   "rate_pct_per_day": -0.01273,
+   "exercise_effect": 0.5,
+   "recovery_tau_days": 286.2,
+   "responder_sd": 0.02645,
+   "noise_cv": 0.0083,
+   "baseline": {
+    "all": {
+     "mean": 0.667,
+     "sd": 0.095,
+     "n": 50,
+     "p5": 0.516,
+     "p95": 0.797
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -2.01,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": -0.79,
+     "n": 29
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86): Campaign 1, Campaign 3, MEDES; recovery from Campaign 3 follow-up scans",
+   "assumed": [
+    "exercise_effect (no open DXA data with exercise groups; 0.5 is a placeholder)"
+   ]
+  },
+  "lean_legs": {
+   "instrument": "dxa",
+   "code": "L_LEG_LEAN+R_LEG_LEAN",
+   "label": "Leg lean mass",
+   "region": "Legs",
+   "muscle_keys": [
+    "quadriceps_l",
+    "quadriceps_r",
+    "hamstrings_l",
+    "hamstrings_r",
+    "adductors_l",
+    "adductors_r",
+    "calf_l",
+    "calf_r"
+   ],
+   "unit": "g",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": -6.54,
+   "tau_days": 28.5,
+   "exercise_effect": 0.637,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 5.171,
+   "noise_cv": 0.0094,
+   "baseline": {
+    "all": {
+     "mean": 17569.0,
+     "sd": 4468.0,
+     "n": 74,
+     "p5": 10755.0,
+     "p95": 24272.0
+    },
+    "F": {
+     "mean": 13639.0,
+     "sd": 2171.0,
+     "n": 35,
+     "p5": 9940.0,
+     "p95": 17080.0
+    },
+    "M": {
+     "mean": 21097.0,
+     "sd": 2671.0,
+     "n": 39,
+     "p5": 17017.0,
+     "p95": 24751.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -0.53,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": -4.91,
+     "n": 29
+    },
+    {
+     "cohort": "MEDES",
+     "days": 60,
+     "change_pct": -7.88,
+     "n": 24
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86) whole-body scans: Campaign 1, Campaign 3, MEDES",
+   "assumed": [
+    "tau_days (shared with strength)",
+    "exercise_effect (taken from knee extension)",
+    "recovery_tau_days (shared with strength)"
+   ]
+  },
+  "lean_arms": {
+   "instrument": "dxa",
+   "code": "LARM_LEAN+RARM_LEAN",
+   "label": "Arm lean mass",
+   "region": "Arms",
+   "muscle_keys": [
+    "upper_arm_muscles_l",
+    "upper_arm_muscles_r",
+    "forearm_muscles_l",
+    "forearm_muscles_r"
+   ],
+   "unit": "g",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": 0.2,
+   "tau_days": 28.5,
+   "exercise_effect": 0.637,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 1.604,
+   "noise_cv": 0.0209,
+   "baseline": {
+    "all": {
+     "mean": 6234.0,
+     "sd": 2206.0,
+     "n": 74,
+     "p5": 3220.0,
+     "p95": 9458.0
+    },
+    "F": {
+     "mean": 4157.0,
+     "sd": 718.0,
+     "n": 35,
+     "p5": 3027.0,
+     "p95": 5209.0
+    },
+    "M": {
+     "mean": 8097.0,
+     "sd": 1164.0,
+     "n": 39,
+     "p5": 6591.0,
+     "p95": 9555.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -1.31,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": 1.01,
+     "n": 29
+    },
+    {
+     "cohort": "MEDES",
+     "days": 60,
+     "change_pct": -0.69,
+     "n": 24
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86) whole-body scans: Campaign 1, Campaign 3, MEDES",
+   "assumed": [
+    "tau_days (shared with strength)",
+    "exercise_effect (taken from knee extension)",
+    "recovery_tau_days (shared with strength)"
+   ]
+  },
+  "lean_trunk": {
+   "instrument": "dxa",
+   "code": "TRUNK_LEAN",
+   "label": "Trunk lean mass",
+   "region": "Trunk",
+   "muscle_keys": [
+    "back_muscles_l",
+    "back_muscles_r",
+    "abdominal_muscles"
+   ],
+   "unit": "g",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": -1.0,
+   "tau_days": 28.5,
+   "exercise_effect": 0.637,
+   "recovery_tau_days": 19.0,
+   "responder_sd": 2.941,
+   "noise_cv": 0.0091,
+   "baseline": {
+    "all": {
+     "mean": 25526.0,
+     "sd": 5136.0,
+     "n": 74,
+     "p5": 17736.0,
+     "p95": 33008.0
+    },
+    "F": {
+     "mean": 20800.0,
+     "sd": 2340.0,
+     "n": 35,
+     "p5": 17589.0,
+     "p95": 24295.0
+    },
+    "M": {
+     "mean": 29767.0,
+     "sd": 2599.0,
+     "n": 39,
+     "p5": 25915.0,
+     "p95": 34431.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 1",
+     "days": 60,
+     "change_pct": -1.63,
+     "n": 3
+    },
+    {
+     "cohort": "Campaign 3",
+     "days": 75,
+     "change_pct": -0.69,
+     "n": 29
+    },
+    {
+     "cohort": "MEDES",
+     "days": 60,
+     "change_pct": -1.09,
+     "n": 24
+    }
+   ],
+   "source": "MR035G (doi:10.83263/7myc-5j86) whole-body scans: Campaign 1, Campaign 3, MEDES",
+   "assumed": [
+    "tau_days (shared with strength)",
+    "exercise_effect (taken from knee extension)",
+    "recovery_tau_days (shared with strength)"
+   ]
+  },
+  "vo2peak": {
+   "instrument": "cycle",
+   "code": "REL VO2PK",
+   "label": "Peak oxygen uptake (VO2peak)",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "ml/kg/min",
+   "decimals": 1,
+   "model": "saturating",
+   "loss_pct": -22.2,
+   "tau_days": 28.5,
+   "exercise_effect": 0.704,
+   "recovery_tau_days": 16.8,
+   "responder_sd": 6.345,
+   "noise_cv": 0.0691,
+   "baseline": {
+    "all": {
+     "mean": 40.6,
+     "sd": 6.2,
+     "n": 38,
+     "p5": 31.6,
+     "p95": 50.2
+    },
+    "F": {
+     "mean": 33.0,
+     "sd": null,
+     "n": 1,
+     "p5": 33.0,
+     "p95": 33.0
+    },
+    "M": {
+     "mean": 40.8,
+     "sd": 6.2,
+     "n": 37,
+     "p5": 31.5,
+     "p95": 50.4
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": -20.29,
+     "n": 10
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": -6.0,
+     "n": 19
+    },
+    {
+     "cohort": "Campaign 11 (Control), ~10 days after",
+     "days": null,
+     "change_pct": -8.27,
+     "n": 10
+    }
+   ],
+   "source": "MR080G (doi:10.83263/w056-8t76), Campaign 11 / CFT70; REL VO2PK only (other peak columns are shifted in some rows)",
+   "assumed": [
+    "tau_days (shared with strength; the data has one bed-rest length)"
+   ]
+  },
+  "resting_hr": {
+   "instrument": "wearable",
+   "code": "HRsupine",
+   "label": "Resting heart rate (supine)",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "bpm",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": 31.12,
+   "tau_days": 28.5,
+   "exercise_effect": 0.539,
+   "recovery_tau_days": 6.2,
+   "responder_sd": 14.047,
+   "noise_cv": 0.0573,
+   "baseline": {
+    "all": {
+     "mean": 70.0,
+     "sd": 10.0,
+     "n": 38,
+     "p5": 58.0,
+     "p95": 85.0
+    },
+    "F": {
+     "mean": 100.0,
+     "sd": null,
+     "n": 1,
+     "p5": 100.0,
+     "p95": 100.0
+    },
+    "M": {
+     "mean": 69.0,
+     "sd": 8.0,
+     "n": 37,
+     "p5": 58.0,
+     "p95": 83.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": 28.45,
+     "n": 10
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": 13.11,
+     "n": 19
+    },
+    {
+     "cohort": "Campaign 11 (Control), ~10 days after",
+     "days": null,
+     "change_pct": 0.38,
+     "n": 10
+    }
+   ],
+   "source": "MR080G (doi:10.83263/w056-8t76), Campaign 11 / CFT70; supine rest before the cycle test",
+   "assumed": [
+    "tau_days (shared with strength; the data has one bed-rest length)"
+   ]
+  },
+  "resting_sbp": {
+   "instrument": "wearable",
+   "code": "SBPsupine",
+   "label": "Resting systolic pressure",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "mmHg",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": 3.32,
+   "tau_days": 28.5,
+   "exercise_effect": 0.0,
+   "recovery_tau_days": 10.0,
+   "responder_sd": 1.569,
+   "noise_cv": 0.0849,
+   "baseline": {
+    "all": {
+     "mean": 121.0,
+     "sd": 8.0,
+     "n": 38,
+     "p5": 106.0,
+     "p95": 136.0
+    },
+    "F": {
+     "mean": 118.0,
+     "sd": null,
+     "n": 1,
+     "p5": 118.0,
+     "p95": 118.0
+    },
+    "M": {
+     "mean": 121.0,
+     "sd": 8.0,
+     "n": 37,
+     "p5": 106.0,
+     "p95": 136.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": 3.03,
+     "n": 10
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": 12.12,
+     "n": 19
+    },
+    {
+     "cohort": "Campaign 11 (Control), ~10 days after",
+     "days": null,
+     "change_pct": -7.42,
+     "n": 10
+    }
+   ],
+   "source": "MR080G (doi:10.83263/w056-8t76), Campaign 11 / CFT70; supine rest before the cycle test",
+   "assumed": [
+    "tau_days (shared with strength; the data has one bed-rest length)",
+    "recovery_tau_days"
+   ]
+  },
+  "resting_dbp": {
+   "instrument": "wearable",
+   "code": "DBPsupine",
+   "label": "Resting diastolic pressure",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "mmHg",
+   "decimals": 0,
+   "model": "saturating",
+   "loss_pct": 13.43,
+   "tau_days": 28.5,
+   "exercise_effect": 0.013,
+   "recovery_tau_days": 10.0,
+   "responder_sd": 8.139,
+   "noise_cv": 0.0789,
+   "baseline": {
+    "all": {
+     "mean": 76.0,
+     "sd": 6.0,
+     "n": 38,
+     "p5": 66.0,
+     "p95": 84.0
+    },
+    "F": {
+     "mean": 76.0,
+     "sd": null,
+     "n": 1,
+     "p5": 76.0,
+     "p95": 76.0
+    },
+    "M": {
+     "mean": 76.0,
+     "sd": 6.0,
+     "n": 37,
+     "p5": 66.0,
+     "p95": 84.0
+    }
+   },
+   "observed": [
+    {
+     "cohort": "Campaign 11 (Control)",
+     "days": 70,
+     "change_pct": 12.27,
+     "n": 10
+    },
+    {
+     "cohort": "Campaign 11 (Exercise)",
+     "days": 70,
+     "change_pct": 12.12,
+     "n": 19
+    },
+    {
+     "cohort": "Campaign 11 (Control), ~10 days after",
+     "days": null,
+     "change_pct": -1.25,
+     "n": 10
+    }
+   ],
+   "source": "MR080G (doi:10.83263/w056-8t76), Campaign 11 / CFT70; supine rest before the cycle test",
+   "assumed": [
+    "tau_days (shared with strength; the data has one bed-rest length)",
+    "recovery_tau_days"
+   ]
+  },
+  "spo2": {
+   "instrument": "wearable",
+   "code": null,
+   "label": "Blood oxygen saturation (SpO2)",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "%",
+   "decimals": 0,
+   "model": "constant",
+   "baseline": {
+    "all": {
+     "mean": 97.5,
+     "sd": 1.0,
+     "p5": 96,
+     "p95": 99
+    }
+   },
+   "noise_cv": 0.007,
+   "responder_sd": 0.0,
+   "source": "not in the data",
+   "assumed": [
+    "whole measure: typical healthy range 95-100 %, no trend; replace with a cited source"
+   ]
+  },
+  "hrv_rmssd": {
+   "instrument": "wearable",
+   "code": null,
+   "label": "Heart-rate variability (RMSSD)",
+   "region": null,
+   "muscle_keys": [],
+   "unit": "ms",
+   "decimals": 0,
+   "model": "constant",
+   "baseline": {
+    "all": {
+     "mean": 42,
+     "sd": 15,
+     "p5": 20,
+     "p95": 75
+    }
+   },
+   "noise_cv": 0.15,
+   "responder_sd": 0.0,
+   "source": "not in the data",
+   "assumed": [
+    "whole measure: typical adult range, no trend; replace with a cited source"
+   ]
+  }
+ }
+}

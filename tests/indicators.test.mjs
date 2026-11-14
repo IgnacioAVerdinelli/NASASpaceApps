@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { orderedIndicators, placeIndicator } from '../src/front/body-3d/indicators.js';
+import { orderedIndicators, placeIndicator, shortMuscleName, indicatorLinePath } from '../src/front/body-3d/indicators.js';
 
 test('only positive known intensities are shown, with selection first and values clamped', () => {
   const result = orderedIndicators({ quadriceps_l: 75, quadriceps_r: 101, calf_l: 0, calf_r: NaN, unknown: 50 }, 'quadriceps_l');
@@ -8,14 +8,36 @@ test('only positive known intensities are shown, with selection first and values
   assert.deepEqual(orderedIndicators({ quadriceps_l: -1 }, null), []);
 });
 
-test('labels stay inside the view and do not overlap', () => {
-  const occupied = [];
-  const left = placeIndicator(60, 80, 400, 300, 120, occupied);
-  assert.deepEqual(left, { left: 76, right: 196, top: 65, bottom: 95 });
-  const right = placeIndicator(340, 80, 400, 300, 120, occupied);
-  assert.deepEqual(right, { left: 204, right: 324, top: 65, bottom: 95 });
-  assert.equal(placeIndicator(200, 80, 400, 300, 120, occupied), null);
-  assert.equal(placeIndicator(100, 4, 400, 300, 120, occupied), null);
+test('labels use separate lanes outside the body and avoid overlap', () => {
+  const occupied = [], body = { left: 210, right: 390 };
+  const left = placeIndicator(250, 80, 600, 300, 144, occupied, body);
+  assert.equal(left.side, 'left');
+  assert.ok(left.right <= body.left - 24);
+  const right = placeIndicator(350, 80, 600, 300, 144, occupied, body);
+  assert.equal(right.side, 'right');
+  assert.ok(right.left >= body.right + 24);
+  const next = placeIndicator(250, 80, 600, 300, 144, occupied, body);
+  assert.equal(next.side, 'left');
+  assert.ok(next.bottom + 16 <= left.top || next.top >= left.bottom + 16);
+  assert.equal(placeIndicator(150, 80, 300, 300, 144, [], { left: 60, right: 240 }), null);
+});
+
+test('indicator offsets and bent paths vary while remaining outside the body', () => {
+  const body = { left: 210, right: 390 };
+  const first = placeIndicator(250, 130, 600, 300, 120, [], body, null, 0);
+  const second = placeIndicator(250, 130, 600, 300, 120, [], body, null, 2);
+  assert.notEqual(first.left, second.left);
+  assert.notEqual(first.top, second.top);
+  const path1 = indicatorLinePath(250, 130, first, 300, 0);
+  const path2 = indicatorLinePath(250, 130, second, 300, 2);
+  assert.notEqual(path1, path2);
+  assert.equal((path1.match(/ L /g) || []).length, 4);
+});
+
+test('short labels identify muscles and their anatomical side', () => {
+  assert.equal(shortMuscleName('quadriceps_l'), 'Quadriceps · L');
+  assert.equal(shortMuscleName('chest_muscles_r'), 'Chest · R');
+  assert.equal(shortMuscleName('diaphragm'), 'Diaphragm');
 });
 
 test('a front thigh indicator follows the model and disappears behind it', async () => {
@@ -35,9 +57,9 @@ test('a front thigh indicator follows the model and disappears behind it', async
   const camera = new THREE.PerspectiveCamera(35, 1, .01, 100);
   camera.position.set(0, .86, 3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
   const view = { skin, regions: data.regions, surfaceWeights: buildSurfaceWeights(skin.geometry, data.regions, SURFACE_KEYS.length), muscleMeshes: [], skeletonMeshes: [], skeletonGroup: { visible: false }, camera };
-  const makeElement = () => ({ children: [], style: { setProperty() {} }, classList: { toggle() {} }, setAttribute() {}, append(...nodes) { this.children.push(...nodes); }, appendChild(node) { this.children.push(node); }, remove() {} });
+  const makeElement = () => ({ children: [], style: { setProperty(key, value) { this[key] = value; } }, classList: { toggle() {}, add() {} }, setAttribute() {}, append(...nodes) { this.children.push(...nodes); }, appendChild(node) { this.children.push(node); }, remove() {} });
   const oldDocument = globalThis.document;
-  globalThis.document = { createElement: makeElement };
+  globalThis.document = { createElement: makeElement, createElementNS: makeElement };
   try {
     const container = makeElement(); container.clientWidth = 600; container.clientHeight = 600;
     const labels = createIndicatorLayer(container, view);
@@ -45,11 +67,31 @@ test('a front thigh indicator follows the model and disappears behind it', async
     for (let i = 0; i < 1000 && !labels.update(values, 1000 + i); i++) {}
     const overlay = container.children[0];
     assert.equal(overlay.children.length, 1, 'a visible thigh gets a label');
-    assert.equal(overlay.children[0].children[2].children[0].textContent, 'Quadriceps (Front Thigh) (L)');
+    assert.equal(overlay.children[0].children[2].children[0].textContent, 'Quadriceps · L');
     assert.equal(overlay.children[0].children[2].children[1].textContent, '75%');
     camera.position.set(0, .86, -3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
     for (let i = 0; i < 1000 && !labels.update(values, 2200 + i); i++) {}
     assert.equal(overlay.children[0].style.display, 'none', 'the label is hidden behind the body');
+    const calf = { layer: 'surface', scores: { calf_l: 75 }, selected: 'calf_l', isolated: false };
+    for (let i = 0; i < 1000 && !labels.update(calf, 4000 + i); i++) {}
+    const calfLabel = overlay.children.find(entry => entry.children[2].children[0].textContent === 'Calf · L');
+    assert.ok(calfLabel && calfLabel.style.display !== 'none', 'a visible calf has a label');
+    const calfY = parseFloat(calfLabel.style['--dot-y']);
+    assert.ok(calfY > 380 && calfY < 500, `calf dot should be on the lower leg, got ${calfY}`);
+    container.clientWidth = 565; container.clientHeight = 697;
+    camera.aspect = 565 / 697; camera.updateProjectionMatrix();
+    camera.position.set(0, .86, 3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
+    const many = { layer: 'surface', scores: { quadriceps_l: 75, quadriceps_r: 75, chest_muscles_l: 50, chest_muscles_r: 50 }, selected: 'quadriceps_l', isolated: false };
+    for (let i = 0; i < 1000 && !labels.update(many, 6000 + i); i++) {}
+    const visible = overlay.children.filter(entry => entry.style.display !== 'none');
+    assert.ok(visible.length >= 2, `expected multiple labels, got ${visible.length}`);
+    const { projectedBodyBounds } = await import('../src/front/body-3d/indicators.js');
+    const silhouette = projectedBodyBounds(skin, camera, 565, 697);
+    for (const entry of visible) {
+      const left = parseFloat(entry.style['--label-x']);
+      const right = left + parseFloat(entry.style['--label-width']);
+      assert.ok(right <= silhouette.left || left >= silhouette.right, 'label must stay outside body bounds');
+    }
     labels.dispose();
   } finally { globalThis.document = oldDocument; }
 });
@@ -71,9 +113,9 @@ test('muscle-layer labels use visible muscle geometry', async () => {
   const camera = new THREE.PerspectiveCamera(35, 1, .01, 100);
   camera.position.set(0, .86, 3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
   const view = { skin, regions: data.regions, muscleMeshes, skeletonMeshes: [], skeletonGroup: { visible: false }, camera };
-  const makeElement = () => ({ children: [], style: { setProperty() {} }, classList: { toggle() {} }, setAttribute() {}, append(...nodes) { this.children.push(...nodes); }, appendChild(node) { this.children.push(node); }, remove() {} });
+  const makeElement = () => ({ children: [], style: { setProperty(key, value) { this[key] = value; } }, classList: { toggle() {}, add() {} }, setAttribute() {}, append(...nodes) { this.children.push(...nodes); }, appendChild(node) { this.children.push(node); }, remove() {} });
   const oldDocument = globalThis.document;
-  globalThis.document = { createElement: makeElement };
+  globalThis.document = { createElement: makeElement, createElementNS: makeElement };
   try {
     const container = makeElement(); container.clientWidth = 600; container.clientHeight = 600;
     const labels = createIndicatorLayer(container, view);

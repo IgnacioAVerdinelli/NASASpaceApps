@@ -4,6 +4,34 @@ import { pickSurfaceRegion } from './surfaceWeights.js';
 
 const names = new Map(muscles.map(item => [item.key, item.label]));
 const samplesPerRegion = 64;
+const shortNames = {
+  abdominal_muscles: 'Abdominals', back_muscles: 'Back', calf: 'Calf', chest_muscles: 'Chest',
+  deltoid: 'Deltoid', diaphragm: 'Diaphragm', foot_muscles: 'Foot', forearm_muscles: 'Forearm',
+  gluteal: 'Glutes', hamstrings: 'Hamstrings', hand_muscles: 'Hand', iliopsoas: 'Hip flexor',
+  adductors: 'Inner thigh', intercostals: 'Intercostals', neck_muscles: 'Neck', pelvic_floor: 'Pelvic floor',
+  quadriceps: 'Quadriceps', rotator_cuff: 'Rotator cuff', shin_muscles: 'Shin',
+  shoulder_muscles: 'Shoulder', trapezius: 'Trapezius', upper_arm_muscles: 'Upper arm',
+};
+
+export function shortMuscleName(key) {
+  const side = key.endsWith('_l') ? ' · L' : key.endsWith('_r') ? ' · R' : '';
+  return (shortNames[key.replace(/_[lr]$/, '')] ?? names.get(key) ?? key) + side;
+}
+
+// Use the projected skin, including arms, to reserve the complete silhouette.
+export function projectedBodyBounds(skin, camera, width, height) {
+  const position = skin.geometry.attributes.position;
+  const point = new THREE.Vector3();
+  let left = Infinity, right = -Infinity;
+  for (let i = 0; i < position.count; i += 4) {
+    point.fromBufferAttribute(position, i).applyMatrix4(skin.matrixWorld).project(camera);
+    if (point.z < -1 || point.z > 1) continue;
+    const x = (point.x + 1) * width / 2;
+    left = Math.min(left, x); right = Math.max(right, x);
+  }
+  if (!Number.isFinite(left)) return { left: 0, right: width };
+  return { left: THREE.MathUtils.clamp(left, 0, width), right: THREE.MathUtils.clamp(right, 0, width) };
+}
 
 // Sample the original geometry so dots stay on the actual skin or muscle, in both models.
 function sampleFace(mesh, face) {
@@ -22,9 +50,29 @@ export function buildIndicatorSamples(view) {
   const faces = new Map(SURFACE_KEYS.map(key => [key, []]));
   view.regions.forEach((id, face) => { if (id) faces.get(SURFACE_KEYS[id - 1])?.push(face); });
   const surface = new Map();
+  const position = view.skin.geometry.attributes.position, index = view.skin.geometry.index;
+  const vertex = new THREE.Vector3();
   for (const [key, indices] of faces) {
-    const count = Math.min(samplesPerRegion, indices.length);
-    surface.set(key, Array.from({ length: count }, (_, i) => sampleFace(view.skin, indices[Math.floor((i + .5) * indices.length / count)])));
+    if (!indices.length) { surface.set(key, []); continue; }
+    // Equal samples along the body's height avoid overrepresenting dense foot triangles.
+    const heights = indices.map(face => {
+      let y = 0;
+      for (let corner = 0; corner < 3; corner++) {
+        const i = index ? index.getX(face * 3 + corner) : face * 3 + corner;
+        y += vertex.fromBufferAttribute(position, i).applyMatrix4(view.skin.matrixWorld).y / 3;
+      }
+      return y;
+    });
+    const min = Math.min(...heights), max = Math.max(...heights);
+    const bins = Array.from({ length: 16 }, () => []);
+    indices.forEach((face, i) => bins[Math.min(15, Math.floor((heights[i] - min) / (max - min || 1) * 16))].push(face));
+    const populated = bins.filter(bin => bin.length);
+    const selectedFaces = [];
+    for (const bin of populated) {
+      const count = Math.min(bin.length, Math.floor(samplesPerRegion / populated.length));
+      for (let i = 0; i < count; i++) selectedFaces.push(bin[Math.floor((i + .5) * bin.length / count)]);
+    }
+    surface.set(key, selectedFaces.map(face => sampleFace(view.skin, face)));
   }
   const muscle = new Map();
   for (const item of view.muscleMeshes) {
@@ -45,19 +93,39 @@ export function orderedIndicators(scores, selected) {
     .sort((a, b) => Number(b.selected) - Number(a.selected) || b.value - a.value || a.key.localeCompare(b.key));
 }
 
-// Pick a side that fits; preserve the point-to-label connection and reject overlaps.
-export function placeIndicator(x, y, width, height, labelWidth, occupied) {
-  const labelHeight = 30, gap = 16, margin = 4;
-  if (y - labelHeight / 2 < margin || y + labelHeight / 2 > height - margin) return null;
-  const choices = x < width / 2 ? [x + gap, x - gap - labelWidth] : [x - gap - labelWidth, x + gap];
-  for (const left of choices) {
-    const rect = { left, right: left + labelWidth, top: y - labelHeight / 2, bottom: y + labelHeight / 2 };
-    if (rect.left < margin || rect.right > width - margin) continue;
-    if (occupied.some(other => rect.left < other.right + 6 && rect.right + 6 > other.left && rect.top < other.bottom + 6 && rect.bottom + 6 > other.top)) continue;
-    occupied.push(rect);
-    return rect;
+// Keep cards in side lanes; move vertically to fit without covering the body.
+export function placeIndicator(x, y, width, height, labelWidth, occupied, body, previous = null, variation = 0) {
+  const labelHeight = 30, margin = 8, bodyGap = 24, separation = 16;
+  const preferred = x < (body.left + body.right) / 2 ? 'left' : 'right';
+  const sides = previous?.side ? [previous.side, previous.side === 'left' ? 'right' : 'left'] : [preferred, preferred === 'left' ? 'right' : 'left'];
+  for (const side of sides) {
+    const preferredGap = bodyGap + variation % 3 * 8;
+    for (const gap of [...new Set([preferredGap, bodyGap])]) {
+      const left = side === 'left' ? body.left - gap - labelWidth : body.right + gap;
+      if (left < margin || left + labelWidth > width - margin) continue;
+      const bias = [0, -8, 10, -14, 6][variation % 5];
+      const base = Math.max(margin, Math.min(height - labelHeight - margin, y - labelHeight / 2 + bias));
+      const positions = [base];
+      for (let step = 1; step <= 4; step++) positions.push(base - step * (labelHeight + separation), base + step * (labelHeight + separation));
+      for (const top of positions) {
+        const rect = { left, right: left + labelWidth, top, bottom: top + labelHeight, side };
+        if (top < margin || rect.bottom > height - margin) continue;
+        if (occupied.some(other => rect.left < other.right + separation && rect.right + separation > other.left && rect.top < other.bottom + separation && rect.bottom + separation > other.top)) continue;
+        occupied.push(rect);
+        return rect;
+      }
+    }
   }
   return null;
+}
+
+export function indicatorLinePath(x, y, rect, height, variation) {
+  const direction = rect.side === 'left' ? -1 : 1;
+  const lineEndX = rect.side === 'left' ? rect.right : rect.left;
+  const endY = rect.top + 15;
+  const stub = Math.min(8 + variation % 3 * 4, Math.abs(lineEndX - x) / 4);
+  const bendY = THREE.MathUtils.clamp(y + direction * (6 + variation % 4 * 4), 4, height - 4);
+  return `M ${x} ${y} L ${x + direction * stub} ${y} L ${x + direction * stub * 2} ${bendY} L ${lineEndX - direction * stub} ${endY} L ${lineEndX} ${endY}`;
 }
 
 export function createIndicatorLayer(container, view) {
@@ -65,7 +133,8 @@ export function createIndicatorLayer(container, view) {
   overlay.className = 'atlas-indicators';
   overlay.setAttribute('aria-hidden', 'true');
   container.appendChild(overlay);
-  const entries = new Map();
+  const entries = new Map(), previousPlacements = new Map(), previousAnchors = new Map();
+  const measure = document.createElement('canvas').getContext?.('2d');
   const raycaster = new THREE.Raycaster();
   const samples = buildIndicatorSamples(view);
   // The model is static; bounding boxes rule out almost all meshes before triangle raycasts.
@@ -93,10 +162,10 @@ export function createIndicatorLayer(container, view) {
       const camera = view.camera.clone(); camera.updateMatrixWorld();
       const targets = layer === 'surface' ? [view.skin] : view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh);
       if (layer === 'muscles' && view.skeletonGroup.visible) targets.push(...view.skeletonMeshes.filter(mesh => mesh.visible));
-      job = { camera, targets, ordered: orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set() };
+      job = { camera, targets, ordered: orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
       lastValues = { layer, isolated, scores, selected, width, height };
     }
-    const { camera, targets, ordered, occupied, seen } = job;
+    const { camera, targets, ordered, occupied, seen, body } = job;
     const started = performance.now();
     while (job.index < ordered.length && performance.now() - started < 6) {
       const item = ordered[job.index++];
@@ -114,16 +183,28 @@ export function createIndicatorLayer(container, view) {
         toCamera.copy(camera.position).sub(point).normalize();
         const facing = normal.dot(toCamera);
         if (facing <= .15) continue;
-        ranked.push({ sample, facing });
+        ranked.push({ sample, facing, x: projected.x, y: projected.y });
       }
-      ranked.sort((a, b) => b.facing - a.facing);
+      if (!ranked.length) continue;
+      const median = axis => ranked.map(candidate => candidate[axis]).sort((a, b) => a - b)[Math.floor(ranked.length / 2)];
+      const centerX = median('x'), centerY = median('y');
+      const previousAnchor = previousAnchors.get(item.key);
+      for (const candidate of ranked) {
+        const centerDistance = (candidate.x - centerX) ** 2 + (candidate.y - centerY) ** 2;
+        const previousDistance = previousAnchor ? (candidate.x - previousAnchor.x) ** 2 + (candidate.y - previousAnchor.y) ** 2 : centerDistance;
+        candidate.rank = centerDistance * .8 + previousDistance * .2 - candidate.facing * .002;
+      }
+      ranked.sort((a, b) => a.rank - b.rank);
       let visiblePoint = null, rect = null;
-      const labelWidth = Math.min(160, Math.max(96, width * .34));
+      const shortName = shortMuscleName(item.key);
+      const variation = [...item.key].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0);
+      if (measure) measure.font = `600 ${width <= 500 ? 10 : 11}px system-ui, sans-serif`;
+      const labelWidth = Math.max(112, Math.ceil((measure?.measureText(shortName).width ?? shortName.length * 6.2) + 50));
       for (const { sample } of ranked.slice(0, 3)) {
         point.copy(sample.point).applyMatrix4(sample.mesh.matrixWorld);
         projected.copy(point).project(camera);
         const candidateX = (projected.x + 1) * width / 2, candidateY = (1 - projected.y) * height / 2;
-        const available = placeIndicator(candidateX, candidateY, width, height, labelWidth, occupied.slice());
+        const available = placeIndicator(candidateX, candidateY, width, height, labelWidth, occupied.slice(), body, previousPlacements.get(item.key), variation);
         if (!available) continue;
         toCamera.copy(point).sub(camera.position);
         const distance = toCamera.length();
@@ -137,6 +218,7 @@ export function createIndicatorLayer(container, view) {
           if (SURFACE_KEYS[id - 1] !== item.key) continue;
         } else if (hit.object !== sample.mesh) continue;
         visiblePoint = point.clone(); rect = available;
+        previousAnchors.set(item.key, { x: projected.x, y: projected.y });
         occupied.push(rect);
         break;
       }
@@ -147,19 +229,23 @@ export function createIndicatorLayer(container, view) {
       if (!entry) {
         entry = document.createElement('div'); entry.className = 'atlas-indicator';
         const dot = document.createElement('span'); dot.className = 'atlas-indicator-dot';
-        const line = document.createElement('span'); line.className = 'atlas-indicator-line';
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        line.classList.add('atlas-indicator-line');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        line.appendChild(path);
         const text = document.createElement('span'); text.className = 'atlas-indicator-text';
         const name = document.createElement('span'); name.className = 'atlas-indicator-name';
         const value = document.createElement('strong'); value.className = 'atlas-indicator-value';
         text.append(name, value);
         entry.append(dot, line, text); overlay.appendChild(entry); entries.set(item.key, entry);
       }
-      entry.children[2].children[0].textContent = item.label;
+      entry.children[2].children[0].textContent = shortName;
       entry.children[2].children[1].textContent = `${Math.round(item.value)}%`;
       entry.style.setProperty('--dot-x', `${x}px`); entry.style.setProperty('--dot-y', `${y}px`);
       entry.style.setProperty('--label-x', `${rect.left}px`); entry.style.setProperty('--label-y', `${rect.top}px`);
       entry.style.setProperty('--label-width', `${labelWidth}px`);
-      entry.classList.toggle('atlas-indicator-left', rect.left < x);
+      entry.children[1].children[0].setAttribute('d', indicatorLinePath(x, y, rect, height, variation));
+      previousPlacements.set(item.key, rect);
       entry.style.display = '';
       seen.add(item.key);
     }

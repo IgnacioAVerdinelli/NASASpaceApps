@@ -14,7 +14,7 @@ export function App({ dashboard, stale = false }) {
   return <><main id="top">
     {stale && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
     <section className="overview" aria-label="Body overview">
-      <div className="body-panel"><div className="body-stage"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="model-canvas"><BodyViewer body={body} layer={layer} scores={scores} selected={selected} viewRequest={viewRequest} framing={1.22} showIndicators/></div></div></div>
+      <div className="body-panel"><div className="body-stage"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="model-canvas"><BodyViewer body={body} layer={layer} scores={scores} selected={selected} viewRequest={viewRequest} framing={1.1} showIndicators/></div></div></div>
       <div className="summary"><div className="summary-content"><h2>{summary.title}</h2><p className="summary-intro">{summary.description}</p>
         <div className="insight-list" aria-label="Areas">{summary.items.map(item => { const active = selected && item.muscleKeys.includes(selected); return <div key={item.id} className={'insight-row'+(active?' is-selected':'')}><span className="insight-marker"/><span className="insight-main"><span className="insight-name">{item.title}</span><span className="insight-detail">{item.description}</span></span><span className="insight-change">{item.changePercent === null ? 'No data' : `${item.changePercent > 0 ? '+' : ''}${item.changePercent}%`}</span></div>; })}</div>
         {muscle && <p className="selected-detail"><strong>{muscle.label}</strong><br/>Intensity: {value == null ? 'No data' : `${value} / 100`}</p>}

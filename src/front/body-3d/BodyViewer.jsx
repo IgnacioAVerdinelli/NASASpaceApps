@@ -10,6 +10,7 @@ import femaleRegions from './assets/surface-female.json';
 import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, intensityColor, visibleSystems } from './anatomy.js';
 import { buildSurfaceWeights, pickSurfaceRegion } from './surfaceWeights.js';
 import { softenMaleGroin } from './surfaceShape.js';
+import { addSurfaceEyes } from './surfaceEyes.js';
 import { createIndicatorLayer, orderedIndicators } from './indicators.js';
 import './indicators.css';
 
@@ -200,6 +201,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         geometry.setAttribute('paintStrength', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
         (Array.isArray(skin.material) ? skin.material : [skin.material]).forEach(material => originalMaterials.add(material));
         skin.material = surfaceMaterial();
+        addSurfaceEyes(root, skinGroup);
         const muscleMeshes = [];
         const sourceMuscleMeshes = [];
         muscleGroup.traverse(mesh => { if (mesh.isMesh) sourceMuscleMeshes.push(mesh); });

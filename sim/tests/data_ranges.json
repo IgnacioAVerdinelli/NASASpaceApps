@@ -1,0 +1,1067 @@
+{
+ "_about": "Ranges derived straight from the raw NLSP CSVs by a separate verification script that is not in the repository, independently of fit_params.py. The MR079G files it read are in data/nlsp (CFT70) and sim/fit/source_data (the other studies). baseline = pre-bed-rest values; change_pct = first post-bed-rest test vs the subject's pre mean, per cohort. 'any_post' includes later post tests (recovery days). Units as in the files.",
+ "measures": {
+  "knee_extension_60": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 46.0,
+    "max": 347.0,
+    "p5": 75.5,
+    "p95": 246.7,
+    "median": 157.0,
+    "n_subjects": 152,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -73.47,
+    "max": 17.2,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 12,
+      "min": -33.28,
+      "max": 9.45,
+      "median": -4.6
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -44.72,
+      "max": -9.11,
+      "median": -21.07
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -22.27,
+      "max": 15.28,
+      "median": -6.87
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -27.37,
+      "max": 0.12,
+      "median": -15.31
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": -51.73,
+      "max": 17.2,
+      "median": -7.66
+     },
+     "Campaign 11 (Control)": {
+      "n": 6,
+      "min": -30.17,
+      "max": -20.41,
+      "median": -24.17
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 8,
+      "min": -20.11,
+      "max": 3.31,
+      "median": -8.77
+     },
+     "Campaign 3 (none)": {
+      "n": 23,
+      "min": -63.14,
+      "max": 0.44,
+      "median": -22.4
+     },
+     "HDT30 (none)": {
+      "n": 12,
+      "min": -29.67,
+      "max": -4.47,
+      "median": -16.24
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -73.47,
+      "max": 9.4,
+      "median": -27.24
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     30.0,
+     250.0
+    ]
+   ]
+  },
+  "knee_flexion_60": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 24.4,
+    "max": 192.5,
+    "p5": 41.1,
+    "p95": 130.4,
+    "median": 85.4,
+    "n_subjects": 152,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -59.79,
+    "max": 53.59,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 12,
+      "min": -22.14,
+      "max": 14.21,
+      "median": -8.63
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -27.67,
+      "max": 13.46,
+      "median": -6.11
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -20.59,
+      "max": 36.23,
+      "median": 4.36
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -16.98,
+      "max": 9.16,
+      "median": -7.01
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": -21.38,
+      "max": 38.97,
+      "median": 21.57
+     },
+     "Campaign 11 (Control)": {
+      "n": 6,
+      "min": -35.06,
+      "max": 2.16,
+      "median": -5.45
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 8,
+      "min": -10.66,
+      "max": 26.21,
+      "median": 8.49
+     },
+     "Campaign 3 (none)": {
+      "n": 23,
+      "min": -56.71,
+      "max": 1.95,
+      "median": -20.54
+     },
+     "HDT30 (none)": {
+      "n": 12,
+      "min": -20.74,
+      "max": 9.6,
+      "median": -3.52
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -41.46,
+      "max": 6.69,
+      "median": -17.18
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     20.0,
+     150.0
+    ],
+    [
+     30.0,
+     250.0
+    ]
+   ]
+  },
+  "ankle_plantarflexion_30": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 14.5,
+    "max": 193.0,
+    "p5": 65.0,
+    "p95": 151.3,
+    "median": 105.3,
+    "n_subjects": 152,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -78.28,
+    "max": 60.37,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 11,
+      "min": -17.81,
+      "max": 3.73,
+      "median": -1.33
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -44.97,
+      "max": 8.8,
+      "median": -17.96
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -30.89,
+      "max": 10.69,
+      "median": -8.57
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -38.34,
+      "max": 22.68,
+      "median": -6.12
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": -44.94,
+      "max": -29.32,
+      "median": -39.55
+     },
+     "Campaign 11 (Control)": {
+      "n": 6,
+      "min": -42.36,
+      "max": -1.35,
+      "median": -21.48
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 8,
+      "min": -31.47,
+      "max": -3.67,
+      "median": -18.93
+     },
+     "Campaign 3 (none)": {
+      "n": 23,
+      "min": -71.04,
+      "max": 19.18,
+      "median": -26.98
+     },
+     "HDT30 (none)": {
+      "n": 12,
+      "min": -38.17,
+      "max": 14.15,
+      "median": -21.46
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -58.32,
+      "max": 60.37,
+      "median": -25.35
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     20.0,
+     150.0
+    ],
+    [
+     20.0,
+     200.0
+    ]
+   ]
+  },
+  "ankle_dorsiflexion_30": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 9.0,
+    "max": 66.0,
+    "p5": 18.4,
+    "p95": 44.6,
+    "median": 30.4,
+    "n_subjects": 137,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -49.95,
+    "max": 41.34,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 11,
+      "min": -6.71,
+      "max": 11.6,
+      "median": -1.65
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -12.38,
+      "max": 3.23,
+      "median": -7.78
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -22.78,
+      "max": 12.16,
+      "median": -1.16
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -10.61,
+      "max": 27.06,
+      "median": 4.58
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": 6.19,
+      "max": 20.4,
+      "median": 11.38
+     },
+     "Campaign 3 (none)": {
+      "n": 23,
+      "min": -40.84,
+      "max": 27.66,
+      "median": -5.88
+     },
+     "HDT30 (none)": {
+      "n": 12,
+      "min": -33.33,
+      "max": 34.4,
+      "median": 13.12
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -49.95,
+      "max": 19.79,
+      "median": -2.3
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     0.0,
+     50.0
+    ],
+    [
+     10.0,
+     100.0
+    ]
+   ]
+  },
+  "trunk_extension_60": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 67.9,
+    "max": 678.8,
+    "p5": 112.4,
+    "p95": 515.7,
+    "median": 323.7,
+    "n_subjects": 143,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -47.28,
+    "max": 59.56,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 7,
+      "min": -14.06,
+      "max": 5.81,
+      "median": -4.91
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -28.06,
+      "max": 9.33,
+      "median": -8.55
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -27.8,
+      "max": 25.84,
+      "median": -7.79
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -24.63,
+      "max": 16.17,
+      "median": -7.32
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": -31.35,
+      "max": -5.35,
+      "median": -20.19
+     },
+     "Campaign 11 (Control)": {
+      "n": 6,
+      "min": -30.54,
+      "max": 3.76,
+      "median": -19.18
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 8,
+      "min": -31.66,
+      "max": 27.72,
+      "median": -4.41
+     },
+     "Campaign 3 (none)": {
+      "n": 18,
+      "min": -47.28,
+      "max": 2.04,
+      "median": -18.84
+     },
+     "HDT30 (none)": {
+      "n": 11,
+      "min": -36.77,
+      "max": 14.24,
+      "median": -1.85
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -37.55,
+      "max": 59.56,
+      "median": -14.92
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     50.0,
+     300.0
+    ]
+   ]
+  },
+  "trunk_flexion_60": {
+   "unit": "ft-lb",
+   "source": "MR079G: HDT30, Campaign 1, Campaign 3, AG Pilot, MEDES, Campaign 11 (+CFT70, Campaign 17); columns Value/Measured_ft/lb/Measured_Value, Test_Phase, BR_Day",
+   "baseline": {
+    "min": 40.6,
+    "max": 393.9,
+    "p5": 67.5,
+    "p95": 251.3,
+    "median": 164.9,
+    "n_subjects": 143,
+    "by_sex": {}
+   },
+   "change_pct": {
+    "min": -54.07,
+    "max": 85.53,
+    "by_cohort": {
+     "AG Pilot (none)": {
+      "n": 7,
+      "min": -13.46,
+      "max": 15.58,
+      "median": -2.07
+     },
+     "CFT70 (Control)": {
+      "n": 11,
+      "min": -29.99,
+      "max": 48.11,
+      "median": -1.45
+     },
+     "CFT70 (Exercise)": {
+      "n": 18,
+      "min": -39.19,
+      "max": 36.92,
+      "median": -6.55
+     },
+     "CFT70 (Fly)": {
+      "n": 8,
+      "min": -23.36,
+      "max": 8.75,
+      "median": -12.73
+     },
+     "Campaign 1 (none)": {
+      "n": 3,
+      "min": -25.15,
+      "max": 34.51,
+      "median": 9.08
+     },
+     "Campaign 11 (Control)": {
+      "n": 6,
+      "min": -26.35,
+      "max": 85.53,
+      "median": 8.83
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 8,
+      "min": -54.07,
+      "max": 17.12,
+      "median": -5.66
+     },
+     "Campaign 3 (none)": {
+      "n": 18,
+      "min": -45.53,
+      "max": 18.12,
+      "median": -6.16
+     },
+     "HDT30 (none)": {
+      "n": 11,
+      "min": -29.88,
+      "max": 35.16,
+      "median": 2.33
+     },
+     "MEDES (none)": {
+      "n": 24,
+      "min": -46.24,
+      "max": 15.26,
+      "median": -11.22
+     }
+    }
+   },
+   "acceptable_range_in_files": [
+    [
+     50.0,
+     300.0
+    ]
+   ]
+  },
+  "hip_bmd": {
+   "unit": "g/cm²",
+   "source": "MR035G: Campaign 1, Campaign 3, MEDES, AG Pilot; columns HTOT_BMD, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 0.798,
+    "max": 1.27,
+    "p5": 0.857,
+    "p95": 1.158,
+    "median": 0.983,
+    "n_subjects": 74,
+    "by_sex": {
+     "F": {
+      "min": 0.822,
+      "max": 1.102,
+      "median": 0.939,
+      "n": 35
+     },
+     "M": {
+      "min": 0.886,
+      "max": 1.27,
+      "median": 1.064,
+      "n": 39
+     }
+    }
+   },
+   "change_pct": {
+    "min": -6.96,
+    "max": 1.19,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -1.65,
+      "max": 0.21,
+      "median": -0.38
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -3.91,
+      "max": 1.19,
+      "median": -3.73
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -5.93,
+      "max": -0.15,
+      "median": -2.72
+     },
+     "MEDES": {
+      "n": 24,
+      "min": -6.96,
+      "max": 0.19,
+      "median": -3.48
+     }
+    }
+   }
+  },
+  "spine_bmd": {
+   "unit": "g/cm²",
+   "source": "MR035G: Campaign 1, Campaign 3, MEDES, AG Pilot; columns TOT_BMD, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 0.877,
+    "max": 1.197,
+    "p5": 0.904,
+    "p95": 1.16,
+    "median": 1.028,
+    "n_subjects": 74,
+    "by_sex": {
+     "F": {
+      "min": 0.88,
+      "max": 1.173,
+      "median": 1.026,
+      "n": 35
+     },
+     "M": {
+      "min": 0.91,
+      "max": 1.193,
+      "median": 1.034,
+      "n": 39
+     }
+    }
+   },
+   "change_pct": {
+    "min": -5.98,
+    "max": 5.76,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -2.94,
+      "max": 1.83,
+      "median": -0.48
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -2.75,
+      "max": -1.17,
+      "median": -2.34
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -5.98,
+      "max": 5.76,
+      "median": -1.03
+     },
+     "MEDES": {
+      "n": 24,
+      "min": -5.08,
+      "max": 5.66,
+      "median": 0.7
+     }
+    }
+   }
+  },
+  "heel_bmd": {
+   "unit": "g/cm²",
+   "source": "MR035G: Campaign 1, Campaign 3, AG Pilot; columns NET_AVG_BMD, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 0.474,
+    "max": 0.864,
+    "p5": 0.516,
+    "p95": 0.797,
+    "median": 0.665,
+    "n_subjects": 50,
+    "by_sex": {},
+    "note": "one heel scan reads 0.0 in MR035G Campaign 3 (file artifact); per-subject minimum used"
+   },
+   "change_pct": {
+    "min": -19.62,
+    "max": 35.11,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -2.76,
+      "max": 35.11,
+      "median": 0.38
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -3.2,
+      "max": -1.22,
+      "median": -2.01
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -19.62,
+      "max": 21.55,
+      "median": -0.98
+     }
+    }
+   }
+  },
+  "lean_legs": {
+   "unit": "g",
+   "source": "MR035G: Campaign 1, Campaign 3, AG Pilot, MEDES; columns L_LEG_LEAN+R_LEG_LEAN, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 9510.0,
+    "max": 26814.0,
+    "p5": 10755.0,
+    "p95": 24272.0,
+    "median": 17442.0,
+    "n_subjects": 74,
+    "by_sex": {
+     "F": {
+      "min": 9515.0,
+      "max": 18127.0,
+      "median": 13646.0,
+      "n": 35
+     },
+     "M": {
+      "min": 15028.0,
+      "max": 26748.0,
+      "median": 21736.0,
+      "n": 39
+     }
+    }
+   },
+   "change_pct": {
+    "min": -16.99,
+    "max": 1.19,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -5.0,
+      "max": 0.09,
+      "median": -2.78
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -11.55,
+      "max": 0.16,
+      "median": -0.53
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -11.71,
+      "max": 1.19,
+      "median": -5.91
+     },
+     "MEDES": {
+      "n": 24,
+      "min": -16.99,
+      "max": -1.98,
+      "median": -7.88
+     }
+    }
+   }
+  },
+  "lean_arms": {
+   "unit": "g",
+   "source": "MR035G: Campaign 1, Campaign 3, AG Pilot, MEDES; columns LARM_LEAN+RARM_LEAN, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 2876.0,
+    "max": 11500.0,
+    "p5": 3220.0,
+    "p95": 9458.0,
+    "median": 6436.0,
+    "n_subjects": 74,
+    "by_sex": {
+     "F": {
+      "min": 2973.0,
+      "max": 5719.0,
+      "median": 4174.0,
+      "n": 35
+     },
+     "M": {
+      "min": 5950.0,
+      "max": 11118.0,
+      "median": 8009.0,
+      "n": 39
+     }
+    }
+   },
+   "change_pct": {
+    "min": -13.8,
+    "max": 7.63,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -5.23,
+      "max": 4.89,
+      "median": -0.3
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -6.94,
+      "max": -0.38,
+      "median": -1.31
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -6.99,
+      "max": 7.63,
+      "median": 1.39
+     },
+     "MEDES": {
+      "n": 24,
+      "min": -13.8,
+      "max": 7.56,
+      "median": -0.69
+     }
+    }
+   }
+  },
+  "lean_trunk": {
+   "unit": "g",
+   "source": "MR035G: Campaign 1, Campaign 3, AG Pilot, MEDES; columns TRUNK_LEAN, TEST_PHASE, SCAN_DATE",
+   "baseline": {
+    "min": 16397.0,
+    "max": 36551.0,
+    "p5": 17736.0,
+    "p95": 33008.0,
+    "median": 26171.0,
+    "n_subjects": 74,
+    "by_sex": {
+     "F": {
+      "min": 16460.0,
+      "max": 27091.0,
+      "median": 20722.0,
+      "n": 35
+     },
+     "M": {
+      "min": 25594.0,
+      "max": 36053.0,
+      "median": 29883.0,
+      "n": 39
+     }
+    }
+   },
+   "change_pct": {
+    "min": -11.05,
+    "max": 7.27,
+    "by_cohort": {
+     "AG Pilot": {
+      "n": 15,
+      "min": -3.12,
+      "max": 6.72,
+      "median": -0.98
+     },
+     "Campaign 1": {
+      "n": 3,
+      "min": -2.19,
+      "max": -0.67,
+      "median": -1.63
+     },
+     "Campaign 3": {
+      "n": 26,
+      "min": -11.05,
+      "max": 7.27,
+      "median": -0.42
+     },
+     "MEDES": {
+      "n": 24,
+      "min": -8.59,
+      "max": 5.45,
+      "median": -1.09
+     }
+    }
+   }
+  },
+  "vo2peak": {
+   "unit": "ml/kg/min",
+   "source": "MR080G CFT70 (Campaign 11): column REL VO2PK, TEST=PRE/POST1/POST2/SCREEN",
+   "baseline": {
+    "min": 15.3,
+    "max": 54.6,
+    "p5": 31.6,
+    "p95": 50.2,
+    "median": 40.8,
+    "n_subjects": 38,
+    "by_sex": {
+     "F": {
+      "min": 33.0,
+      "max": 33.0,
+      "median": 33.0,
+      "n": 1
+     },
+     "M": {
+      "min": 29.2,
+      "max": 53.6,
+      "median": 41.1,
+      "n": 37
+     }
+    },
+    "note": "includes Campaign 3 and Campaign 1 peak cycle tests (lower-fitness volunteers) besides CFT70"
+   },
+   "change_pct": {
+    "min": -44.5,
+    "max": 10.13,
+    "by_cohort": {
+     "Campaign 11 (Control)": {
+      "n": 10,
+      "min": -38.06,
+      "max": -2.5,
+      "median": -20.29
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 19,
+      "min": -14.68,
+      "max": 10.13,
+      "median": -6.0
+     },
+     "Campaign 3 (peak cycle, VO2 ml/kg/min at Peak stage)": {
+      "n": 15,
+      "min": -44.5,
+      "max": -16.99,
+      "median": -30.83
+     }
+    }
+   }
+  },
+  "resting_hr": {
+   "unit": "bpm",
+   "source": "MR080G CFT70 (Campaign 11): column HRsupine, TEST=PRE/POST1/POST2/SCREEN",
+   "baseline": {
+    "min": 51.0,
+    "max": 107.0,
+    "p5": 58.0,
+    "p95": 85.0,
+    "median": 68.0,
+    "n_subjects": 38,
+    "by_sex": {
+     "F": {
+      "min": 100.0,
+      "max": 100.0,
+      "median": 100.0,
+      "n": 1
+     },
+     "M": {
+      "min": 54.0,
+      "max": 88.0,
+      "median": 68.0,
+      "n": 37
+     }
+    }
+   },
+   "change_pct": {
+    "min": -12.5,
+    "max": 48.21,
+    "by_cohort": {
+     "Campaign 11 (Control)": {
+      "n": 10,
+      "min": 9.09,
+      "max": 40.62,
+      "median": 28.45
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 19,
+      "min": -12.5,
+      "max": 36.23,
+      "median": 13.11
+     }
+    }
+   }
+  },
+  "resting_sbp": {
+   "unit": "mmHg",
+   "source": "MR080G CFT70 (Campaign 11): column SBPsupine, TEST=PRE/POST1/POST2/SCREEN",
+   "baseline": {
+    "min": 100.0,
+    "max": 140.0,
+    "p5": 106.0,
+    "p95": 136.0,
+    "median": 122.0,
+    "n_subjects": 38,
+    "by_sex": {
+     "F": {
+      "min": 118.0,
+      "max": 118.0,
+      "median": 118.0,
+      "n": 1
+     },
+     "M": {
+      "min": 102.0,
+      "max": 138.0,
+      "median": 122.0,
+      "n": 37
+     }
+    }
+   },
+   "change_pct": {
+    "min": -3.39,
+    "max": 30.91,
+    "by_cohort": {
+     "Campaign 11 (Control)": {
+      "n": 10,
+      "min": -3.39,
+      "max": 13.24,
+      "median": 3.03
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 19,
+      "min": 1.64,
+      "max": 30.91,
+      "median": 12.12
+     }
+    }
+   }
+  },
+  "resting_dbp": {
+   "unit": "mmHg",
+   "source": "MR080G CFT70 (Campaign 11): column DBPsupine, TEST=PRE/POST1/POST2/SCREEN",
+   "baseline": {
+    "min": 58.0,
+    "max": 94.0,
+    "p5": 66.0,
+    "p95": 84.0,
+    "median": 78.0,
+    "n_subjects": 38,
+    "by_sex": {
+     "F": {
+      "min": 76.0,
+      "max": 76.0,
+      "median": 76.0,
+      "n": 1
+     },
+     "M": {
+      "min": 64.0,
+      "max": 86.0,
+      "median": 78.0,
+      "n": 37
+     }
+    }
+   },
+   "change_pct": {
+    "min": -11.63,
+    "max": 41.18,
+    "by_cohort": {
+     "Campaign 11 (Control)": {
+      "n": 10,
+      "min": -2.5,
+      "max": 27.91,
+      "median": 12.27
+     },
+     "Campaign 11 (Exercise)": {
+      "n": 19,
+      "min": -11.63,
+      "max": 41.18,
+      "median": 12.12
+     }
+    }
+   }
+  }
+ },
+ "cft70_demographics": {
+  "age": {
+   "n": 38,
+   "min": 24.0,
+   "max": 55.0,
+   "p5": 25.0,
+   "p95": 46.0,
+   "median": 33.0,
+   "mean": 33.0
+  },
+  "weight_kg": {
+   "n": 38,
+   "min": 51.1,
+   "max": 98.5,
+   "p5": 61.6,
+   "p95": 93.3,
+   "median": 75.8,
+   "mean": 76.8
+  },
+  "sex_counts": {
+   "M": 37,
+   "F": 1
+  },
+  "hr_seated": {
+   "n": 38,
+   "min": 54.0,
+   "max": 116.0,
+   "p5": 59.0,
+   "p95": 107.0,
+   "median": 74.0,
+   "mean": 76.0
+  },
+  "hr_peak": {
+   "n": 38,
+   "min": 2.0,
+   "max": 204.0,
+   "p5": 3.0,
+   "p95": 199.0,
+   "median": 185.0,
+   "mean": 167.0
+  },
+  "sbp_peak": {
+   "n": 38,
+   "min": 148.0,
+   "max": 212.0,
+   "p5": 157.0,
+   "p95": 205.0,
+   "median": 175.0,
+   "mean": 178.0
+  }
+ }
+}

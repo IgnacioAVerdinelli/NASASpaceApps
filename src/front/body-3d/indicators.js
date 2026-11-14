@@ -113,7 +113,7 @@ export function placeIndicator(x, y, width, height, labelWidth, occupied, body, 
       if (left < margin || left + labelWidth > width - margin) continue;
       const bias = [0, -8, 10, -14, 6][variation % 5];
       const base = Math.max(margin, Math.min(height - labelHeight - margin, y - labelHeight / 2 + bias));
-      const positions = [base];
+      const positions = previous?.side === side && Math.abs(previous.top - base) < 24 ? [previous.top, base] : [base];
       for (let step = 1; step <= 4; step++) positions.push(base - step * (labelHeight + separation), base + step * (labelHeight + separation));
       for (const top of positions) {
         const rect = { left, right: left + labelWidth, top, bottom: top + labelHeight, side };
@@ -142,7 +142,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
   if (!checkpoints) overlay.setAttribute('aria-hidden', 'true');
   else overlay.classList.add('atlas-checkpoints');
   container.appendChild(overlay);
-  const entries = new Map(), previousPlacements = new Map(), previousAnchors = new Map();
+  const entries = new Map(), previousPlacements = new Map(), previousAnchors = new Map(), display = new Map();
   const measure = document.createElement('canvas').getContext?.('2d');
   const raycaster = new THREE.Raycaster();
   const samples = buildIndicatorSamples(view);
@@ -154,18 +154,56 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
   }
   const point = new THREE.Vector3(), normal = new THREE.Vector3(), toCamera = new THREE.Vector3();
   const projected = new THREE.Vector3(), normalMatrix = new THREE.Matrix3(), boxHit = new THREE.Vector3();
-  let lastUpdate = -Infinity, job = null, lastValues = null, currentValues = null;
+  let lastUpdate = -Infinity, lastFrame = null, job = null, lastValues = null, currentValues = null;
 
-  function update(values, now) {
+  // Projection is cheap and follows every camera frame; visibility checks stay budgeted below.
+  function projectEntries(now, width, height, reducedMotion) {
+    const delta = lastFrame === null ? 0 : Math.max(0, Math.min(100, now - lastFrame));
+    lastFrame = now;
+    view.camera.updateMatrixWorld();
+    for (const [key, state] of display) {
+      const entry = entries.get(key), sample = state.sample;
+      point.copy(sample.point).applyMatrix4(sample.mesh.matrixWorld);
+      projected.copy(point).project(view.camera);
+      normalMatrix.getNormalMatrix(sample.mesh.matrixWorld);
+      normal.copy(sample.normal).applyNormalMatrix(normalMatrix).normalize();
+      toCamera.copy(view.camera.position).sub(point).normalize();
+      if (!sample.mesh.visible || projected.z < -1 || projected.z > 1 || Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1 || normal.dot(toCamera) <= 0) {
+        entry.style.display = 'none';
+        continue;
+      }
+      const x = (projected.x + 1) * width / 2, y = (1 - projected.y) * height / 2;
+      entry.style.display = '';
+      if (checkpoints) {
+        entry.style.left = `${x}px`; entry.style.top = `${y}px`;
+      } else {
+        const amount = reducedMotion ? 1 : 1 - Math.exp(-delta / 100);
+        state.current.left += (state.rect.left - state.current.left) * amount;
+        state.current.top += (state.rect.top - state.current.top) * amount;
+        // A side change snaps to the new lane so the label never travels across the body.
+        if (state.current.side !== state.rect.side) state.current = { ...state.rect };
+        const rect = { ...state.current, right: state.current.left + state.labelWidth };
+        entry.style.setProperty('--dot-x', `${x}px`); entry.style.setProperty('--dot-y', `${y}px`);
+        entry.style.setProperty('--label-x', `${rect.left}px`); entry.style.setProperty('--label-y', `${rect.top}px`);
+        entry.style.setProperty('--label-width', `${state.labelWidth}px`);
+        entry.children[1].children[0].setAttribute('d', indicatorLinePath(x, y, rect, height, state.variation));
+      }
+    }
+  }
+
+  function update(values, now, reducedMotion = false) {
     currentValues = values;
     const { layer, isolated, scores, selected, checkpointItems } = values;
     const width = container.clientWidth, height = container.clientHeight;
     const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.width !== width || lastValues.height !== height;
     if (layer !== 'surface' && layer !== 'muscles' || width < 60 || height < 60) {
       for (const entry of entries.values()) entry.style.display = 'none';
+      display.clear(); previousAnchors.clear(); previousPlacements.clear();
       job = null; lastValues = { layer, isolated, scores, selected, width, height };
       return true;
     }
+    if (lastValues && lastValues.layer !== layer) { display.clear(); previousAnchors.clear(); previousPlacements.clear(); for (const entry of entries.values()) entry.style.display = 'none'; }
+    projectEntries(now, width, height, reducedMotion);
     if (changed) { job = null; lastUpdate = -Infinity; }
     if (!job) {
       if (now - lastUpdate < 150) return true;
@@ -201,11 +239,10 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       const previousAnchor = previousAnchors.get(item.key);
       for (const candidate of ranked) {
         const centerDistance = (candidate.x - centerX) ** 2 + (candidate.y - centerY) ** 2;
-        const previousDistance = previousAnchor ? (candidate.x - previousAnchor.x) ** 2 + (candidate.y - previousAnchor.y) ** 2 : centerDistance;
-        candidate.rank = centerDistance * .8 + previousDistance * .2 - candidate.facing * .002;
+        candidate.rank = candidate.sample === previousAnchor ? -Infinity : centerDistance - candidate.facing * .002;
       }
       ranked.sort((a, b) => a.rank - b.rank);
-      let visiblePoint = null, rect = null;
+      let visiblePoint = null, chosenSample = null, rect = null;
       const shortName = shortMuscleName(item.key);
       const variation = [...item.key].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0);
       if (measure) measure.font = `600 ${width <= 500 ? 10 : 11}px system-ui, sans-serif`;
@@ -227,8 +264,8 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
           const id = pickSurfaceRegion(view.skin.geometry, view.surfaceWeights, hit.faceIndex, view.skin.worldToLocal(hit.point.clone()));
           if (SURFACE_KEYS[id - 1] !== item.key) continue;
         } else if (hit.object !== sample.mesh) continue;
-        visiblePoint = point.clone(); rect = available;
-        previousAnchors.set(item.key, { x: projected.x, y: projected.y });
+        visiblePoint = point.clone(); chosenSample = sample; rect = available;
+        previousAnchors.set(item.key, sample);
         if (!checkpoints) occupied.push(rect);
         break;
       }
@@ -245,6 +282,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
         }
         entry.setAttribute('aria-label', `${item.title}: ${shortName}`);
         entry.setAttribute('aria-pressed', String(item.selected));
+        display.set(item.key, { sample: chosenSample });
         entry.style.left = `${x}px`; entry.style.top = `${y}px`; entry.style.display = '';
         seen.add(item.key);
         continue;
@@ -264,17 +302,16 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       }
       entry.children[2].children[0].textContent = shortName;
       entry.children[2].children[1].textContent = `${Math.round(item.value)}%`;
-      entry.style.setProperty('--dot-x', `${x}px`); entry.style.setProperty('--dot-y', `${y}px`);
-      entry.style.setProperty('--label-x', `${rect.left}px`); entry.style.setProperty('--label-y', `${rect.top}px`);
-      entry.style.setProperty('--label-width', `${labelWidth}px`);
-      entry.children[1].children[0].setAttribute('d', indicatorLinePath(x, y, rect, height, variation));
+      const current = display.get(item.key)?.current ?? { ...rect };
+      display.set(item.key, { sample: chosenSample, rect, current, labelWidth, variation });
       previousPlacements.set(item.key, rect);
       entry.style.display = '';
       seen.add(item.key);
     }
     if (job.index < ordered.length) return false;
-    for (const [key, entry] of entries) if (!seen.has(key)) entry.style.display = 'none';
+    for (const [key, entry] of entries) if (!seen.has(key)) { entry.style.display = 'none'; display.delete(key); previousAnchors.delete(key); previousPlacements.delete(key); }
     job = null; lastUpdate = now;
+    projectEntries(now, width, height, reducedMotion);
     return true;
   }
 

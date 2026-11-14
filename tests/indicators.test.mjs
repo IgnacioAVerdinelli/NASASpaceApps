@@ -31,6 +31,16 @@ test('labels use separate lanes outside the body and avoid overlap', () => {
   assert.equal(placeIndicator(150, 80, 300, 300, 144, [], { left: 60, right: 240 }), null);
 });
 
+test('labels keep their lane and vertical position through small movements', () => {
+  const body = { left: 210, right: 390 };
+  const first = placeIndicator(250, 130, 600, 300, 120, [], body);
+  const next = placeIndicator(255, 136, 600, 300, 120, [], body, first);
+  assert.equal(next.side, first.side);
+  assert.equal(next.top, first.top);
+  const blocked = placeIndicator(255, 136, 600, 300, 120, [first], body, first);
+  assert.notEqual(blocked.top, first.top);
+});
+
 test('indicator offsets and bent paths vary while remaining outside the body', () => {
   const body = { left: 210, right: 390 };
   const first = placeIndicator(250, 130, 600, 300, 120, [], body, null, 0);
@@ -78,6 +88,14 @@ test('a front thigh indicator follows the model and disappears behind it', async
     assert.equal(overlay.children.length, 1, 'a visible thigh gets a label');
     assert.equal(overlay.children[0].children[2].children[0].textContent, 'Quadriceps · L');
     assert.equal(overlay.children[0].children[2].children[1].textContent, '75%');
+    const dot = overlay.children[0];
+    const initialX = parseFloat(dot.style['--dot-x']);
+    camera.position.set(.12, .86, 3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
+    labels.update(values, 1050);
+    const projectedX = parseFloat(dot.style['--dot-x']);
+    assert.notEqual(projectedX, initialX, 'the point follows the camera before the next visibility check');
+    for (let i = 0; i < 1000 && !labels.update(values, 1300 + i); i++) {}
+    assert.ok(Math.abs(parseFloat(dot.style['--dot-x']) - projectedX) < .01, 'the visible anchor stays on the same part of the model');
     camera.position.set(0, .86, -3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
     for (let i = 0; i < 1000 && !labels.update(values, 2200 + i); i++) {}
     assert.equal(overlay.children[0].style.display, 'none', 'the label is hidden behind the body');

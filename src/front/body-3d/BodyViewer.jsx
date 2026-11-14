@@ -161,7 +161,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     controls.maxDistance = 6;
     controls.update();
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let inView = true, focused = false, interacting = false, transition = null;
+    let inView = true, focused = false, interacting = false, transition = null, lastFrame = null;
     const visibility = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(entries => { inView = entries[0].isIntersecting; });
     visibility?.observe(container);
     const cancelTransition = () => { transition = null; interacting = true; };
@@ -263,7 +263,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
           controls.enableDamping = false;
           controls.update();
           controls.enableDamping = true;
-          transition = { fromTarget: controls.target.clone(), fromPosition: camera.position.clone(), target, position, start: null };
+          transition = { fromTarget: controls.target.clone(), fromPosition: camera.position.clone(), target, position, elapsed: 0 };
         };
         viewRef.current = view;
         scene.add(root);
@@ -332,17 +332,19 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     renderer.domElement.addEventListener('pointerup', onPointerUp);
     const animate = (now = 0) => {
       const visible = inView && !document.hidden;
+      const delta = visible && lastFrame !== null ? Math.min((now - lastFrame) / 1000, 0.05) : 0;
+      lastFrame = visible ? now : null;
       controls.autoRotate = Boolean(explorationRequest) && visible && !focused && !interacting && !transition && !motion.matches;
       controls.autoRotateSpeed = 0.3;
       if (transition && visible) {
-        if (transition.start === null) transition.start = now;
-        const progress = motion.matches ? 1 : Math.min(1, (now - transition.start) / 500);
-        const eased = 1 - (1 - progress) ** 3;
+        transition.elapsed += delta;
+        const progress = motion.matches ? 1 : Math.min(1, transition.elapsed / 0.5);
+        const eased = progress * progress * (3 - 2 * progress);
         controls.target.lerpVectors(transition.fromTarget, transition.target, eased);
         camera.position.lerpVectors(transition.fromPosition, transition.position, eased);
         if (progress === 1) transition = null;
       }
-      if (visible) { controls.update(); indicators?.update(valuesRef.current, now); checkpoints?.update(valuesRef.current, now); renderer.render(scene, camera); }
+      if (visible) { controls.update(delta); indicators?.update(valuesRef.current, now, motion.matches); checkpoints?.update(valuesRef.current, now, motion.matches); renderer.render(scene, camera); }
       frame = requestAnimationFrame(animate);
     };
     animate();

@@ -1,6 +1,6 @@
 # Data service: status and planned changes
 
-Snapshot: Saturday 14 Nov 2026, 18:50 (Argentina). Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
+Snapshot: Saturday 14 Nov 2026, 19:20 (Argentina). Updated after the work in section 2 was pushed. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
 
 The agreed architecture is in [architecture.md](architecture.md). The data service is the left part of it: sources → DataService ↔ database, with the generator (`gravsim`) standing in for every source during the challenge. The HealthService, the two queues, the analysis scheduler, the notification system and the frontend belong to other teammates.
 
@@ -9,9 +9,8 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 | Place | What is there | State |
 |---|---|---|
 | `main` | `docs/architecture.md` (diagram and parts), `docs/img/architecture-sketch.png`, `docs/references/OCHMO-STD-100.1A_RevA_2024-09-09.pdf` (Table 8 on pages 33-37) | Pushed |
-| `feat/sensor-simulator` on GitHub (`90439f7`) | `sim/`: the generator, the DataService, 169 tests, README, demo notebook; based on `Feat/gravityEffectsInvestigation` (Tomás's data in `data/nlsp/`) | Pushed, **out of date**: see below |
-| `feat/sensor-simulator`, local | Commit `cfd7754` and uncommitted work (sections 2 and 3 below) | **In progress**, pushed when tests pass |
-| Pull request to `main` | Only the data service and what it depends on | **Planned**, after a final check |
+| `feat/sensor-simulator` on GitHub (`0560b75`) | `sim/`: the generator, the DataService with its HTTP API, crew context, the event hook, tests, README, demo notebook; the HealthService mock in `sim/mocks/`. Based on `Feat/gravityEffectsInvestigation` (Tomás's data in `data/nlsp/`) | Pushed, **current** |
+| Pull request to `main` | Only the data service and what it depends on | **Planned**: final checks running now |
 
 ## 1. Done and pushed (on `feat/sensor-simulator`)
 
@@ -38,7 +37,7 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
   - Two known data gaps are documented, not hidden: calf strength under exercise, and single blood-pressure readings.
   - The README lists the decisions that are open to veto.
 
-## 2. In progress (local, not on GitHub yet)
+## 2. Pushed in `0560b75` (was in progress)
 
 - **The dashboard mock moves out of the data service.**
   - The dashboard builder that fed the 3D page during the demo moves from `sim/gravsim/health.py` to `sim/mocks/healthservice/`. It is a mock of the HealthService, which another teammate owns.
@@ -55,18 +54,18 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
     - Activities: sleep, exercise, work, meal, hygiene, eva.
     - Location: an ISS module, or "outside" during a spacewalk.
     - Source: room sensors, crew timeline or spacesuit.
-  - The generator simulates a daily routine for each person, plus spacewalk days you can set (`crew.add_eva(day, start_hour, hours)`), with suit heart rate during a spacewalk.
+  - The generator simulates a daily routine for each person (sleep 22:30-06:00, meals, hygiene, work in a module, two exercise blocks that follow exercise adherence, a few unplanned toilet visits from the room sensor), plus spacewalk days you can set (`crew.add_eva(day, start_hour, hours)`, with an hour in the Quest airlock before and after). During a spacewalk the suit reports a new measure, `heart_rate`, every 5 minutes.
+  - When sources overlap, `current_context` prefers what was observed: suit, then room sensor, then the crew timeline.
   - The DataService stores context and answers "where is this astronaut and what are they doing".
 - **Event hook, for the event queue.**
   - `DataService(publisher=...)` takes any object with `publish(topic, message)`. The default is a mock that only logs.
-  - Planned topics: `data.readings_stored`, `data.context_updated`, `data.result_saved`, each with a small JSON message (crew_id, measures or kind, count, time range). One message per ingest per crew member.
-  - The README will document the exact schemas; until then, treat these names as provisional.
+  - Topics: `data.readings_stored` (crew_id, count, measures, start, end), `data.context_updated` (crew_id, count, activities, start, end), `data.result_saved` (crew_id, kind, timestamp, computed_at, model_version). One message per ingest call per crew member; nothing is published when nothing was stored. The DataService stores first, then publishes.
+  - The exact schemas are in `sim/README.md` on the branch.
 - **Demo notebook:** the dashboard section moves to a separate notebook next to the mock.
 
 ## 3. Planned
 
-1. **Push** the work in section 2 once all tests pass.
-2. **Final check** by a separate review: the whole test suite, plus a review of the new code (context, events, the split).
+1. **Final checks** (running now, in parallel): data quality and NASA standards on the final code; crew context, events and the HTTP API; and a merge-readiness check that installs and tests only the files that will land.
 3. **Pull request to `main`** containing only the data service and its dependencies.
    - Lands: `sim/gravsim/`, `sim/fit/`, the data-service tests, `sim/pyproject.toml`, the README and `data/nlsp/`.
    - Stays on the branch: the dashboard mock, Tomás's research doc and `prototype/`, and the duplicate zips in `data/healthData/`.
@@ -74,7 +73,9 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 
 ## For other services
 
+- **Run the DataService API:** `cd sim && python -m gravsim.serve` (port 8000). The HealthService mock that feeds the 3D page: `python -m mocks.healthservice.serve` (port 3000).
 - **Read data** through the DataService API above, not from the generator directly.
+- **Sensors** can only send data from Python for now (`ingest()`, `ingest_context()`); there is no HTTP endpoint for sending readings yet.
 - **Every reading:**
   - has one unit per measure;
   - carries `synthetic: true` (generated data);

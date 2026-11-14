@@ -9,22 +9,20 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Reading, Wearable
+from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Wearable
+from .reading import Reading
 
 
 def default_instruments(seed: int | None = None, faults: dict | None = None, noise: float = 1.0) -> dict[str, Instrument]:
     """One of each instrument. faults: {"dxa": [Fault(...)], ...}; noise: 1 = realistic, 0 = none."""
     faults = faults or {}
-    s = (lambda k: None) if seed is None else (lambda k: seed + k)
-    return {
-        "dynamometer": Dynamometer(seed=s(1), faults=faults.get("dynamometer", ()), noise=noise),
-        "dxa": DxaScanner(seed=s(2), faults=faults.get("dxa", ()), noise=noise),
-        "cycle": CycleErgometer(seed=s(3), faults=faults.get("cycle", ()), noise=noise),
-        "wearable": Wearable(seed=s(4), faults=faults.get("wearable", ()), noise=noise),
-    }
+    # seed + 1, + 2, ...: each instrument gets its own random stream
+    return {cls.name: cls(seed=None if seed is None else seed + k, faults=faults.get(cls.name, ()), noise=noise)
+            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable), start=1)}
 
 
 def nasa_days(mission, instrument: str) -> list[float]:
+    """The mission days on which NASA's routine uses this instrument."""
     land, end = mission.landing, mission.end
     pre = [-60.0, -30.0]          # two baseline sessions, averaged into the pre-flight reference
     if instrument == "dxa":
@@ -72,21 +70,3 @@ def timeline(mission, schedule: str | int = "nasa", instruments: dict[str, Instr
     out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure))
     return out
 
-
-def to_records(readings: Iterable[Reading]) -> list[dict]:
-    return [r.to_dict() for r in readings]
-
-
-def to_dataframe(readings: Iterable[Reading]):
-    """A pandas DataFrame, one row per reading (truth fields flattened). Needs pandas."""
-    import pandas as pd
-    rows = []
-    for r in readings:
-        d = r.to_dict()
-        truth, status = d.pop("truth"), d.pop("status")
-        d["muscle_keys"] = ",".join(d["muscle_keys"])
-        d.update({"true_value": truth.get("value"), "true_change_pct": truth.get("change_pct"),
-                  "faults": ";".join(truth.get("faults", [])), "adherence": status.get("adherence"),
-                  "responder": status.get("responder"), "events": ";".join(status.get("events", []))})
-        rows.append(d)
-    return pd.DataFrame(rows)

@@ -16,7 +16,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from .core import MEASURES, MODEL_VERSION, CrewMember, Mission
-from .instruments import Reading
+from .reading import Reading
 from .schedule import timeline
 
 MUSCLE_KEYS = {

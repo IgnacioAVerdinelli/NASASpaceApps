@@ -16,17 +16,19 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 import numpy as np
 
-PARAMS: dict = json.loads((Path(__file__).with_name("params.json")).read_text())
+PARAMS: dict = json.loads(Path(__file__).with_name("params.json").read_text(encoding="utf-8"))
 MEASURES: dict = PARAMS["measures"]
 MODEL_VERSION: str = PARAMS["model_version"]
 MAX_DATA_DAYS: float = PARAMS["max_unloading_days_in_data"]
+TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"    # UTC to the second: sorts correctly as text, and the frontend accepts it
+Z90 = 1.2816                          # 90th percentile of the standard normal
 
 # Handy groups for events and filters
 GROUPS = {
@@ -67,19 +69,13 @@ class Phase:
     gravity_g: float      # 1.0 Earth, 0.38 Mars, 0.166 Moon, 0 free fall
 
 
-def _preset(name: str) -> list[Phase]:
-    if name == "iss_180":
-        return [Phase("preflight", -180, 0, 1.0), Phase("flight", 0, 180, 0.0), Phase("postflight", 180, 545, 1.0)]
-    if name == "artemis_30":
-        return [Phase("preflight", -180, 0, 1.0), Phase("transit", 0, 12, 0.0), Phase("lunar_surface", 12, 18, 0.166),
-                Phase("transit_return", 18, 30, 0.0), Phase("postflight", 30, 395, 1.0)]
-    if name == "mars":
-        return [Phase("preflight", -180, 0, 1.0), Phase("transit", 0, 180, 0.0), Phase("mars_surface", 180, 680, 0.38),
-                Phase("transit_return", 680, 860, 0.0), Phase("postflight", 860, 1225, 1.0)]
-    raise KeyError(f"unknown preset {name!r}; use iss_180, artemis_30 or mars")
-
-
-PRESETS = ("iss_180", "artemis_30", "mars")
+PRESETS = {
+    "iss_180": [Phase("preflight", -180, 0, 1.0), Phase("flight", 0, 180, 0.0), Phase("postflight", 180, 545, 1.0)],
+    "artemis_30": [Phase("preflight", -180, 0, 1.0), Phase("transit", 0, 12, 0.0), Phase("lunar_surface", 12, 18, 0.166),
+                   Phase("transit_return", 18, 30, 0.0), Phase("postflight", 30, 395, 1.0)],
+    "mars": [Phase("preflight", -180, 0, 1.0), Phase("transit", 0, 180, 0.0), Phase("mars_surface", 180, 680, 0.38),
+             Phase("transit_return", 680, 860, 0.0), Phase("postflight", 860, 1225, 1.0)],
+}
 
 
 class Mission:
@@ -89,20 +85,24 @@ class Mission:
     >>> cm = m.add_crew("CM-1", adherence=1.0, seed=1)
     """
 
-    def __init__(self, phases: str | Sequence[Phase] = "iss_180", launch_date: str | datetime | None = None,
+    def __init__(self, phases: str | Sequence[Phase] = "iss_180", launch_date: str | datetime = "2027-01-01",
                  unloading: Callable[[float], float] | None = None, name: str | None = None):
+        if isinstance(phases, str) and phases not in PRESETS:
+            raise KeyError(f"unknown preset {phases!r}; use one of {list(PRESETS)}")
         self.name = name or (phases if isinstance(phases, str) else "custom")
-        self.phases = _preset(phases) if isinstance(phases, str) else list(phases)
-        self.phases.sort(key=lambda p: p.start)
-        if launch_date is None:
-            launch_date = datetime(2027, 1, 1, 12, tzinfo=timezone.utc)
-        elif isinstance(launch_date, str):
+        self.phases = sorted(PRESETS[phases] if isinstance(phases, str) else phases, key=lambda p: p.start)
+        if isinstance(launch_date, str):
+            if len(launch_date) == 10:          # a bare date means noon UTC, the same calendar day in most time zones
+                launch_date += "T12:00"
             launch_date = datetime.fromisoformat(launch_date)
         if launch_date.tzinfo is None:
-            launch_date = launch_date.replace(hour=12, tzinfo=timezone.utc)
+            launch_date = launch_date.replace(tzinfo=timezone.utc)
         self.launch_date = launch_date
         self.unloading = unloading or (lambda g: min(1.0, max(0.0, 1.0 - g)))
         self.crew: list[CrewMember] = []
+        # cumulative days of full unloading on a one-day grid, read by unloaded_days()
+        self._grid = np.arange(self.start, self.end + 1.0, 1.0)
+        self._unloaded = np.concatenate([[0.0], np.cumsum([self.unloading(self.gravity(d)) for d in self._grid[:-1]])])
 
     # timeline facts
     @property
@@ -129,8 +129,13 @@ class Mission:
         return self.phase(day).gravity_g
 
     def timestamp(self, day: float) -> str:
-        t = self.launch_date + timedelta(days=float(day))
-        return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")      # the frontend accepts at most milliseconds
+        """The UTC time of a mission day, e.g. '2027-03-01T12:00:00Z'."""
+        return (self.launch_date + timedelta(days=float(day))).astimezone(timezone.utc).strftime(TIME_FORMAT)
+
+    def day_of(self, timestamp: str) -> float:
+        """The mission day of a timestamp written like timestamp() writes them (the inverse of timestamp)."""
+        t = datetime.strptime(timestamp, TIME_FORMAT).replace(tzinfo=timezone.utc)
+        return (t - self.launch_date) / timedelta(days=1)
 
     def label(self, day: float) -> str:
         """NASA-style day label: L-30 before launch, FD12 in flight, R+5 after landing."""
@@ -142,26 +147,23 @@ class Mission:
 
     def unloaded_days(self, day: float) -> float:
         """Equivalent days of full unloading from the start of the timeline up to `day`."""
-        if not hasattr(self, "_unload"):
-            grid = np.arange(self.start, self.end + 1.0, 1.0)
-            self._unload = (grid, np.concatenate([[0.0], np.cumsum([self.unloading(self.gravity(d)) for d in grid[:-1]])]))
-        grid, cum = self._unload
-        return float(np.interp(day, grid, cum))
+        return float(np.interp(day, self._grid, self._unloaded))
 
     # crew
-    def add_crew(self, crew_id: str | None = None, **kwargs) -> "CrewMember":
+    def add_crew(self, crew_id: str | None = None, **kwargs) -> CrewMember:
         cm = CrewMember(self, crew_id or f"CM-{len(self.crew) + 1}", **kwargs)
         self.crew.append(cm)
         return cm
 
     def timeline(self, *args, **kwargs):
-        from .schedule import timeline
+        """Shortcut for schedule.timeline(mission, ...)."""
+        from .schedule import timeline       # imported here: schedule imports this module
         return timeline(self, *args, **kwargs)
 
     @classmethod
-    def random(cls, preset: str = "iss_180", n_crew: int = 4, seed: int | None = None, **kwargs) -> "Mission":
+    def random(cls, preset: str = "iss_180", n_crew: int = 4, seed: int | None = None, **kwargs) -> Mission:
         """A mission with randomly varied crew: mostly on the exercise routine, some slipping,
-        the odd fast responder or injury. Instruments with faults come from schedule.default_instruments."""
+        the odd fast responder or injury."""
         rng = np.random.default_rng(seed)
         m = cls(preset, **kwargs)
         flight_end = m.landing
@@ -222,36 +224,37 @@ class CrewMember:
     def __init__(self, mission: Mission, crew_id: str, sex: str | None = None, age: float | None = None,
                  mass_kg: float | None = None, adherence: Adherence = 1.0, responder: str | float = "typical",
                  seed: int | None = None):
+        if responder not in ("typical", "fast") and not isinstance(responder, (int, float)):
+            raise ValueError(f"responder must be 'typical', 'fast' or a number of SD, not {responder!r}")
         self.mission = mission
         self.id = crew_id
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.sex = sex or ("F" if self.rng.random() < 0.35 else "M")
-        inst = PARAMS["instruments"]["cycle"]
-        self.age = age if age is not None else float(np.clip(self.rng.normal(inst["age"]["mean"], inst["age"]["sd"]), 26, 55))
-        w = inst["weight_kg"]["all"]
-        default_mass = w["mean"] * (0.85 if self.sex == "F" else 1.0)
-        self.mass_kg = mass_kg if mass_kg is not None else float(np.clip(self.rng.normal(default_mass, w["sd"] * 0.8), 50, 100))
+        cycle = PARAMS["instruments"]["cycle"]
+        self.age = age if age is not None else float(np.clip(self.rng.normal(cycle["age"]["mean"], cycle["age"]["sd"]), 26, 55))
+        w = cycle["weight_kg"]["all"]
+        mean_mass = w["mean"] * (0.85 if self.sex == "F" else 1.0)
+        self.mass_kg = mass_kg if mass_kg is not None else float(np.clip(self.rng.normal(mean_mass, w["sd"] * 0.8), 50, 100))
         self.responder = responder
-        self._events: list[Event] = []
+        self.events: list[Event] = []
+        self._cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self.set_adherence(adherence)
 
-        # personal response: one shared tendency plus a measure-specific part
+        # Personal response, in SDs towards worse: 0.7 of a tendency shared by every measure plus an own part
+        # weighted sqrt(1 - 0.49), so each z stays standard normal and measures correlate at 0.49.
         z_shared = self.rng.normal()
         if responder == "fast":
-            z_shared = 1.2816 + abs(self.rng.normal(0, 0.5))      # above the 90th percentile
-        elif isinstance(responder, (int, float)):
-            z_shared = float(responder)
+            z_shared = Z90 + abs(self.rng.normal(0, 0.5))
         self.z = {}
         for mid in MEASURES:
             z = 0.7 * z_shared + math.sqrt(1 - 0.49) * self.rng.normal()
             if responder == "fast":
-                z = max(z, 1.2816)
+                z = max(z, Z90)
             elif isinstance(responder, (int, float)):
-                z = float(responder)              # exactly this many SD on every measure (0 = group median)
+                z = float(responder)              # exactly this many SD on every measure (0 = the group median)
             self.z[mid] = z
         self.baseline = {mid: self._sample_baseline(mid) for mid in MEASURES}
-        self._cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
 
     def __repr__(self):
         return f"CrewMember({self.id!r}, sex={self.sex}, age={self.age:.0f}, responder={self.responder!r})"
@@ -268,24 +271,20 @@ class CrewMember:
         return float(np.clip(v, lo - 0.25 * (hi - lo), hi + 0.25 * (hi - lo)))
 
     # ---- status controls
-    def set_adherence(self, adherence: Adherence) -> "CrewMember":
-        """1.0 = full exercise routine, 0.0 = none. Number, [(day, value), ...] steps, or f(day)."""
+    def set_adherence(self, adherence: Adherence) -> CrewMember:
+        """1.0 = full exercise routine, 0.0 = none. A number, [(day, value), ...] steps, or f(day)."""
         if callable(adherence):
             self._adh = adherence
         elif isinstance(adherence, (int, float)):
-            a = float(adherence)
-            self._adh = lambda d, a=a: a
+            self._adh = lambda d, a=float(adherence): a
         else:
             steps = sorted((float(d), float(v)) for d, v in adherence)
 
-            def f(d, steps=steps):
-                val = steps[0][1]
-                for day, v in steps:
-                    if d >= day:
-                        val = v
-                return val
-            self._adh = f
-        self._adherence_spec = adherence
+            def step(d):            # the value of the last step that has started; the first value before any
+                started = [v for day, v in steps if day <= d]
+                return started[-1] if started else steps[0][1]
+            self._adh = step
+        self.adherence_plan = adherence          # as given, to copy this person onto another mission
         self._cache = {}
         return self
 
@@ -295,34 +294,25 @@ class CrewMember:
     def add_event(self, day: float, measures: str | Iterable[str] = "legs", severity_pct: float = 10.0,
                   recovery_days: float = 21.0, label: str = "event") -> Event:
         ev = Event(float(day), expand(measures), float(severity_pct), float(recovery_days), label)
-        self._events.append(ev)
+        self.events.append(ev)
         return ev
 
-    @property
-    def events(self) -> list[Event]:
-        return list(self._events)
-
     # ---- physiology
-    def _personal(self, mid: str) -> dict:
+    def _personal(self, mid: str) -> float:
+        """This person's plateau (saturating) or daily rate (linear): the group value moved z SDs towards worse."""
         m = MEASURES[mid]
-        z = self.z[mid]
-        sd = m.get("responder_sd") or 0.0
-        if m["model"] == "saturating":
-            a = m["loss_pct"]
-            return {"amp": a + math.copysign(1.0, a or -1.0) * z * sd}
-        if m["model"] == "linear":
-            r = m["rate_pct_per_day"]
-            return {"rate": r + math.copysign(1.0, r or -1.0) * z * sd}
-        return {}
+        group = m["loss_pct"] if m["model"] == "saturating" else m["rate_pct_per_day"]
+        return group + math.copysign(1.0, group or -1.0) * self.z[mid] * (m.get("responder_sd") or 0.0)
 
     def _curve(self, mid: str) -> tuple[np.ndarray, np.ndarray]:
+        """% change on every day of the mission, stepping the model one day at a time (cached)."""
         if mid in self._cache:
             return self._cache[mid]
         m, ms = MEASURES[mid], self.mission
         days = np.arange(ms.start, ms.end + 1.0, 1.0)
         s = np.zeros_like(days)
         if m["model"] in ("saturating", "linear"):
-            pers = self._personal(mid)
+            own = self._personal(mid)
             e = m.get("exercise_effect") or 0.0
             rec = m.get("recovery_tau_days") or 30.0
             for i in range(1, len(days)):
@@ -331,11 +321,12 @@ class CrewMember:
                 k = 1.0 - e * self.adherence(d)
                 prev = s[i - 1]
                 if m["model"] == "saturating":
-                    target = pers["amp"] * k * u
+                    target = own * k * u
+                    # moving away from 0 (losing) uses the loss time constant, moving back the recovery one
                     tau = m["tau_days"] if abs(target) > abs(prev) or target * prev < 0 else rec
                     s[i] = target + (prev - target) * math.exp(-1.0 / tau)
                 else:
-                    s[i] = prev + pers["rate"] * k * u - (1.0 - u) * prev / rec
+                    s[i] = prev + own * k * u - (1.0 - u) * prev / rec
         self._cache[mid] = (days, s)
         return days, s
 
@@ -344,21 +335,17 @@ class CrewMember:
         days, s = self._curve(measure)
         v = float(np.interp(day, days, s))
         if events:
-            v += sum(ev.extra(measure, day) for ev in self._events)
+            v += sum(ev.extra(measure, day) for ev in self.events)
         return v
 
     def true_value(self, measure: str, day: float) -> float:
         return self.baseline[measure] * (1.0 + self.change(measure, day) / 100.0)
 
-    def unloaded_days(self, day: float) -> float:
-        return self.mission.unloaded_days(day)
-
     def extrapolated(self, measure: str, day: float) -> bool:
         """True when the reading is outside what the bed-rest data covers."""
-        m = MEASURES[measure]
-        if m["model"] == "constant":
+        if MEASURES[measure]["model"] == "constant":
             return True
-        if self.unloaded_days(day) > MAX_DATA_DAYS:
+        if self.mission.unloaded_days(day) > MAX_DATA_DAYS:
             return True
         return any(0.0 < p.gravity_g < 1.0 and p.start <= day for p in self.mission.phases)
 
@@ -366,5 +353,5 @@ class CrewMember:
         return {
             "adherence": round(self.adherence(day), 2),
             "responder": self.responder if isinstance(self.responder, str) else f"z={self.responder}",
-            "events": [ev.label for ev in self._events if ev.day <= day and day - ev.day < 3 * ev.recovery_days],
+            "events": [ev.label for ev in self.events if ev.day <= day and day - ev.day < 3 * ev.recovery_days],
         }

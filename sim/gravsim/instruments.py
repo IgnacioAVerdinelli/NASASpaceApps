@@ -1,8 +1,9 @@
 """Simulated instruments. Each one reads a CrewMember on a mission day and returns Readings.
 
-measure(crew, day, ...)  -> one Reading (or a list for the wearable): the headline value a report shows
-session(crew, day)       -> the whole session as the instrument records it (reps, scan sites, test stages,
-                            a 24-hour trace), with the headline Readings inside
+measure(crew, day, measure)  -> one Reading: the headline value a report shows
+measure_all(crew, day)       -> one Reading per measure the instrument takes
+session(crew, day)           -> the whole session as the instrument records it (reps, scan sites, test stages,
+                                a 24-hour trace), with the headline Readings inside
 
 Every reading carries measurement noise fitted from repeat tests in the data, and the instrument's
 faults (offset, drift, dropout, spike, stuck) if any are active that day. The `truth` field holds the
@@ -10,41 +11,13 @@ noise-free value and the active faults, so a monitoring system can be scored aga
 """
 from __future__ import annotations
 
-import math
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from typing import Iterable
 
 import numpy as np
 
-from .core import MEASURES, MODEL_VERSION, CrewMember, expand
-
-
-@dataclass
-class Reading:
-    crew_id: str
-    mission_day: float
-    day_label: str
-    timestamp: str
-    phase: str
-    gravity_g: float
-    instrument: str
-    device: str
-    measure: str
-    label: str
-    value: float | None
-    unit: str
-    region: str | None = None
-    muscle_keys: list[str] = field(default_factory=list)
-    side: str | None = None
-    quality: str = "ok"                      # ok | missing
-    synthetic: bool = True
-    extrapolated: bool = False
-    model_version: str = MODEL_VERSION
-    status: dict = field(default_factory=dict)
-    truth: dict = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        return asdict(self)
+from .core import MEASURES, MODEL_VERSION, CrewMember
+from .reading import Reading
 
 
 @dataclass
@@ -65,8 +38,17 @@ class Fault:
     pct_per_day: float = 0.0
     prob: float = 0.0
 
+    def __post_init__(self):
+        if self.kind not in ("offset", "drift", "dropout", "spike", "stuck"):
+            raise ValueError(f"unknown fault kind {self.kind!r}")
+
     def active(self, day: float) -> bool:
         return (self.start is None or day >= self.start) and (self.end is None or day < self.end)
+
+
+def hr_max_tanaka(age: float) -> float:
+    """Maximum heart rate from age (Tanaka 2001). A textbook formula, not fitted to our data."""
+    return 208 - 0.7 * age
 
 
 class Instrument:
@@ -74,7 +56,7 @@ class Instrument:
     device = "generic"
     measures: tuple[str, ...] = ()
 
-    def __init__(self, seed: int | None = None, faults: Iterable[Fault] = (), noise: float | bool = 1.0):
+    def __init__(self, seed: int | None = None, faults: Iterable[Fault] = (), noise: float = 1.0):
         """noise: scale on the measurement noise fitted from the data (1 = realistic, 0 = none)."""
         self.rng = np.random.default_rng(seed)
         self.faults = list(faults)
@@ -118,14 +100,14 @@ class Instrument:
         return Reading(
             crew_id=crew.id, mission_day=round(float(day), 3), day_label=ms.label(day), timestamp=ms.timestamp(day),
             phase=phase.name, gravity_g=phase.gravity_g, instrument=self.name, device=self.device,
-            measure=measure, label=m["label"], value=value, unit=m["unit"], region=m.get("region"),
-            muscle_keys=list(m.get("muscle_keys") or []), side=side, quality=quality,
-            extrapolated=crew.extrapolated(measure, day), status=crew.status(day),
+            measure=measure, value=value, unit=m["unit"], side=side, quality=quality, synthetic=True,
+            extrapolated=crew.extrapolated(measure, day), model_version=MODEL_VERSION, status=crew.status(day),
             truth={"value": round(true, m["decimals"] + 2), "change_pct": round(crew.change(measure, day), 3),
                    "faults": active},
         )
 
     def measure(self, crew: CrewMember, day: float, measure: str | None = None) -> Reading:
+        """One reading of `measure` (default: the instrument's first measure)."""
         measure = measure or self.measures[0]
         if measure not in self.measures:
             raise KeyError(f"{self.name} measures {self.measures}, not {measure!r}")
@@ -193,7 +175,7 @@ class CycleErgometer(Instrument):
         peak = self._read(crew, day, "vo2peak")
         vo2peak = crew.true_value("vo2peak", day)
         hr_rest = crew.true_value("resting_hr", day)
-        hr_max = 208 - 0.7 * crew.age
+        hr_max = hr_max_tanaka(crew.age)
         vo2_rest = 3.5
         stages, watts, t = [], 0, 0.0
         while True:
@@ -222,12 +204,6 @@ class Wearable(Instrument):
     device = "wearable monitor (garment or watch)"
     measures = ("resting_hr", "resting_sbp", "resting_dbp", "spo2", "hrv_rmssd")
 
-    def measure(self, crew: CrewMember, day: float, measure: str | None = None):
-        """One measure, or the daily summary (every measure) when `measure` is None."""
-        if measure is None:
-            return self.measure_all(crew, day)
-        return super().measure(crew, day, measure)
-
     def session(self, crew: CrewMember, day: float, minutes: int = 1440) -> dict:
         """Minute-by-minute heart rate over a day: resting level, a daily rhythm, sleep dip and two exercise
         sessions when the crew member is exercising. The shape is assumed; the resting level comes from the model."""
@@ -241,7 +217,7 @@ class Wearable(Instrument):
             for start_h, dur in ((9.0, 60), (16.0, 60)):                # exercise blocks (~2 h/day on the ISS)
                 if self.rng.random() < adh:
                     s = int(start_h * 60)
-                    hr[s:s + dur] += (208 - 0.7 * crew.age - rest) * 0.55
+                    hr[s:s + dur] += (hr_max_tanaka(crew.age) - rest) * 0.55
         hr = hr + self.rng.normal(0, 2.5 * self.noise, size=minutes)
         trace = [{"minute": int(i), "hr_bpm": int(round(v))} for i, v in zip(t, hr)]
         for f in self.faults:
@@ -254,7 +230,3 @@ class Wearable(Instrument):
 
 
 INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable)}
-
-
-def instrument_for(measure: str) -> str:
-    return MEASURES[measure]["instrument"]

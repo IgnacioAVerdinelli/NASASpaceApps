@@ -16,13 +16,14 @@
 """
 from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Event, Mission, Phase, expand
 from .dashboard import build_dashboard, validate
-from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Reading, Wearable
-from .schedule import default_instruments, nasa_days, timeline, to_dataframe, to_records
+from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Wearable
+from .reading import Reading, to_dataframe
+from .schedule import default_instruments, nasa_days, timeline
 
 __version__ = MODEL_VERSION
 __all__ = [
     "Mission", "Phase", "CrewMember", "Event", "Fault", "Reading", "Instrument",
     "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable",
-    "timeline", "nasa_days", "default_instruments", "to_dataframe", "to_records",
+    "timeline", "nasa_days", "default_instruments", "to_dataframe",
     "build_dashboard", "validate", "MEASURES", "GROUPS", "PRESETS", "PARAMS", "MODEL_VERSION", "expand",
 ]

@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .core import Mission
 from .dashboard import build_dashboard
-from .schedule import default_instruments, timeline, to_records
+from .schedule import default_instruments, timeline
 
 
 def main(argv=None):
@@ -71,7 +71,7 @@ def main(argv=None):
             if url.path == "/api/v1/dashboard":
                 return self._send(200, build_dashboard(mission, crew, day, readings=readings))
             if url.path == "/api/v1/readings":
-                return self._send(200, to_records(r for r in readings if r.crew_id == crew.id and r.mission_day <= day))
+                return self._send(200, [r.to_dict() for r in readings if r.crew_id == crew.id and r.mission_day <= day])
             return self._send(404, {"error": "use /api/v1/dashboard or /api/v1/readings"})
 
         def log_message(self, *a):

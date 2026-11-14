@@ -23,3 +23,6 @@ gravsim = ["params.json"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# the stress tests sample thousands of crew members; run them with  python -m pytest -m slow
+markers = ["slow: stress tests against the data ranges and standards (a few minutes)"]
+addopts = "-m 'not slow'"

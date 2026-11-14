@@ -1,10 +1,10 @@
 # Contexto del desafío: monitoreo de salud de astronautas
 
 **NASA Space Apps Challenge 2026 · Documento de referencia del equipo**  
-**Última consulta:** 13 de noviembre de 2026  
+**Última consulta:** 14 de noviembre de 2026  
 **Desafío:** [Create Health Monitoring Software for Astronauts on Space Missions — Details](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=details) · [Resources](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=resources)
 
-> **Estado de verificación:** las páginas oficiales del desafío devolvieron un error 502 durante la consulta. El resumen oficial indexado confirma el título, la dificultad, los temas y el objetivo general. El desarrollo del brief y la lista de recursos se contrastaron con la [reproducción del evento local HackAthlone](https://hackathlone.com/challenges/health-monitoring-software), que indica que la página oficial prevalece. Los cinco recursos se consultaron directamente. Revisar ambas pestañas oficiales cuando vuelvan a estar disponibles.
+> **Estado de verificación:** el 13 y el 14 de noviembre de 2026 se leyeron directamente las pestañas oficiales [Details](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=details) y [Resources](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=resources), y las guías oficiales [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) y [Judging & Awards Guide](https://www.spaceappschallenge.org/resources/judging-awards-guide/). El brief y los cinco recursos coinciden con la [reproducción del evento local HackAthlone](https://hackathlone.com/challenges/health-monitoring-software), que se usó en la primera versión de este documento porque la página oficial devolvía un error 502.
 
 ## 1. El desafío en una mirada
 
@@ -17,11 +17,11 @@
 | Dificultad y temas | Intermedia; exploración humana, software y exploración espacial. |
 | Agencia asociada | Agencia Espacial Canadiense (CSA), según la reproducción del desafío. |
 
-Fuente: [página oficial del desafío](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/) para el resumen general; [HackAthlone](https://hackathlone.com/challenges/health-monitoring-software) para el desarrollo del objetivo y la agencia asociada.
+Fuente: [página oficial del desafío](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/), pestañas Details y Resources.
 
 ## 2. Problema y contexto de misión
 
-Las misiones más largas aumentan la exposición a las condiciones del espacio y exigen que la tripulación participe en el seguimiento de su propia salud. El brief relaciona esas condiciones con cambios inmunitarios, pérdida de densidad ósea, eventos cardiovasculares, nutrición insuficiente y problemas de salud conductual. Estos son ejemplos de riesgos, no una lista de condiciones que necesariamente desarrollará cada astronauta. [Fuente: brief reproducido](https://hackathlone.com/challenges/health-monitoring-software).
+Las misiones más largas aumentan la exposición a las condiciones del espacio y exigen que la tripulación participe en el seguimiento de su propia salud. El brief relaciona esas condiciones con cambios inmunitarios, pérdida de densidad ósea, eventos cardiovasculares, nutrición insuficiente y problemas de salud conductual. Estos son ejemplos de riesgos, no una lista de condiciones que necesariamente desarrollará cada astronauta. [Fuente: brief oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=details).
 
 El Programa de Investigación Humana de NASA (**HRP**, por *Human Research Program*) agrupa los peligros del vuelo espacial en cinco categorías. Un **peligro** es una fuente de exposición; un **riesgo** es un posible resultado para la salud o el rendimiento. Los peligros pueden interactuar y sus efectos dependen de la misión. [Fuentes: peligros de NASA](https://www.nasa.gov/hrp/hazards/) y [riesgos de NASA](https://www.nasa.gov/hrp/risks/).
 
@@ -37,7 +37,7 @@ La CSA describe cómo las misiones lejanas combinan más tiempo en ingravidez, r
 
 ## 3. Qué pide el brief
 
-Esta sección resume la [reproducción de HackAthlone](https://hackathlone.com/challenges/health-monitoring-software); la redacción detallada sigue pendiente de contraste directo con la pestaña oficial.
+Esta sección resume la [pestaña Details oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=details).
 
 ### Resultado buscado
 
@@ -55,9 +55,8 @@ El desafío propone considerar:
 2. ¿Cómo afectan los peligros del vuelo espacial a los indicadores elegidos?
 3. ¿Cuándo podría un resultado requerir atención de la tripulación o de los médicos de vuelo en Tierra?
 4. ¿Qué acciones podrían prevenir que una condición de salud se vuelva crítica?
-5. ¿Cómo presentar métricas y resultados con una interfaz clara y comprensible?
 
-El brief menciona animaciones, interacción y una figura humana con partes seleccionables como un ejemplo de presentación; no prescribe ese diseño.
+Además, el brief destaca que el diseño de la interfaz es importante para presentar métricas y diagnósticos con claridad. Menciona animaciones, interacción y una figura humana con partes seleccionables como un ejemplo de presentación; no prescribe ese diseño.
 
 ### Consideraciones explícitamente opcionales
 
@@ -72,7 +71,7 @@ La orientación sobre tratamientos figura en el objetivo; las fuentes revisadas 
 
 ## 4. Recursos del desafío
 
-El [espejo de HackAthlone](https://hackathlone.com/challenges/health-monitoring-software) enumera estos cinco recursos: tres de NASA y dos de la CSA. Todos los enlaces siguientes respondieron durante la consulta. La composición de la pestaña oficial aún debe verificarse directamente.
+La [pestaña Resources oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=resources) enumera estos cinco recursos: tres de NASA y dos de la CSA. Son páginas informativas, no datasets descargables. Todos los enlaces siguientes respondieron durante la consulta.
 
 ### NASA
 
@@ -85,7 +84,7 @@ El [espejo de HackAthlone](https://hackathlone.com/challenges/health-monitoring-
 4. **[Monitoring radiation for astronaut health](https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp).** Describe el desarrollo de CANS, un instrumento compacto y autónomo diseñado para medir radiación de neutrones de manera continua. Aporta contexto sobre medición ambiental de radiación; el artículo no es un dataset médico ni establece que el instrumento mida la dosis personal total.
 5. **[Why do we conduct science experiments in space?](https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp).** Explica por qué la investigación espacial ayuda a preparar misiones lejanas y puede producir beneficios en la Tierra. Aporta contexto sobre autonomía y dificultades de misión; no especifica requisitos del software.
 
-El espejo recuerda respetar las condiciones de uso de los sitios y datos externos. Revisar permisos, licencias, atribución y restricciones de acceso de cada recurso antes de reutilizarlo. [Fuente: HackAthlone](https://hackathlone.com/challenges/health-monitoring-software).
+La pestaña oficial aclara que NASA no avala entidades ajenas al gobierno de EE. UU. y que, en los sitios de otras agencias, hay que respetar sus condiciones de uso de datos. Revisar permisos, licencias, atribución y restricciones de acceso de cada recurso antes de reutilizarlo.
 
 ## 5. Datos y evidencia para investigar
 
@@ -100,16 +99,56 @@ Puntos de partida adicionales sugeridos en esa respuesta:
 
 El Navigator considera razonable complementar investigación accesible con datos simulados claramente identificados. También recomienda no trasladar automáticamente rangos clínicos terrestres a límites seguros para astronautas, y documentar la fuente y el carácter experimental de cualquier umbral. Estas son recomendaciones para evaluar, no requisitos obligatorios ni validación clínica. [Fuente: respuesta del Navigator](https://github.com/nasa/spaceapps/discussions/2025).
 
-## 6. Participación y evaluación
+**Regla oficial sobre datos.** La [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) exige usar **al menos un dato o recurso de NASA** para ser elegible a un premio global, y detallarlo en el campo *NASA Data* del formulario. Además, el criterio de Relevancia premia integrar los datos de NASA como componente central de la solución, no como agregado superficial (ver sección 6). También se alienta usar datos de las agencias socias de 2026, entre ellas la CSA y la Comisión Nacional de Actividades Espaciales de Argentina (CONAE).
 
-La [página oficial de Space Apps 2026](https://www.spaceappschallenge.org/2026/), consultada mediante su contenido indexado porque la apertura directa falló, indica que el hackathon se realiza el **14 y 15 de noviembre de 2026**, con equipos de hasta **seis integrantes**. El registro individual es necesario para la elegibilidad de evaluación global. La ventana general de envío en la pestaña **Project** figura desde el 14 de noviembre a las 09:00 hasta el 15 de noviembre a las 23:59, en hora local. Confirmar esta información y las condiciones vigentes en el sitio oficial.
+## 6. Participación, entrega y evaluación
 
-La [sede oficial de Ajmer](https://www.spaceappschallenge.org/2026/local-events/ajmer/) enumera impacto, creatividad, validez, relevancia y presentación como criterios de evaluación. Esa fuente corresponde a una sede concreta: verificar criterios, formato de pitch, horarios y posibles entregas anticipadas de la sede del equipo. No se han verificado ponderaciones específicas para este desafío.
+Fuentes: [Participant FAQs](https://www.spaceappschallenge.org/resources/participant-faqs/), [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) y [Judging & Awards Guide](https://www.spaceappschallenge.org/resources/judging-awards-guide/).
+
+### Fechas y equipo
+
+- El hackathon se realiza el **14 y 15 de noviembre de 2026**.
+- La entrega abre el **sábado 14 a las 9:00** y cierra el **domingo 15 a las 23:59**, en la hora local del evento del equipo. En el Universal Event (virtual) rige la hora local del lugar de residencia del dueño del equipo (*Team Owner*).
+- Los equipos tienen hasta **seis integrantes**; en el Universal Event, al menos dos. Todos deben estar registrados en el mismo evento y figurar en la pestaña *Members* del equipo. No se pueden sumar integrantes después del cierre de la entrega.
+- La sede local puede tener horarios propios de evaluación y premiación: consultarlos con el *Local Lead*.
+
+### Qué se entrega
+
+La página del proyecto y todo el material vinculado deben estar **en inglés**. Campos del formulario:
+
+- **Project Name** y **High-Level Project Summary**: qué se desarrolló, cómo responde al desafío y por qué importa.
+- **Link to Project Demo**: presentación de **hasta 7 diapositivas** (incluidas portada e introducción) o **video de hasta 30 segundos**. El video puede hablarse en otro idioma si tiene subtítulos en inglés. El link debe ser público, sin contraseña, permisos ni registro.
+- **Link to Final Project**: link público al proyecto (sitio, repositorio, carpeta en la nube, etc.).
+- **Detailed Project Description**: qué hace, cómo funciona, beneficios, objetivos y herramientas o lenguajes usados.
+- **Use of Super Intelligence (SI)**: si se usaron herramientas de IA y cómo.
+- **NASA Data**: qué datos y recursos de NASA se usaron.
+- **Space Agency Partner Data and Other References**: todos los datos, recursos, código, textos e imágenes externos usados, aunque sean abiertos o gratuitos.
+
+Al enviar hay que confirmar que el trabajo es original y que todas las fuentes externas figuran en las referencias.
+
+### Uso de IA
+
+La guía permite usar IA (*Super Intelligence*, SI) para acelerar el desarrollo, pero indica que **no debe usarse para idear la solución** del desafío. Hay que identificar lo generado: imágenes y videos con marca de agua visible; audio, código y datos reconocidos en el texto descriptivo y en los metadatos. El contenido generado no puede usar ni modificar logos ni elementos de marca de NASA. Los jueces no ven la respuesta del campo SI, pero sí las marcas y aclaraciones incluidas en el proyecto.
+
+### Criterios de evaluación
+
+En todas las instancias, cada proyecto se califica de 1 a 5 en cinco criterios:
+
+| Criterio | Qué evalúa |
+| --- | --- |
+| Impacto | Magnitud del problema que aborda y alcance de su efecto. |
+| Creatividad | Originalidad e innovación del enfoque. |
+| Validez | Fundamento científico, factibilidad técnica y usabilidad. |
+| Relevancia | Alineación con el desafío e integración de datos de NASA como parte central. |
+| Presentación | Claridad y narrativa al comunicar el desafío, la solución y su importancia. |
+
+La mayor parte de la evaluación se basa en la página del proyecto; una buena demo puede subir el puntaje de Presentación.
 
 ## 7. Pendientes de verificación
 
-- Abrir las pestañas oficiales de [Details](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=details) y [Resources](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/?tab=resources); cotejar el brief y los cinco recursos y registrar cambios.
-- Confirmar la sede, sus horarios, requisitos de presentación y criterios vigentes; comprobar también las reglas generales y el estado del registro de cada integrante.
+Resuelto el 14 de noviembre: el brief y los recursos se contrastaron con las pestañas oficiales, y los criterios, el formato de entrega y la regla de datos de NASA se confirmaron en las guías oficiales (secciones 3 a 6).
+
+- Confirmar la sede del equipo (o el Universal Event) y sus horarios de evaluación local; comprobar que todos los integrantes estén registrados en el mismo evento y figuren en *Members*.
 - Para cada indicador que el equipo estudie más adelante, investigar viabilidad de medición, contexto de misión, calidad y disponibilidad de datos, y respaldo de cualquier interpretación o acción.
 - Verificar licencias, atribución y acceso de cada dataset o material elegido. Mantener diferenciados datos reales, datos sintéticos y reglas experimentales.
 

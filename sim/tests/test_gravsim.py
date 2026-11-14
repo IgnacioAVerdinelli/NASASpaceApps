@@ -2,7 +2,6 @@
 
 Run from sim/:  python -m pytest -q
 """
-import json
 import statistics as st
 
 import pytest
@@ -143,32 +142,3 @@ def test_sessions_have_the_expected_shape():
     stages = gs.CycleErgometer().session(c, 75)["stages"]
     assert stages[0]["watts"] == 0 and len(stages) > 4
     assert len(gs.Wearable().session(c, 10)["trace"]) == 1440
-
-
-def test_dashboard_follows_the_frontend_contract():
-    m = gs.Mission.random(seed=4)
-    data = gs.DataService()
-    data.ingest(m.timeline(seed=4))
-    health = gs.HealthService(data)
-    for c in m.crew:
-        for day in (-30, 0, 120, 300):
-            d = gs.validate_dashboard(health.dashboard(c, day))
-            assert d["simulated"] is True
-        assert d["body"]["scores"]
-
-
-def test_dashboard_validator_rejects_what_the_page_rejects():
-    m = gs.Mission.random(seed=4)
-    data = gs.DataService()
-    data.ingest(m.timeline(seed=4))
-    good = gs.HealthService(data).dashboard(m.crew[0], 120)
-    for path, bad in [(("body", "scores", "quadriceps_l"), float("nan")), (("body", "viewRequest"), {"direction": "up"}),
-                      (("charts", 0, "points", 0, "at"), "2027-13-40T00:00:00Z"), (("summary", "items", 0, "changePercent"), "8")]:
-        d = json.loads(json.dumps(good))
-        *parents, last = path
-        target = d
-        for p in parents:
-            target = target[p]
-        target[last] = bad
-        with pytest.raises(ValueError):
-            gs.validate_dashboard(d)

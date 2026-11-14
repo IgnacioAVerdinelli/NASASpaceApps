@@ -1,13 +1,17 @@
 """Checks for the DataService: units, the cleaning rules, the inert store, gravsim's readings going
-through the pipeline, and the processed results the HealthService saves.
+through the pipeline, and processed results.
 
 Run from sim/:  python -m pytest -q
 """
+import json
 import logging
+import threading
+import urllib.request
 
 import pytest
 
 import gravsim as gs
+from gravsim.serve import data_routes, make_server
 
 
 def sensor(**fields):
@@ -178,20 +182,50 @@ def test_computing_a_result_again_replaces_it_and_a_new_model_version_adds_one()
     assert sorted(r.model_version for r in data.results("CM-1")) == [gs.MODEL_VERSION, "9.9.9"]
 
 
-def test_dashboard_saves_what_it_computes(mission_and_data):
+# ---- the HTTP API ---------------------------------------------------------------------------
+
+@pytest.fixture
+def api(mission_and_data):
+    """The DataService API on a free port, with the mission clock stopped at day 100. Yields get(path), post(path, body)."""
     m, _, _, kept = mission_and_data
     data = gs.DataService()
     data.ingest(kept)
-    crew = m.crew[0]
-    dash = gs.HealthService(data).dashboard(crew, 120)
+    server = make_server(data_routes(m, data, clock=lambda: 100.0), port=0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
-    saved = {r.kind: r for r in data.results(crew.id)}
-    assert set(saved) == {"dashboard", "measure_change"}
-    assert {r.timestamp for r in saved.values()} == {m.timestamp(120)}
-    assert saved["dashboard"].payload == dash
-    changes = saved["measure_change"].payload
-    for item in dash["summary"]["items"]:
-        measure = next(mid for item_id, mid, _, _ in gs.health.REGIONS if item_id == item["id"])
-        change = changes[measure]["change_pct"]
-        assert item["changePercent"] == (None if change is None else round(change, 1))
-    assert changes["vo2peak"]["latest_at"] <= m.timestamp(120)
+    def call(path, body=None):
+        req = urllib.request.Request(base + path, method="GET" if body is None else "POST",
+                                     data=None if body is None else json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as e:
+            return e.code, json.load(e)
+    yield m, data, call
+    server.shutdown()
+    server.server_close()
+
+
+def test_api_readings_and_latest_stop_at_the_mission_clock(api):
+    m, data, call = api
+    status, readings = call("/api/v1/readings?crew=CM-2&measures=knee_extension_60")
+    assert status == 200 and readings == [r.to_dict() for r in data.readings("CM-2", "knee_extension_60", end=m.timestamp(100))]
+    assert readings[-1]["day_label"] == "FD75"
+    status, latest = call("/api/v1/latest?crew=CM-2&measures=bone,vo2peak&day=300")
+    assert status == 200 and set(latest) == {"hip_bmd", "spine_bmd", "heel_bmd", "vo2peak"}
+    assert call("/api/v1/latest?crew=CM-9")[0] == 404
+    assert call("/api/v1/latest?measures=elbow")[0] == 400
+    assert call("/api/v1/nothing")[0] == 404
+
+
+def test_api_saves_and_reads_results(api):
+    m, data, call = api
+    study = {"crew_id": "CM-1", "kind": "study", "timestamp": m.timestamp(60), "payload": {"study": "bone_densitometry"}}
+    status, saved = call("/api/v1/results", study)
+    assert status == 201 and saved["payload"] == study["payload"] and saved["timestamp"] == m.timestamp(60)
+    assert [r.kind for r in data.results("CM-1")] == ["study"]
+    assert call("/api/v1/results?crew=CM-1&kind=study")[1] == [saved]
+    assert call("/api/v1/results?crew=CM-1&day=50")[1] == []            # it is for day 60, after "now"
+    assert call("/api/v1/results", {"crew_id": "CM-1"})[0] == 400       # kind, timestamp and payload missing

@@ -330,16 +330,3 @@ def test_nasa_schedule_days():
     assert not any(0 <= d < m.landing for d in gs.nasa_days(m, "dxa"))                   # no DXA in flight
     tl = m.timeline()
     assert all(r.mission_day == round(r.mission_day, 3) for r in tl) and tl == sorted(tl, key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure))
-
-
-def test_dashboard_uses_only_readings_never_truth():
-    m = gs.Mission.random(seed=4); data = gs.DataService(); data.ingest(m.timeline(seed=4))
-    health = gs.HealthService(data)
-    before = [health.dashboard(c, 120) for c in m.crew]
-    for c in m.crew:
-        for r in data.readings(c.id):                       # the readings the DataService holds
-            r.truth = {"value": -1e9, "change_pct": -1e9, "faults": ["corrupted"]}
-    after = [health.dashboard(c, 120) for c in m.crew]
-    assert before == after
-    for d in after:
-        gs.validate_dashboard(d)

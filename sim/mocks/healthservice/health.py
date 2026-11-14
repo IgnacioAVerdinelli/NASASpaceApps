@@ -1,12 +1,15 @@
-"""HealthService: turns the readings in the DataService into what the 3D page shows.
+"""MOCK of the HealthService, which another part of the team builds. It is here only so the 3D page demo
+has something to show; it is not part of the DataService and does not ship with it.
+
+It turns the readings in the DataService into what the 3D page shows.
 
 dashboard() builds the dashboard JSON, version 1 of the contract in docs/frontend-backend.md on the
 design-body branch. validate_dashboard() runs the same checks as the page (src/front/sketch/data/contract.js).
 Everything dashboard() computes is saved back through the DataService as processed results: kind
 "dashboard" (the JSON it returns) and kind "measure_change" (for each measure shown: the pre-flight
 reference, the % change and the time of the latest reading).
-In the team's sketch the HealthService also feeds a queue and a notification system (ship, crew, Earth);
-those are out of scope for the challenge.
+In the team's architecture (docs/architecture.md) the real HealthService also decides who is told about an
+alert, using crew context, and publishes findings on the event queue; this mock does neither.
 
 Only what a monitoring system would see is used: readings with quality "ok", never gravsim's hidden truth.
 The reference for each measure is the mean of that person's pre-flight readings.
@@ -22,8 +25,7 @@ import re
 from collections import defaultdict
 from datetime import datetime
 
-from .core import MEASURES, MODEL_VERSION, CrewMember
-from .dataservice import DataService
+from gravsim import MEASURES, MODEL_VERSION, CrewMember, DataService
 
 MUSCLE_KEYS = {
     "abdominal_muscles", "back_muscles_l", "back_muscles_r", "calf_l", "calf_r", "chest_muscles_l", "chest_muscles_r",

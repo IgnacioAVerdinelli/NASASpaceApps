@@ -21,7 +21,8 @@ packages = ["gravsim"]
 gravsim = ["params.json"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# tests/ checks the gravsim package; mocks/ (demo stand-ins for other teams' services, not packaged) has its own
+testpaths = ["tests", "mocks"]
 pythonpath = ["."]
 # the stress tests sample thousands of crew members; run them with  python -m pytest -m slow
 markers = ["slow: stress tests against the data ranges and standards (a few minutes)"]

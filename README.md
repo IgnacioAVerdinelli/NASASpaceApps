@@ -34,6 +34,8 @@ npm install
 npm run dev
 ```
 
+La demostración de alertas para wearable está disponible en `/alerts/` desde el mismo servidor. Sus alertas son ejemplos simulados y se pueden seleccionar para explorar el reloj.
+
 La página usa por defecto [datos de ejemplo](src/front/sketch/data/dashboard.example.json), sin requerir un backend. Para conectarla a una API implementada por otro integrante, iniciá Vite con la URL completa:
 
 ```bash

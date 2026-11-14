@@ -1,53 +1,144 @@
 # gravsim: simulated instrument readings for the gravity hazard
 
-We have no dynamometer, DXA scanner, metabolic cart or flight wearable. `gravsim` stands in for them: a Python package that produces readings for a crew member on any mission day, following the curves measured in NASA's open bed-rest studies (the files in `data/nlsp/`). Readings are random by default and fully controllable: exercise adherence over time, fast responders, injuries on a chosen day, broken instruments.
+We have no dynamometer, DXA scanner, metabolic cart or flight wearable. `gravsim` stands in for them: it produces readings for a crew member on any mission day, following the curves measured in NASA's open bed-rest studies (the files in `data/nlsp/`). Readings are random by default and fully controllable: exercise adherence over time, fast responders, injuries on a chosen day, broken instruments.
 
-It is the input to our system. Its output is either plain reading records (JSON or a DataFrame) or the dashboard JSON that the 3D page in `src/front/sketch` reads (contract version 1, `docs/frontend-backend.md` on `design-body`).
+The readings then travel the way real sensor data would. A DataService cleans and stores them, a HealthService turns them into the dashboard JSON that the 3D page in `src/front/sketch` reads (contract version 1, `docs/frontend-backend.md` on the `design-body` branch), and `serve.py` puts that on HTTP.
 
 All data it produces is synthetic and every reading says so (`synthetic: true`).
 
-## Install and run
+## Quick start
 
-Python 3.10 or newer, with `numpy`. `pandas` is needed only for `to_dataframe()` and to refit the parameters.
+You need Python 3.10 or newer. From the repository root:
 
 ```bash
 cd sim
-pip install -e .            # or: pip install numpy pandas, and run from sim/
-python -m pytest -q         # 18 checks, including against the bed-rest data
+pip install -e ".[dev]"      # numpy, plus pandas and pytest
+python -m pytest -q          # 37 checks, some of them against the bed-rest data
 ```
+
+Feed the 3D page:
+
+```bash
+python -m gravsim.serve --day 95 --speed 20 --port 3000
+# then, in src/front/sketch on the design-body branch:
+VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
+```
+
+Or use it from Python:
 
 ```python
 import gravsim as gs
 
 mission = gs.Mission("iss_180", launch_date="2027-03-01")
-ana = mission.add_crew("CM-1", sex="F", adherence=1.0, seed=1)        # follows the exercise routine
+ana = mission.add_crew("CM-1", sex="F", adherence=1.0, seed=1)                        # follows the exercise routine
 ben = mission.add_crew("CM-2", adherence=[(0, 1.0), (60, 0.2), (120, 1.0)], seed=2)   # skips exercise for two months
 ben.add_event(day=95, measures="legs", severity_pct=12, recovery_days=20, label="ankle sprain")
 
-dyn = gs.Dynamometer(seed=3)
-r = dyn.measure(ben, day=104, measure="knee_extension_60")
-r.value, r.unit, r.day_label            # (131.0, 'ft-lb', 'FD105'): one test, noise included
-r.truth                                 # {'value': 111.921, 'change_pct': -23.62, 'faults': []}
+data = gs.DataService()
+data.ingest(mission.timeline(seed=7))      # gravsim plays the sensors, on NASA's schedule
 
-readings = mission.timeline()           # NASA schedule for every crew member
-df = gs.to_dataframe(readings)          # one row per reading
-
-dash = gs.build_dashboard(mission, ben, day=120, readings=readings)   # JSON for the 3D page
+data.readings("CM-2", "knee_extension_60", end=mission.timestamp(120))   # 6 readings, L-60 to FD105
+data.latest("CM-2", "bone", at=mission.timestamp(200))                   # newest hip, spine and heel scans (R+7)
+dash = gs.HealthService(data).dashboard(ben, day=120)                    # the JSON for the 3D page
 ```
 
-`examples/gravsim_demo.ipynb` shows what it generates, with charts against the bed-rest data (needs `pandas` and `altair`; run it from `sim/examples`).
+`examples/gravsim_demo.ipynb` shows what the generator makes, with charts against the bed-rest data (it also needs `altair`; run it from `sim/examples`).
 
-To feed the 3D page:
+## How the pieces fit
 
-```bash
-python -m gravsim.serve --preset iss_180 --day 95 --speed 20 --port 3000
-# then, in src/front/sketch on the design-body branch:
-VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
+```mermaid
+flowchart LR
+    sensors["Sensors 1, 2, 3<br/>(real instruments, not built)"]
+    gen["gravsim generator<br/>core.py, instruments.py, schedule.py"]
+    subgraph dataservice["DataService (dataservice.py)"]
+        pipe["ingestion pipeline<br/>pipeline.py, units.py"]
+        mem["readings in memory"]
+        db[("SQLite store (store.py)<br/>schema only, inert")]
+        pipe --> mem
+        pipe -. "save() does nothing" .-> db
+    end
+    health["HealthService<br/>health.py"]
+    api["API<br/>serve.py"]
+    front["3D frontend<br/>src/front/sketch"]
+    notify["queue and notifications<br/>(out of scope)"]
+    sensors -.-> pipe
+    gen -- "stands in for the sensors" --> pipe
+    mem -- "readings(), latest()" --> health
+    db -. "query() returns nothing" .-> health
+    health --> api --> front
+    health -.-> notify
 ```
 
-`--speed 20` advances the mission 20 days per real minute, so the page (which polls every 3 seconds) shows the mission unfolding. `?crew=CM-2&day=150` on the URL picks a crew member and a day. `/api/v1/readings?crew=CM-1` returns the raw readings.
+| Box in the sketch | File | What is in it |
+|---|---|---|
+| "real" data for the challenge | `core.py` | `Mission`, `CrewMember` and the physiology curves |
+| | `instruments.py` | the four simulated instruments and their faults |
+| | `schedule.py` | `timeline()`: who is measured on which days |
+| shared by every box | `reading.py` | `Reading`, the record that travels through the system; `to_dataframe()` |
+| DataService | `dataservice.py` | `DataService`: `ingest()`, `readings()`, `latest()` |
+| | `pipeline.py` | `clean()`: the ingestion rules, and `LIMITS` |
+| | `units.py` | the unit registry and `convert()` |
+| | `store.py` | the SQLite schema and `SqliteStore`, inert |
+| HealthService | `health.py` | `HealthService.dashboard()` and `validate_dashboard()` |
+| between HealthService and frontend | `serve.py` | the HTTP API |
 
-## The pieces
+`fit/fit_params.py` sits outside the package: it refits `gravsim/params.json` from `data/nlsp/`.
+
+## The DataService
+
+It holds every reading and answers three calls:
+
+- `ingest(records)` runs records through the pipeline and keeps them. A record is a `Reading` or a plain dict with at least `crew_id`, `measure`, `timestamp`, `value` and `unit`, so any sensor can send one.
+- `readings(crew_id, measures=None, start=None, end=None)` returns a crew member's readings in a time range, oldest first, whatever their quality. `measures` takes ids or group names (`"bone"`); times can be ISO text, a `datetime` or Unix seconds.
+- `latest(crew_id, measures=None, at=None)` returns the newest reading of each measure that has quality `ok`.
+
+A reading from a real sensor goes in the same way as gravsim's:
+
+```python
+[r] = data.ingest([{"crew_id": "CM-1", "measure": "resting_hr", "timestamp": "2027-06-01T09:30:00+02:00",
+                    "value": 1.15, "unit": "beats/s", "instrument": "chest strap"}])
+r.timestamp, r.value, r.unit, r.quality      # ('2027-06-01T07:30:00Z', 69.0, 'bpm', 'ok')
+```
+
+**Ingestion rules** (`pipeline.py`), applied to every reading, gravsim's included:
+
+1. A record with no crew member, no known measure or no readable time is dropped, and a warning says how many.
+2. Times are stored as UTC ISO text to the second, `2027-03-01T12:00:00Z`. A time with no offset is taken as UTC.
+3. A missing or unreadable value becomes `None` with quality `missing`. It is kept, because a gap is information too.
+4. The value is converted to its measure's canonical unit. An unknown unit, or one of the wrong kind (kg for a heart rate), keeps value and unit as sent and gets quality `bad_unit`.
+5. A value outside the physiological limits in `LIMITS` gets quality `out_of_range` and is kept unrounded. The limits are wide on purpose: a resting heart rate of 1.2 is beats per second sent as bpm, not a very calm astronaut. Values inside the limits are rounded to the measure's decimals.
+6. For readings with the same crew member, measure, time, instrument and side, the last one sent wins. The result is sorted by time.
+
+The HealthService only uses readings with quality `ok`.
+
+**Units** (`units.py`). Each measure is stored in the unit `params.json` gives it. `UNITS` maps every accepted unit to that canonical unit and a factor, and `gs.convert(100, "N·m", "ft-lb")` gives 73.76.
+
+| Canonical unit | Also accepted |
+|---|---|
+| ft-lb (torque) | N·m, Nm |
+| g/cm² (bone density) | g/cm2, mg/cm², mg/cm2 |
+| g (lean mass) | kg, lb |
+| bpm (heart rate) | beats/s |
+| mmHg (blood pressure) | kPa |
+| % (SpO2) | fraction (0.97 for 97 %) |
+| ms (HRV) | s |
+| ml/kg/min (VO2peak) | |
+
+To accept a new unit, add one line to `UNITS`.
+
+**The store** (`store.py`) is where real sensor data and imported historical data would live. For the challenge it does nothing on purpose: `SqliteStore` creates the `readings` table (in memory by default), `save()` writes nothing and `query()` returns an empty list, so the demo runs on gravsim's readings held in memory. The table has one row per reading, keyed by crew member, measure, time, instrument and side, with the value in its canonical unit, the quality, a `synthetic` flag and the remaining fields as JSON. Making it real means an `INSERT OR REPLACE` in `save()` and a `SELECT` in `query()`.
+
+**The API** (`python -m gravsim.serve`), all `GET`:
+
+| Path | Returns |
+|---|---|
+| `/api/v1/dashboard` | the dashboard JSON (contract version 1) |
+| `/api/v1/readings` | every reading so far, as JSON records |
+| `/api/v1/latest` | the newest usable reading of each measure |
+
+Query parameters: `crew=CM-2` (default: the first), `day=150` (default: the mission clock), `measures=bone,vo2peak` (for `/readings` and `/latest`). At start-up the server generates the whole mission and ingests it. `--speed 20` moves the mission clock 20 days per real minute, so the page, which polls every 3 seconds, shows the mission unfolding.
+
+## The generator
 
 **Mission.** A list of phases with a gravity level. Presets:
 
@@ -57,11 +148,11 @@ VITE_DASHBOARD_URL=http://localhost:3000/api/v1/dashboard npm run dev
 | `artemis_30` | 12 days transit, 6 on the Moon (0.166 g), 12 back | Assumption: no data for partial gravity |
 | `mars` | 180 days transit, 500 on Mars (0.38 g), 180 back | Assumption: no data for partial gravity or for 860 days |
 
-Custom missions: `gs.Mission([gs.Phase("flight", 0, 120, 0.0), ...])`. Partial gravity scales the unloading by `1 - g` unless you pass `unloading=` your own function.
+Custom missions: `gs.Mission([gs.Phase("flight", 0, 120, 0.0), ...])`. Partial gravity scales the unloading by `1 - g` unless you pass `unloading=` your own function. `mission.timestamp(day)` and `mission.day_of(timestamp)` convert between mission days and UTC times.
 
 **CrewMember.** One person, consistent across readings. Sex, age and mass (random if not given), a baseline for every measure (sampled from the subjects' pre-bed-rest values) and a personal response (sampled from the spread between subjects). The status controls:
 
-| You said | Parameter |
+| Status | Parameter |
 |---|---|
 | Normal (following the routine) | `adherence=1.0`, the Campaign 11 exercise group's curve |
 | Not normal (no exercise) | `adherence=0.0`, the control groups' curve |
@@ -70,9 +161,15 @@ Custom missions: `gs.Mission([gs.Phase("flight", 0, 120, 0.0), ...])`. Partial g
 | Damaged: an event | `crew.add_event(day, measures="legs", severity_pct=12, recovery_days=20)` |
 | Broken instrument | `Fault("offset", start, end, pct=-1.1)`, `"drift"`, `"dropout"`, `"spike"`, `"stuck"` on the instrument |
 
-Measure groups for events: `legs`, `trunk`, `arms`, `bone`, `cardio`, `strength`.
+Measure groups for events and queries: `legs`, `trunk`, `arms`, `bone`, `cardio`, `strength`.
 
-**Instruments.** `measure(crew, day, measure)` returns one `Reading`; `session(crew, day)` returns the whole session as the device records it.
+**Instruments.** `measure(crew, day, measure)` returns one `Reading`, `measure_all(crew, day)` one per measure, and `session(crew, day)` the whole session as the device records it.
+
+```python
+r = gs.Dynamometer(seed=3).measure(ben, day=104, measure="knee_extension_60")
+r.value, r.unit, r.day_label      # (131.0, 'ft-lb', 'FD105'): one test, noise included
+r.truth                           # {'value': 111.921, 'change_pct': -23.62, 'faults': []}
+```
 
 | Instrument | Measures | `session()` |
 |---|---|---|
@@ -83,7 +180,7 @@ Measure groups for events: `legs`, `trunk`, `arms`, `bone`, `cardio`, `strength`
 
 `noise=0` on an instrument (or on `timeline()`) turns measurement noise off; `noise=0.5` halves it.
 
-**Reading fields.** `crew_id`, `mission_day`, `day_label` (L-30, FD12, R+5), `timestamp`, `phase`, `gravity_g`, `instrument`, `device`, `measure`, `label`, `value`, `unit`, `region`, `muscle_keys` (the 3D page's keys, e.g. `quadriceps_l`), `quality` (`ok` or `missing`), `synthetic`, `extrapolated`, `model_version`, `status` (adherence, responder, recent events) and `truth` (noise-free value, true % change, active faults). A real monitoring system would not see `truth`; it is there to score one.
+**Reading fields.** `crew_id`, `mission_day`, `day_label` (L-30, FD12, R+5), `timestamp`, `phase`, `gravity_g`, `instrument`, `device`, `measure`, `label`, `value`, `unit`, `region`, `muscle_keys` (the 3D page's keys, e.g. `quadriceps_l`), `side`, `quality` (`ok`, `missing`, `out_of_range` or `bad_unit`), `synthetic`, `extrapolated`, `model_version`, `status` (adherence, responder, recent events) and `truth` (noise-free value, true % change, active faults). A real monitoring system would not see `truth`; it is there to score one. Real sensors leave the mission fields and `truth` empty. `gs.to_dataframe(readings)` makes a pandas DataFrame with one row per reading.
 
 **Timeline.** `mission.timeline()` uses the NASA routine from `docs/investigacion-gravedad.md`: DXA only before and after flight (there is no DXA on the ISS), strength every 30 days, VO2peak on flight days 14, 75 and 165, the wearable daily, two baseline sessions before launch. `mission.timeline(schedule=7)` reads everything every 7 days instead. `until=day` gives the timeline so far. `gs.Mission.random(seed=...)` makes a crew with random statuses (some slipping on exercise, the odd fast responder or injury).
 
@@ -128,7 +225,7 @@ What the tests check against the data: knee extension at 30 and 70 days with and
 - The exercise effect on bone has no open data (Campaign 11's DXA files are restricted); 0.5 is a placeholder.
 - Resting heart rate and pressure come from supine rest on the day subjects got up, which includes the effect of standing up again; in flight the change may be smaller.
 - The cycle test's stage values use two textbook formulas (ACSM cycling equation for VO2, Tanaka 2001 for maximum heart rate), not the data.
-- SpO2 and HRV have no data behind them.
+- SpO2 and HRV have no data behind them. Simulated SpO2 can come out above 100 %; the pipeline flags those readings `out_of_range`.
 - Groups were small (3 to 29 people per study) and some studies mix groups (AG Pilot, MEDES), so the spread between people is approximate.
 
 ## AI use

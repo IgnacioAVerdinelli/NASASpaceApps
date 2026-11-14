@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { orderedIndicators, placeIndicator, shortMuscleName, indicatorLinePath } from '../src/front/body-3d/indicators.js';
+import { areaCheckpoints, orderedIndicators, placeIndicator, shortMuscleName, indicatorLinePath } from '../src/front/body-3d/indicators.js';
+
+test('area checkpoints include both sides without requiring intensity data', () => {
+  const areas = [{ title: 'Quadriceps', muscleKeys: ['quadriceps_l', 'quadriceps_r'] }, { title: 'Empty', muscleKeys: [] }];
+  assert.deepEqual(areaCheckpoints(areas, 'quadriceps_l'), [
+    { key: 'quadriceps_l', title: 'Quadriceps', selected: true },
+    { key: 'quadriceps_r', title: 'Quadriceps', selected: true },
+  ]);
+  assert.deepEqual(areaCheckpoints([], null), []);
+});
 
 test('only positive known intensities are shown, with selection first and values clamped', () => {
   const result = orderedIndicators({ quadriceps_l: 75, quadriceps_r: 101, calf_l: 0, calf_r: NaN, unknown: 50 }, 'quadriceps_l');

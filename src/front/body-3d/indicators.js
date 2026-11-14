@@ -93,6 +93,14 @@ export function orderedIndicators(scores, selected) {
     .sort((a, b) => Number(b.selected) - Number(a.selected) || b.value - a.value || a.key.localeCompare(b.key));
 }
 
+export function areaCheckpoints(areas, selected) {
+  const checkpoints = new Map();
+  for (const area of areas ?? []) for (const key of area.muscleKeys) {
+    if (!checkpoints.has(key)) checkpoints.set(key, { key, title: area.title, selected: area.muscleKeys.includes(selected) });
+  }
+  return [...checkpoints.values()];
+}
+
 // Keep cards in side lanes; move vertically to fit without covering the body.
 export function placeIndicator(x, y, width, height, labelWidth, occupied, body, previous = null, variation = 0) {
   const labelHeight = 30, margin = 8, bodyGap = 24, separation = 16;
@@ -128,10 +136,11 @@ export function indicatorLinePath(x, y, rect, height, variation) {
   return `M ${x} ${y} L ${x + direction * stub} ${y} L ${x + direction * stub * 2} ${bendY} L ${lineEndX - direction * stub} ${endY} L ${lineEndX} ${endY}`;
 }
 
-export function createIndicatorLayer(container, view) {
+export function createIndicatorLayer(container, view, checkpoints = false) {
   const overlay = document.createElement('div');
   overlay.className = 'atlas-indicators';
-  overlay.setAttribute('aria-hidden', 'true');
+  if (!checkpoints) overlay.setAttribute('aria-hidden', 'true');
+  else overlay.classList.add('atlas-checkpoints');
   container.appendChild(overlay);
   const entries = new Map(), previousPlacements = new Map(), previousAnchors = new Map();
   const measure = document.createElement('canvas').getContext?.('2d');
@@ -145,12 +154,13 @@ export function createIndicatorLayer(container, view) {
   }
   const point = new THREE.Vector3(), normal = new THREE.Vector3(), toCamera = new THREE.Vector3();
   const projected = new THREE.Vector3(), normalMatrix = new THREE.Matrix3(), boxHit = new THREE.Vector3();
-  let lastUpdate = -Infinity, job = null, lastValues = null;
+  let lastUpdate = -Infinity, job = null, lastValues = null, currentValues = null;
 
   function update(values, now) {
-    const { layer, isolated, scores, selected } = values;
+    currentValues = values;
+    const { layer, isolated, scores, selected, checkpointItems } = values;
     const width = container.clientWidth, height = container.clientHeight;
-    const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.width !== width || lastValues.height !== height;
+    const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.width !== width || lastValues.height !== height;
     if (layer !== 'surface' && layer !== 'muscles' || width < 60 || height < 60) {
       for (const entry of entries.values()) entry.style.display = 'none';
       job = null; lastValues = { layer, isolated, scores, selected, width, height };
@@ -162,8 +172,8 @@ export function createIndicatorLayer(container, view) {
       const camera = view.camera.clone(); camera.updateMatrixWorld();
       const targets = layer === 'surface' ? [view.skin] : view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh);
       if (layer === 'muscles' && view.skeletonGroup.visible) targets.push(...view.skeletonMeshes.filter(mesh => mesh.visible));
-      job = { camera, targets, ordered: orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
-      lastValues = { layer, isolated, scores, selected, width, height };
+      job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
+      lastValues = { layer, isolated, scores, selected, checkpointItems, width, height };
     }
     const { camera, targets, ordered, occupied, seen, body } = job;
     const started = performance.now();
@@ -204,7 +214,7 @@ export function createIndicatorLayer(container, view) {
         point.copy(sample.point).applyMatrix4(sample.mesh.matrixWorld);
         projected.copy(point).project(camera);
         const candidateX = (projected.x + 1) * width / 2, candidateY = (1 - projected.y) * height / 2;
-        const available = placeIndicator(candidateX, candidateY, width, height, labelWidth, occupied.slice(), body, previousPlacements.get(item.key), variation);
+        const available = checkpoints ? { left: candidateX, top: candidateY } : placeIndicator(candidateX, candidateY, width, height, labelWidth, occupied.slice(), body, previousPlacements.get(item.key), variation);
         if (!available) continue;
         toCamera.copy(point).sub(camera.position);
         const distance = toCamera.length();
@@ -219,13 +229,26 @@ export function createIndicatorLayer(container, view) {
         } else if (hit.object !== sample.mesh) continue;
         visiblePoint = point.clone(); rect = available;
         previousAnchors.set(item.key, { x: projected.x, y: projected.y });
-        occupied.push(rect);
+        if (!checkpoints) occupied.push(rect);
         break;
       }
       if (!visiblePoint) continue;
       projected.copy(visiblePoint).project(camera);
       const x = (projected.x + 1) * width / 2, y = (1 - projected.y) * height / 2;
       let entry = entries.get(item.key);
+      if (checkpoints) {
+        if (!entry) {
+          entry = document.createElement('button'); entry.type = 'button'; entry.className = 'atlas-checkpoint';
+          entry.addEventListener('pointerdown', event => event.stopPropagation());
+          entry.addEventListener('click', () => currentValues?.onSelect?.(item.key));
+          overlay.appendChild(entry); entries.set(item.key, entry);
+        }
+        entry.setAttribute('aria-label', `${item.title}: ${shortName}`);
+        entry.setAttribute('aria-pressed', String(item.selected));
+        entry.style.left = `${x}px`; entry.style.top = `${y}px`; entry.style.display = '';
+        seen.add(item.key);
+        continue;
+      }
       if (!entry) {
         entry = document.createElement('div'); entry.className = 'atlas-indicator';
         const dot = document.createElement('span'); dot.className = 'atlas-indicator-dot';

@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Iterable
 
-from .core import MEASURES
+from .measures import MEASURES
 
 
 @dataclass(kw_only=True)

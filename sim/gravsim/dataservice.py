@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from . import events
-from .core import MODEL_VERSION, expand
+from .measures import MODEL_VERSION, expand
 from .pipeline import clean, clean_context, context_key, context_order, key, order, utc_iso
 from .reading import ContextRecord, Reading, Result
 from .store import SqliteStore

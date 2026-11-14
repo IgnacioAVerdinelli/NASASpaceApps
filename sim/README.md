@@ -87,7 +87,8 @@ flowchart LR
 | | `gravsim/instruments.py` | the five simulated instruments, the spacesuit included, and their faults |
 | | `gravsim/schedule.py` | `timeline()`: who is measured on which days |
 | | `gravsim/routine.py` | crew context: the daily routine, spacewalks, `context_timeline()` |
-| Records shared by every part | `gravsim/reading.py` | `Reading` (raw data), `ContextRecord` (crew context), `Result` (processed data); `to_dataframe()` |
+| Shared by every part | `gravsim/measures.py` | the list of measures (names, units, limits, groups) from `params.json`; the DataService depends on this list, never on the generator |
+| | `gravsim/reading.py` | `Reading` (raw data), `ContextRecord` (crew context), `Result` (processed data); `to_dataframe()` |
 | DataService | `gravsim/dataservice.py` | `DataService`: `ingest()`, `readings()`, `latest()`, `ingest_context()`, `context()`, `current_context()`, `save_result()`, `results()` |
 | | `gravsim/pipeline.py` | `clean()` and `clean_context()`: the ingestion rules, and `LIMITS` |
 | | `gravsim/units.py` | the unit registry and `convert()` |
@@ -163,6 +164,7 @@ Making it real means an `INSERT OR REPLACE` in `save()`, `save_context()` and `s
 
 | Method and path | Returns |
 |---|---|
+| `GET /api/v1/mission` | the mission: `name`, `launch_date`, `phases` (each with `start`, `end` and `gravity_g`), the clock (`now_day`, `now`) and the `crew` with each member's `sex`. Other services read the mission and its clock here instead of importing gravsim |
 | `GET /api/v1/readings` | every reading so far, as JSON records |
 | `GET /api/v1/latest` | the newest usable reading of each measure |
 | `GET /api/v1/context` | context records under way between `start` and `end` (default: the 24 hours up to now) |
@@ -170,7 +172,7 @@ Making it real means an `INSERT OR REPLACE` in `save()`, `save_context()` and `s
 | `GET /api/v1/results` | processed results of one `kind` or all, including ones dated later than the mission clock (a study booked ahead); `start` and `end` narrow it |
 | `POST /api/v1/results` | saves a result sent as JSON (`crew_id`, `kind`, `timestamp`, `payload`, optional `model_version`) and returns it, status 201 |
 
-Query parameters, all optional: `crew=CM-2` (default: the first), `day=150` (the mission day used as now; default: the mission clock), `measures=bone,vo2peak` (`/readings` and `/latest`), `start` and `end` (ISO times), `at` (an ISO time), `kind=study`. A bad parameter answers 400 and an unknown crew member 404, with the error as JSON. `--speed 20` moves the mission clock 20 days per real minute, so a client that polls sees the mission unfold.
+Query parameters, all optional: `crew=CM-2` (default: the first), `day=150` (the mission day used as now; default: the mission clock), `measures=bone,vo2peak` (`/readings` and `/latest`), `start` and `end` (ISO times), `at` (an ISO time), `kind=study`, `truth=1` (`/readings` and `/latest` only: also send each reading's `truth` and `status`, the simulator's hidden state, which a real monitor would never see; leave it off unless you are scoring a detector). A bad parameter answers 400 and an unknown crew member 404, with the error as JSON. `--speed 20` moves the mission clock 20 days per real minute, so a client that polls sees the mission unfold.
 
 ## Crew context
 

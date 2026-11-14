@@ -237,7 +237,7 @@ def api(mission_and_data):
 
 def test_api_readings_and_latest_stop_at_the_mission_clock(api):
     m, data, call = api
-    status, readings = call("/api/v1/readings?crew=CM-2&measures=knee_extension_60")
+    status, readings = call("/api/v1/readings?crew=CM-2&measures=knee_extension_60&truth=1")
     assert status == 200 and readings == [r.to_dict() for r in data.readings("CM-2", "knee_extension_60", end=m.timestamp(100))]
     assert readings[-1]["day_label"] == "FD75" and {r["unit"] for r in readings} == {"N·m"}
     status, strength = call("/api/v1/latest?crew=CM-2&measures=strength")
@@ -280,3 +280,24 @@ def test_api_refuses_bad_results_and_other_methods(api):
     with pytest.raises(urllib.error.HTTPError) as refused:
         urllib.request.urlopen(urllib.request.Request(call.base + "/api/v1/results", method="DELETE"))
     assert refused.value.code == 405 and "GET and POST" in json.load(refused.value)["error"]
+
+
+def test_api_describes_the_mission_its_clock_and_crew(api):
+    m, _, call = api                                   # the clock is stopped at day 100
+    status, info = call("/api/v1/mission")
+    assert status == 200 and info["name"] == m.name and info["launch_date"] == m.timestamp(0)
+    assert info["now_day"] == 100.0 and info["now"] == m.timestamp(100)
+    assert info["phases"] == [{"name": p.name, "start": p.start, "end": p.end, "gravity_g": p.gravity_g} for p in m.phases]
+    assert info["crew"] == [{"id": c.id, "sex": c.sex} for c in m.crew] and {c["sex"] for c in info["crew"]} <= {"F", "M"}
+    assert call("/api/v1/mission?day=12.5")[1]["now"] == m.timestamp(12.5)
+    json.dumps(info)
+
+
+def test_api_hides_the_simulators_hidden_state_unless_asked(api):
+    _, _, call = api
+    plain = call("/api/v1/readings?crew=CM-1&measures=bone")[1]
+    assert plain and all("truth" not in r and "status" not in r for r in plain)
+    latest = call("/api/v1/latest?crew=CM-1&measures=bone")[1]
+    assert latest and all("truth" not in r and "status" not in r for r in latest.values())
+    scored = call("/api/v1/readings?crew=CM-1&measures=bone&truth=1")[1]
+    assert all("value" in r["truth"] and "adherence" in r["status"] for r in scored)

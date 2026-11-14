@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Fit gravsim's curve parameters from the open NLSP bed-rest data in data/nlsp/.
+"""Fit gravsim's curve parameters from the open NLSP bed-rest data in data/nlsp/ and sim/fit/source_data/.
 
 Run from anywhere:  python sim/fit/fit_params.py
 Writes sim/gravsim/params.json. Needs pandas and numpy.
+
+data/nlsp/ keeps only the CFT70 study of MR079G (muscle strength), the one the website uses. The fit compares
+bed-rest studies of different lengths, so it reads the other MR079G studies from sim/fit/source_data/
+(see the README there). Everything else comes from data/nlsp/.
 
 Every number in params.json is either fitted here (and its source study listed)
 or listed under "assumed" for that measure (or under "model" for the generator-wide settings).
@@ -28,6 +32,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "nlsp"
+SOURCE_DATA = Path(__file__).resolve().parent / "source_data"     # MR079G studies other than CFT70
 OUT = ROOT / "sim" / "gravsim" / "params.json"
 MODEL_VERSION = "0.2.0"
 
@@ -106,7 +111,10 @@ def read_nlsp(path):
 
 
 def files(pattern):
-    return sorted(DATA.glob(pattern))
+    """The files matching `pattern` (a path under data/nlsp/). MR079G studies other than CFT70 are read from
+    sim/fit/source_data/ instead, which has the same folders."""
+    muscle = pattern.startswith("MR079G_isokinetic_muscle/") and not pattern.startswith("MR079G_isokinetic_muscle/MR079G_CFT70/")
+    return sorted((SOURCE_DATA if muscle else DATA).glob(pattern))
 
 
 def rnd(x, n=4):

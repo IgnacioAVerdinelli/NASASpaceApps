@@ -3,7 +3,8 @@
     cd health && .venv/bin/python evaluation/alert_rule.py
 
 For every reading from launch on of the measures the HealthService checks, a rule decides "alert" using only
-what the HealthService sees: the readings and the bed-rest reference. gravsim's `truth` (the noise-free
+what the HealthService sees: the readings, cleaned as the DataService cleans them (only quality "ok" counts),
+and the bed-rest reference. gravsim's `truth` (the noise-free
 change) then says whether the alert was right:
 
 - real: the true change has gone further in the harmful direction than the typical change bed-rest subjects
@@ -61,7 +62,7 @@ class Point:
 def points_for(mission: gs.Mission, seed: int, group: str, reference: Reference, faults=None) -> list[Point]:
     insts = default_instruments(seed, faults=faults)
     insts.pop("wearable")                         # none of its measures can alert
-    sim = [r for r in timeline(mission, "nasa", instruments=insts) if r.measure in MEASURES]
+    sim = [r for r in gs.clean(timeline(mission, "nasa", instruments=insts)) if r.measure in MEASURES]
     info = mission_info(mission)
     landing = info.landing
 
@@ -71,13 +72,14 @@ def points_for(mission: gs.Mission, seed: int, group: str, reference: Reference,
     out, index = [], {}
     for (crew_id, mid), rs in series.items():
         rs.sort(key=lambda r: r.mission_day)
-        pre = [r.value for r in rs if r.mission_day < 0 and r.value is not None]
+        rs = [r for r in rs if r.value is not None and r.quality == "ok"]
+        pre = [r.value for r in rs if r.mission_day < 0]
         if not pre:
             continue
         ref = sum(pre) / len(pre)
         prev = None
         for r in rs:
-            if r.mission_day < 0 or r.value is None:
+            if r.mission_day < 0:
                 continue
             typical = reference.worse_by(mid, reference.typical_change(mid, info.unloaded_days(r.mission_day), 0.0))
             p = Point(group, f"{seed}/{crew_id}", mid, r.mission_day, r.mission_day < landing,

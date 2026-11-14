@@ -2,16 +2,11 @@
 
 **Responsable:** Valen. **Estado (14/11/2026):**
 
-- Hay una primera versión en [`health/`](../health/README.md).
-- Por ahora usa gravsim en lugar del DataService.
-- Ya sirve al front de Enzo (probado de punta a punta) y da los mismos números que el `build_dashboard` de gravsim.
+- El código está en [`health/`](../health/README.md).
+- Lee del DataService de Juan por HTTP (en `main` desde el PR #7, puerto 8000) y guarda ahí sus resultados.
+- Sirve al front de Enzo; probado de punta a punta con el DataService, el HealthService y el front levantados por separado.
 - La regla de alertas está medida contra el `truth` de gravsim (pregunta 9).
-
-Juan, dueño del DataService, publicó su estado en [data-service-status.md](data-service-status.md):
-
-- El `HealthService` que hoy está dentro de gravsim es un mock de este servicio. Lo va a mover a `sim/mocks/healthservice/` para que la página 3D siga andando en la demo.
-- Su API HTTP, el contexto de la tripulación y los eventos todavía no están pusheados.
-- Ese doc respondió varias de las preguntas abiertas, marcadas abajo.
+- El PR #7 y [data-service-status.md](data-service-status.md) respondieron las preguntas 1, 2, 3, 10, 12 y 14. Quedan abiertas la 4 y la 13 para Juan, y las del resto del equipo.
 
 Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): procesa los datos del astronauta y entrega los resultados al front, a la base (a través del DataService) y a las notificaciones.
 
@@ -37,9 +32,10 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 
 | Con quién | Dirección | Qué | Estado |
 |---|---|---|---|
-| DataService | HealthService lee | Lecturas de un tripulante: `GET /api/v1/readings` (filtros `crew`, `measures`, `day`) y `GET /api/v1/latest` (la última lectura usable de cada medida) | API planeada por Juan, sin pushear. Faltan la misión y los tripulantes (pregunta 1) |
-| DataService | HealthService lee | **Contexto actual de cada tripulante:** qué hace y dónde está, `GET /api/v1/context/current` (pregunta 10) | Planeado por Juan, sin pushear. gravsim va a simular una rutina diaria y caminatas espaciales |
-| DataService | HealthService escribe | Resultados procesados: `POST /api/v1/results` (ver abajo) | API planeada por Juan, sin pushear |
+| DataService | HealthService lee | Misión y tripulantes: `GET /api/v1/mission` (fecha de lanzamiento, fases con su gravedad, el día "ahora" de su reloj y el sexo de cada tripulante) | En `main`. Lo usa al arrancar, y en cada consulta para saber el día |
+| DataService | HealthService lee | Lecturas de un tripulante: `GET /api/v1/readings` (filtros `crew`, `measures`, `day`) | En `main`. Pide solo las 8 medidas que muestra y usa las de calidad `ok` |
+| DataService | HealthService lee | **Contexto actual de cada tripulante:** qué hace y dónde está, `GET /api/v1/context/current` (pregunta 10) | En `main`. Todavía no lo usa: hace falta para rutear las alertas (pregunta 11) |
+| DataService | HealthService escribe | Resultados procesados: `POST /api/v1/results` (ver abajo) | En `main`. Lo usa |
 | Front (Enzo) | El front lee del HealthService | `GET /api/v1/dashboard`, contrato v1 | El contrato existe |
 | Cola de eventos | HealthService se suscribe | `data.readings_stored`, que publica el DataService (nombre provisorio) | El DataService ya tiene dónde publicarlo; falta cómo llega a otro proceso (pregunta 13) |
 | Cola de eventos | HealthService publica | Hallazgos, para el planificador de análisis | Planeada; en la demo se simula |
@@ -47,14 +43,14 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 
 ## Punto de partida: `build_dashboard` de gravsim
 
-El `build_dashboard` de `sim/gravsim/dashboard.py` (rama `feat/sensor-simulator`, gravsim 0.1.0) es la primera versión del HealthService, y su salida ya pasa la validación del contrato de Enzo. En gravsim 0.2.0 ese código pasó a `gravsim/health.py`, y Juan lo va a mover a `sim/mocks/healthservice/` como mock de este servicio. Lo que calcula:
+El cálculo sale del `build_dashboard` que tenía gravsim 0.1.0 (de CookieD, rama `feat/sensor-simulator`), que después pasó a ser un mock de este servicio y no entró a `main`. Lo que calcula:
 
 - **Referencia:** el promedio de las lecturas antes del vuelo.
 - **Cambio:** el % de la última lectura contra esa referencia.
 - **Score de 0 a 100:** cuánto se perdió en comparación con lo que perdieron, sin ejercicio, los sujetos de los estudios de reposo en cama.
 - **`insight`:** un texto que compara con la curva típica con y sin ejercicio, sacada de `params.json`.
 
-Para moverlo al HealthService sin depender del simulador hay que reemplazar lo único que toma de él: `crew.id`, `crew.sex`, `mission.label()`, `mission.timestamp()` y `mission.unloaded_days()`. Todo eso se puede calcular con los datos del tripulante y de la misión que entregue el DataService. Las curvas de referencia (`params.json`) se pueden usar como dato fijo del HealthService o guardar en la base como dato histórico importado, como dice la arquitectura.
+Del simulador solo tomaba `crew.id`, `crew.sex`, `mission.label()`, `mission.timestamp()` y `mission.unloaded_days()`. El HealthService los calcula con lo que da `GET /api/v1/mission`, así que no importa gravsim. Las curvas de referencia (`params.json`) las lee del repo por ahora (pregunta 4).
 
 ## Cuándo calcula (propuesta)
 
@@ -65,31 +61,32 @@ El front consulta cada 3 segundos. Si el HealthService calculara y guardara un r
 
 Hoy el código detecta las lecturas nuevas comparándolas con las que ya vio. Cuando exista la cola de eventos, eso pasa a ser el manejador del evento `data.readings_stored` que publica el DataService.
 
-## Resultado que se guarda (propuesta)
+**Límite actual:** el HealthService solo calcula cuando alguien pide un dashboard, y solo para ese tripulante. Si nadie mira la página de CM-3, no se guardan sus resultados ni salen sus alertas. Hasta que los eventos lleguen entre procesos (pregunta 13), lo puede resolver un ciclo que actualice a toda la tripulación cada pocos segundos.
 
-Se guarda con `POST /api/v1/results` del DataService:
+## Resultado que se guarda
+
+Se guarda con `POST /api/v1/results` del DataService, un resultado por tripulante y momento de cálculo:
 
 - `crew_id`: el tripulante.
-- `kind`: propuesta `"measure_result"`.
+- `kind`: `"measure_results"`.
 - `timestamp`: el momento de la misión al que corresponde el resultado.
-- `payload`: los campos de la tabla de abajo.
+- `model_version`: la versión de las curvas usadas.
+- `payload`: `{"mission_day": ..., "measures": {"knee_extension_60": {...}, ...}}`. `mission_day` es hasta qué día de misión llegan los datos; cada una de las 8 medidas lleva los campos de la tabla de abajo.
 
-El DataService agrega `computed_at` y `model_version`, y guarda un resultado por tripulante, `kind`, momento y versión: si se vuelve a calcular, lo reemplaza.
+El DataService agrega `computed_at` y guarda un resultado por tripulante, `kind`, momento y versión: si se vuelve a calcular, lo reemplaza. Por eso van todas las medidas en un solo resultado: con uno por medida en el mismo momento, se pisarían entre sí. Hay un ejemplo real en [`health/README.md`](../health/README.md#what-it-saves).
 
-Una fila por tripulante, medida y momento de cálculo:
+Campos de cada medida:
 
 | Campo | Nota |
 |---|---|
-| `crew_id`, `measure` | |
-| `computed_at`, `mission_day` | Cuándo se calculó y hasta qué día de misión llegan los datos |
+| `unloaded_days` | Días equivalentes sin gravedad hasta ese día |
 | `reference_value` | Promedio antes del vuelo |
-| `last_value`, `last_reading_at` | Última lectura usada |
+| `last_value`, `last_reading_at`, `last_mission_day` | Última lectura usada |
 | `change_pct`, `score` | |
 | `reference_n` | Cuántas lecturas previas al vuelo se promediaron en la referencia |
 | `previous_change_pct`, `previous_mission_day` | La lectura anterior desde el lanzamiento, que usa la regla de alertas |
 | `typical_no_exercise_pct`, `typical_exercise_pct` | Comparación con los estudios |
 | `extrapolated`, `synthetic` | Se heredan de las lecturas |
-| `model_version` | Versión de las curvas usadas |
 
 ## Hallazgo y alerta (propuesta)
 
@@ -139,16 +136,17 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
 
 ## Preguntas abiertas
 
-**Respondidas por Juan** en [data-service-status.md](data-service-status.md) (14/11, 18:50). Lo que describe todavía no está pusheado: lo sube cuando le pasen los tests.
+**Respondidas por Juan** en [data-service-status.md](data-service-status.md) (14/11, 18:50) y en el PR #7 (mergeado el 14/11):
 
-- **1, en parte (API).** Se lee por HTTP:
+- **1 (API, misión y tripulantes).** Se lee por HTTP, en el puerto 8000:
+  - `GET /api/v1/mission`: nombre, fecha de lanzamiento, fases con su gravedad, el día "ahora" de su reloj (`now_day`) y los tripulantes con su sexo. Lo agregó a pedido nuestro en el PR #7;
   - `GET /api/v1/readings`, con los filtros `crew`, `measures` y `day`;
   - `GET /api/v1/latest`;
-  - `GET /api/v1/results` y `POST /api/v1/results`, con `crew_id`, `kind`, `timestamp` y `payload`.
-
-  Falta cómo leer la misión y los tripulantes: queda en la pregunta 1, abajo.
-- **2 (`truth`).** Las lecturas lo traen, para que cada servicio pueda medir su propia detección. El HealthService lo descarta al leer, y solo lo usa la evaluación de alertas.
+  - `GET /api/v1/results` y `POST /api/v1/results`, con `crew_id`, `kind`, `timestamp`, `payload` y `model_version` opcional.
+- **2 (`truth`).** La API no manda `truth` ni `status` salvo que se pida con `?truth=1`, para puntuar un detector. El HealthService no lo pide, y lo descartaría igual; solo lo usa la evaluación de alertas, en el mismo proceso.
 - **3 (procesos).** Son dos. El DataService tiene su propia API HTTP (`gravsim.serve`) y los demás servicios leen por ahí, no directo desde gravsim.
+- **12 (puertos).** El DataService en el 8000 y el HealthService en el 3000, donde lo espera el front.
+- **14 (día de misión).** El filtro `day` es el día de misión que se usa como "ahora". Si una lectura no trae `mission_day`, como puede pasar con un sensor real, el HealthService lo calcula con el `timestamp` y la fecha de lanzamiento.
 - **10 (contexto y "datos nuevos").**
   - El contexto es un `ContextRecord` con `crew_id`, `start`, `end`, `activity`, `location`, `source` y `synthetic`.
   - `activity` puede ser `sleep`, `exercise`, `work`, `meal`, `hygiene` o `eva`.
@@ -158,19 +156,8 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
 
 **Para Juan (DataService)**
 
-- **1 (misión y tripulantes).**
-  - La API no tiene cómo leer la fecha de lanzamiento ni las fases con su gravedad. El HealthService las necesita para calcular los días sin gravedad y las etiquetas FD/R+.
-  - Tampoco tiene la lista de tripulantes con su sexo, que define qué cuerpo muestra el modelo 3D.
-
-  ¿Agregamos `GET /api/v1/mission` y `GET /api/v1/crew`?
-- **4 (curvas de referencia, `params.json`).** ¿Las sirve el DataService, como dato histórico importado (así lo dice la arquitectura), o el HealthService las lee del repo? El PR a `main` incluye `sim/gravsim/`, así que la segunda opción ya funciona.
-- **12 (puertos).** El front espera el dashboard en el puerto 3000, y hoy `gravsim.serve` también usa el 3000.
-  - Propuesta: el HealthService en el 3000 y el DataService en otro, por ejemplo el 8000.
-  - El mock de `sim/mocks/healthservice/` y el HealthService no deberían estar levantados a la vez, porque los dos sirven `/api/v1/dashboard`.
-- **13 (eventos entre procesos).** `DataService(publisher=...)` publica dentro del proceso del DataService. ¿Cómo le llega `data.readings_stored` al HealthService, que corre en otro proceso? Mientras no haya cola, el HealthService puede seguir pidiendo las lecturas y detectar las nuevas comparando, como hace hoy.
-- **14 (día de misión).**
-  - ¿El filtro `day` de `/api/v1/readings` es el día de misión?
-  - Una lectura de un sensor real puede no traer `mission_day`. El HealthService lo puede calcular con el `timestamp` y la fecha de lanzamiento (pregunta 1).
+- **4 (curvas de referencia, `params.json`).** ¿Las sirve el DataService, como dato histórico importado (así lo dice la arquitectura), o el HealthService las lee del repo? Hoy las lee de `sim/gravsim/params.json`, que está en `main`.
+- **13 (eventos entre procesos).** `DataService(publisher=...)` publica dentro del proceso del DataService. ¿Cómo le llega `data.readings_stored` al HealthService, que corre en otro proceso? Mientras no haya cola, el HealthService detecta las lecturas nuevas comparando, con el límite de "Cuándo calcula".
 
 **Para quien hace las notificaciones**
 
@@ -198,28 +185,25 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
 
    `health/evaluation/alert_rule.py` compara la regla vieja y 7 variantes sobre tripulaciones de gravsim, puntuando cada alerta con `truth`. Una alerta cuenta como falsa si el cambio real de la persona no pasó la pérdida típica sin ejercicio. Resultados:
 
+   Con gravsim 0.2.0, el que está en `main`:
+
    | Tripulación | Regla vieja: alertas (falsas) | Regla nueva: alertas (falsas) |
    |---|---|---|
-   | La de la demo (semilla 7, 4 personas) | 28 (28) | 0 (0) |
-   | 50 misiones al azar (200 personas) | 1421 (1214) | 16 (11) |
-   | Las mismas, con 1 de cada 10 pruebas del dinamómetro corrida un 20 % | 1548 (1348) | 29 (20) |
-   | 7 casos armados × 25 personas | 1459 (907) | 117 (15) |
+   | La de la demo (semilla 7, 4 personas) | 28 (26) | 0 (0) |
+   | 50 misiones al azar (200 personas) | 1489 (1340) | 11 (6) |
+   | Las mismas, con 1 de cada 10 pruebas del dinamómetro corrida un 20 % | 1555 (1419) | 27 (19) |
+   | 7 casos armados × 25 personas | 1494 (1023) | 87 (11) |
 
    Por persona, durante el vuelo:
 
-   - Avisa a las 25 personas que no hacen ejercicio y pierden rápido (mediana: día 74).
-   - De las 17 que no hacen ejercicio y tienen una pérdida clara, avisa a 14.
+   - De las 25 personas que no hacen ejercicio y pierden rápido, avisa a 23 (mediana: día 74).
+   - De las 9 que no hacen ejercicio y tienen una pérdida clara, avisa a 6.
    - No avisa a ninguna de las 25 que siguen la rutina.
 
-   Esos números son con gravsim 0.1.0. Con gravsim 0.2.0, que trae las curvas nuevas de Juan y todavía no está integrado, la regla se sostiene:
-
-   - La demo da 0 alertas.
-   - Las 200 personas al azar dan 11 alertas, 6 de ellas falsas.
-   - Los casos armados dan 87 alertas, 11 de ellas falsas.
-   - Avisa a 23 de las 25 personas que no hacen ejercicio y pierden rápido.
+   Con gravsim 0.1.0 los números eran parecidos: 16 alertas (11 falsas) en las 200 personas al azar y 117 (15) en los casos armados.
 
    **Límites, para decidir en equipo:**
 
    - Necesita dos pruebas y el dinamómetro es mensual, así que la primera alerta llega como pronto el día 44. Propuesta: después de una sola prueba fuera de lo esperado (por ejemplo, a más de 1 vez el ruido), publicar un **hallazgo** en la cola de eventos para que el planificador pida una prueba extra antes. La alerta sale cuando esa segunda prueba lo confirma.
-   - Una lesión en alguien que hace ejercicio casi nunca pasa la línea de "sin ejercicio", y se recupera entre pruebas mensuales: avisó a 1 de 16. Para eso habría que comparar con la propia tendencia de la persona, no con los grupos de reposo en cama.
+   - Una lesión en alguien que hace ejercicio casi nunca pasa la línea de "sin ejercicio", y se recupera entre pruebas mensuales: de las 19 con una pérdida clara, avisó a 1. Para eso habría que comparar con la propia tendencia de la persona, no con los grupos de reposo en cama.
    - El umbral (1,645) es configurable: `check(..., confidence=...)`. Con 2 hay menos alertas falsas y llegan más tarde.

@@ -1,13 +1,19 @@
 """What the HealthService knows about a mission, a crew member and a reading.
 
-These are the shapes it expects from the DataService. A reading keeps only what a real monitoring system
-would see: the simulator's `truth` and `status` fields are dropped on the way in.
+These are the shapes the DataService sends (GET /api/v1/mission and /api/v1/readings). A reading keeps only
+what a real monitoring system would see: the simulator's `truth` and `status` fields are dropped on the way in.
 """
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+
+
+def parse_time(text: str) -> datetime:
+    """A UTC ISO time as the DataService writes them ("2027-01-01T12:00:00Z"); without a zone it is taken as UTC."""
+    t = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
 @dataclass(frozen=True)
@@ -22,6 +28,7 @@ class Phase:
 class MissionInfo:
     launch_date: datetime
     phases: list[Phase]
+    name: str = ""
     _cum: list[float] = field(default_factory=list, init=False, repr=False)
 
     def __post_init__(self):
@@ -52,6 +59,10 @@ class MissionInfo:
     def timestamp(self, day: float) -> str:
         t = self.launch_date + timedelta(days=float(day))
         return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def day_of(self, timestamp: str) -> float:
+        """The mission day of a UTC ISO time such as "2027-04-06T12:00:00Z" (the inverse of timestamp)."""
+        return (parse_time(timestamp) - self.launch_date) / timedelta(days=1)
 
     def label(self, day: float) -> str:
         """NASA-style day label: L-30 before launch, FD12 in flight, R+5 after landing."""
@@ -98,9 +109,17 @@ class Reading:
     extrapolated: bool = False
 
     @classmethod
-    def from_record(cls, r: dict) -> "Reading":
-        """Build from a DataService record, ignoring any other field (truth, status, ...)."""
-        return cls(crew_id=r["crew_id"], measure=r["measure"], mission_day=float(r["mission_day"]),
+    def from_record(cls, r: dict, mission: MissionInfo | None = None) -> "Reading":
+        """Build from a DataService record, ignoring any other field (truth, status, ...).
+
+        A real sensor may send no mission day; it is then worked out from the timestamp and the mission's launch.
+        """
+        day = r.get("mission_day")
+        if day is None:
+            if mission is None:
+                raise ValueError(f"a reading without mission_day needs the mission to place it: {r.get('timestamp')}")
+            day = mission.day_of(r["timestamp"])
+        return cls(crew_id=r["crew_id"], measure=r["measure"], mission_day=float(day),
                    timestamp=r["timestamp"], value=r.get("value"), unit=r.get("unit", ""),
                    quality=r.get("quality", "ok"), synthetic=bool(r.get("synthetic", False)),
                    extrapolated=bool(r.get("extrapolated", False)))

@@ -1,8 +1,10 @@
 """The HealthService's own calculation: reference, change, score and comparison with the bed-rest studies.
 
-Ported from gravsim's dashboard builder (sim/gravsim/dashboard.py) so that it works on DataService readings
-instead of simulator objects. Same rules:
+Ported from the dashboard builder gravsim had up to version 0.1.0 (by CookieD), so that it works on DataService
+readings instead of simulator objects. Same rules:
 
+- Only readings with a value and quality "ok" count; the DataService keeps flagged ones (missing, out_of_range,
+  bad_unit) as evidence, but they are not measurements.
 - Reference: mean of the person's pre-flight readings (or the first reading if there are none).
 - Change: % of the latest reading against that reference, only once the mission has started.
 - Score (0-100): how far the measured loss has gone towards the plateau bed-rest subjects reached without
@@ -31,6 +33,8 @@ WHOLE_BODY = [
     ("vo2peak", "Aerobic capacity (VO2peak)", "Peak oxygen uptake on the cycle test"),
     ("hip_bmd", "Hip bone density", "Total hip bone density (DXA)"),
 ]
+# Every measure the HealthService reads, in the order results are listed.
+MEASURES = [m for _, m, _, _ in ITEMS] + [m for m, _, _ in WHOLE_BODY]
 
 
 @dataclass
@@ -60,10 +64,10 @@ class MeasureResult:
 
 
 def series_by_measure(readings: list[Reading], crew_id: str, day: float) -> dict[str, list[Reading]]:
-    """Valid readings of one crew member up to `day`, grouped by measure and sorted by day."""
+    """Usable readings (a value, quality "ok") of one crew member up to `day`, by measure and sorted by day."""
     series: dict[str, list[Reading]] = defaultdict(list)
     for r in readings:
-        if r.crew_id == crew_id and r.mission_day <= day and r.value is not None:
+        if r.crew_id == crew_id and r.mission_day <= day and r.value is not None and r.quality == "ok":
             series[r.measure].append(r)
     for rs in series.values():
         rs.sort(key=lambda r: r.mission_day)
@@ -88,7 +92,7 @@ def compute_results(reference: Reference, mission: MissionInfo, crew: CrewInfo, 
     unloaded = mission.unloaded_days(day)
     scored = {mid for _, mid, _, _ in ITEMS}
     results = []
-    for mid in [m for _, m, _, _ in ITEMS] + [m for m, _, _ in WHOLE_BODY]:
+    for mid in MEASURES:
         rs = series.get(mid, [])
         ref = reference_value(rs)
         last = rs[-1] if rs else None

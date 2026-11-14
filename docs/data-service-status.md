@@ -1,6 +1,6 @@
 # Data service: status and planned changes
 
-Snapshot: Saturday 14 Nov 2026, 20:15 (Argentina). Pull request #7 is open. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
+Snapshot: Saturday 14 Nov 2026, 19:50 (Argentina, UTC-3). Pull request #7 is merged: the data service is on `main` in `sim/`. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
 
 The agreed architecture is in [architecture.md](architecture.md). The data service is the left part of it: sources → DataService ↔ database, with the generator (`gravsim`) standing in for every source during the challenge. The HealthService, the two queues, the analysis scheduler, the notification system and the frontend belong to other teammates.
 
@@ -10,7 +10,7 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 |---|---|---|
 | `main` | `docs/architecture.md` (diagram and parts), `docs/img/architecture-sketch.png`, `docs/references/OCHMO-STD-100.1A_RevA_2024-09-09.pdf` (Table 8 on pages 33-37) | Pushed |
 | `feat/sensor-simulator` on GitHub (`0560b75`) | `sim/`: the generator, the DataService with its HTTP API, crew context, the event hook, tests, README, demo notebook; the HealthService mock in `sim/mocks/`. Based on `Feat/gravityEffectsInvestigation` (Tomás's data in `data/nlsp/`) | Pushed, **current** |
-| Pull request [#7](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/7) to `main`, from branch `data-service` | Only `sim/` without `sim/mocks/` (283 files). Final checks passed | **Open**, waiting for review |
+| Pull request [#7](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/7) to `main`, from branch `data-service` | Only `sim/` without `sim/mocks/`. Final checks passed; Valentín's review asked for `/api/v1/mission`, added before merging | **Merged** (`37aa6c3`) |
 
 ## 1. Done and pushed (on `feat/sensor-simulator`)
 
@@ -73,7 +73,7 @@ The agreed architecture is in [architecture.md](architecture.md). The data servi
 
 ## For other services
 
-- **Run the DataService API:** `cd sim && python -m gravsim.serve` (port 8000). The HealthService mock that feeds the 3D page: `python -m mocks.healthservice.serve` (port 3000).
+- **Run the DataService API:** `cd sim && python -m gravsim.serve` (port 8000). `GET /api/v1/mission` gives the mission, its phases and gravity, the clock and the crew with their sex. `/readings` and `/latest` leave out `truth` and `status` unless you add `?truth=1`. The HealthService mock that feeds the 3D page: `python -m mocks.healthservice.serve` (port 3000).
 - **Read data** through the DataService API above, not from the generator directly.
 - **Sensors** can only send data from Python for now (`ingest()`, `ingest_context()`); there is no HTTP endpoint for sending readings yet.
 - **Every reading:**

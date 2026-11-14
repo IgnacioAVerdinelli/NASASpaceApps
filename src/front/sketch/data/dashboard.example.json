@@ -6,7 +6,14 @@
     "body": "male",
     "layer": "surface",
     "selected": "quadriceps_l",
-    "scores": { "quadriceps_l": 75, "quadriceps_r": 75, "chest_muscles_l": 50, "chest_muscles_r": 50, "calf_l": 25, "calf_r": 25 },
+    "scores": {
+      "quadriceps_l": 75,
+      "quadriceps_r": 75,
+      "chest_muscles_l": 50,
+      "chest_muscles_r": 50,
+      "calf_l": 25,
+      "calf_r": 25
+    },
     "viewRequest": null
   },
   "summary": {
@@ -14,14 +21,176 @@
     "description": "Current muscle intensity and simulated example data.",
     "notice": "Simulated values, not a health assessment.",
     "items": [
-      { "id": "quadriceps", "muscleKeys": ["quadriceps_l", "quadriceps_r"], "title": "Quadriceps", "description": "Example change compared with a personal reference.", "changePercent": -8 },
-      { "id": "chest", "muscleKeys": ["chest_muscles_l", "chest_muscles_r"], "title": "Chest", "description": "Example change compared with a personal reference.", "changePercent": -3 },
-      { "id": "calves", "muscleKeys": ["calf_l", "calf_r"], "title": "Calves", "description": "Example change compared with a personal reference.", "changePercent": -5 }
+      {
+        "id": "quadriceps",
+        "muscleKeys": [
+          "quadriceps_l",
+          "quadriceps_r"
+        ],
+        "title": "Quadriceps",
+        "description": "Example change compared with a personal reference.",
+        "changePercent": -8
+      },
+      {
+        "id": "chest",
+        "muscleKeys": [
+          "chest_muscles_l",
+          "chest_muscles_r"
+        ],
+        "title": "Chest",
+        "description": "Example change compared with a personal reference.",
+        "changePercent": -3
+      },
+      {
+        "id": "calves",
+        "muscleKeys": [
+          "calf_l",
+          "calf_r"
+        ],
+        "title": "Calves",
+        "description": "Example change compared with a personal reference.",
+        "changePercent": -5
+      }
     ]
   },
   "charts": [
-    { "id": "quadriceps-trend", "muscleKeys": ["quadriceps_l", "quadriceps_r"], "title": "Quadriceps over time", "description": "Simulated measurement relative to a personal reference.", "unit": "%", "reference": 100, "insight": "Example values show a gradual decrease.", "points": [ { "at": "2026-10-15T12:00:00.000Z", "value": 100 }, { "at": "2026-10-30T12:00:00.000Z", "value": 97 }, { "at": "2026-11-14T12:00:00.000Z", "value": 92 } ] },
-    { "id": "chest-trend", "muscleKeys": ["chest_muscles_l", "chest_muscles_r"], "title": "Chest over time", "description": "Simulated measurement relative to a personal reference.", "unit": "%", "reference": 100, "insight": "Example values remain close to the reference.", "points": [ { "at": "2026-10-15T12:00:00.000Z", "value": 100 }, { "at": "2026-10-30T12:00:00.000Z", "value": 99 }, { "at": "2026-11-14T12:00:00.000Z", "value": 97 } ] },
-    { "id": "calves-trend", "muscleKeys": ["calf_l", "calf_r"], "title": "Calves over time", "description": "Simulated measurement relative to a personal reference.", "unit": "%", "reference": 100, "insight": "Example values show a slight decrease.", "points": [ { "at": "2026-10-15T12:00:00.000Z", "value": 100 }, { "at": "2026-10-30T12:00:00.000Z", "value": 98 }, { "at": "2026-11-14T12:00:00.000Z", "value": 95 } ] }
+    {
+      "id": "quadriceps-trend",
+      "muscleKeys": [
+        "quadriceps_l",
+        "quadriceps_r"
+      ],
+      "title": "Quadriceps over time",
+      "description": "Simulated measurement relative to a personal reference.",
+      "unit": "%",
+      "reference": 100,
+      "insight": "Example values show a gradual decrease.",
+      "points": [
+        {
+          "at": "2026-10-15T12:00:00.000Z",
+          "value": 100
+        },
+        {
+          "at": "2026-10-19T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-10-23T12:00:00.000Z",
+          "value": 98
+        },
+        {
+          "at": "2026-10-27T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-10-30T12:00:00.000Z",
+          "value": 97
+        },
+        {
+          "at": "2026-11-04T12:00:00.000Z",
+          "value": 96
+        },
+        {
+          "at": "2026-11-09T12:00:00.000Z",
+          "value": 94
+        },
+        {
+          "at": "2026-11-14T12:00:00.000Z",
+          "value": 92
+        }
+      ]
+    },
+    {
+      "id": "chest-trend",
+      "muscleKeys": [
+        "chest_muscles_l",
+        "chest_muscles_r"
+      ],
+      "title": "Chest over time",
+      "description": "Simulated measurement relative to a personal reference.",
+      "unit": "%",
+      "reference": 100,
+      "insight": "Example values remain close to the reference.",
+      "points": [
+        {
+          "at": "2026-10-15T12:00:00.000Z",
+          "value": 100
+        },
+        {
+          "at": "2026-10-19T12:00:00.000Z",
+          "value": 100
+        },
+        {
+          "at": "2026-10-23T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-10-27T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-10-30T12:00:00.000Z",
+          "value": 98
+        },
+        {
+          "at": "2026-11-04T12:00:00.000Z",
+          "value": 98
+        },
+        {
+          "at": "2026-11-09T12:00:00.000Z",
+          "value": 97
+        },
+        {
+          "at": "2026-11-14T12:00:00.000Z",
+          "value": 97
+        }
+      ]
+    },
+    {
+      "id": "calves-trend",
+      "muscleKeys": [
+        "calf_l",
+        "calf_r"
+      ],
+      "title": "Calves over time",
+      "description": "Simulated measurement relative to a personal reference.",
+      "unit": "%",
+      "reference": 100,
+      "insight": "Example values show a slight decrease.",
+      "points": [
+        {
+          "at": "2026-10-15T12:00:00.000Z",
+          "value": 100
+        },
+        {
+          "at": "2026-10-19T12:00:00.000Z",
+          "value": 100
+        },
+        {
+          "at": "2026-10-23T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-10-27T12:00:00.000Z",
+          "value": 98
+        },
+        {
+          "at": "2026-10-30T12:00:00.000Z",
+          "value": 99
+        },
+        {
+          "at": "2026-11-04T12:00:00.000Z",
+          "value": 97
+        },
+        {
+          "at": "2026-11-09T12:00:00.000Z",
+          "value": 96
+        },
+        {
+          "at": "2026-11-14T12:00:00.000Z",
+          "value": 95
+        }
+      ]
+    }
   ]
 }

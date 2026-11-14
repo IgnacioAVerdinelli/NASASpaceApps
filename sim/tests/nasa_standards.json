@@ -1,0 +1,50 @@
+{
+ "_about": "Numeric thresholds read by the verifier (2026-11-14) from the fetched PDFs. Page numbers are PDF page indices of the fetched files. Nothing here is from memory; where a figure was not found in a fetched document it is listed under not_found.",
+ "documents": {
+  "NASA-STD-3001 Vol 1 Rev C": {"title": "NASA Spaceflight Human-System Standard Volume 1: Crew Health, Revision C, approved 2023-09-15, 87 pages", "url": "https://standards.nasa.gov/sites/default/files/standards/NASA/C//nasa-std-3001-vol-1-rev-c-signature.pdf"},
+  "OCHMO-STD-100.1A": {"title": "NASA Space Flight Medical Selection, Recertification and Mission Evaluation Standards, Revision A, release 09/09/2024, 103 pages", "url": "https://www.nasa.gov/wp-content/uploads/2023/04/ochmo-std-100.1a.pdf", "note": "the NTRS copy (OCHMO STD 100 1A 05142024.pdf, 96 pages) is an earlier unsigned draft with the same text"},
+  "OCHMO-TB-031": {"title": "NASA-STD-3001 Technical Brief: Exercise Overview, dated 10/02/2023 on each page, 26 pages", "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-031-exercise-overview.pdf"}
+ },
+ "thresholds": {
+  "vo2_in_mission_min_microgravity_eva_ml_kg_min": {"value": 32.9, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4001]", "section": "4.1.1 Microgravity EVA Aerobic Capacity", "page": 32,
+     "quote": "Crewmembers shall maintain an in-mission VO2max at or above 32.9 ml/min/kg for missions with microgravity EVAs", "also": "OCHMO-TB-031 p.3"},
+  "vo2_in_mission_min_surface_eva_ml_kg_min": {"value": 36.5, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4002]", "section": "4.1.2", "page": 33},
+  "vo2_in_mission_min_fraction_of_premission": {"value": 0.80, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4003]", "section": "4.1.3 In-Mission Aerobic Capacity", "page": 33,
+     "quote": "at or above 80% of the pre-mission capacity", "rationale_page_34": "assumes average 15% decline in VO2max and showed decrements up to 20% do not impair mission objectives"},
+  "vo2_premission_recommendation_ml_kg_min": {"value_15pct_decline": 38.7, "value_25pct_decline": 43.8, "doc": "NASA-STD-3001 Vol 1 Rev C", "table": "Table 4.1-1", "page": 33,
+     "note": "recommendations, not requirements; rationale p.32: 'historical experience showing declines of 15-25% in VO2max'"},
+  "vo2_postflight_decline_typical_pct": {"range": [10, 30], "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4004] rationale", "page": 34, "quote": "Aerobic capacity can be decreased by approximately 10%-30% after spaceflight depending on duration and conditions"},
+  "muscle_strength_in_mission_min_fraction_of_baseline": {"value": 0.80, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4024]", "section": "4.6.2 In-Mission Skeletal Muscle Strength", "page": 38,
+     "quote": "Countermeasures shall maintain in-mission skeletal muscle strength at or above 80% of baseline values"},
+  "muscle_strength_postflight_decline_typical_pct": {"range": [10, 30], "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4025] rationale", "page": 39, "quote": "Lower body muscle cross-sectional area and strength can be decreased by approximately 10-30% after spaceflight"},
+  "premission_strength_table": {"doc": "NASA-STD-3001 Vol 1 Rev C", "table": "Table 4.6-1 Pre-Mission Muscle Strength", "page": 38, "deadlift_x_bodyweight": {"minimum": 1.0, "microgravity_eva": 1.3, "surface_eva": 1.6, "unaided_egress": 1.3}, "bench_press_x_bodyweight": {"minimum": 0.7, "microgravity_eva": 0.8, "surface_eva": 1.0, "unaided_egress": 0.7},
+     "note": "deadlift/bench press, not isokinetic torque: cannot be applied to the dynamometer measures without a conversion that no fetched document gives"},
+  "bmd_in_mission_min_fraction_hip_spine": {"value": 0.95, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4027]", "section": "4.7.2 In-Mission Bone Countermeasures", "page": 39,
+     "quote": "maintain bone mineral density of the hip and spine at or above 95% of pre-mission values and at or above 90% for the femoral neck"},
+  "bmd_in_mission_min_fraction_femoral_neck": {"value": 0.90, "doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4027]", "page": 39},
+  "bmd_6_month_iss_with_countermeasures": {"doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4027] rationale", "page": 39, "quote": "the majority of crewmembers returning with <10% deficit bone mineral density in femoral neck and <5% in total hip or spine during 6-month ISS missions"},
+  "bmd_premission_tscore": {"doc": "NASA-STD-3001 Vol 1 Rev C", "req": "[V1 4026]", "page": 39, "quote": "pre-mission bone mineral density (BMD) T-scores for total hip and lumbar spine (L1-L4) ... shall be consistent with an age, sex, gender, and ethnic-matched population", "numeric": null},
+  "osteoporosis_tscore_disqualifying": {"value": -2.5, "doc": "OCHMO-STD-100.1A", "section": "Appendix, item 17 Disqualifications for Abnormal Bone Mineral Density", "page": 83,
+     "quote": "T-score <= -2.5 at the femoral neck, total hip, or lumbar spine using the female, white, age 20-29 ... as the reference population standard"},
+  "low_bmd_zscore_disqualifying": {"value": -2.0, "doc": "OCHMO-STD-100.1A", "page": 83, "quote": "Bone mineral density below the expected range for age (Z-score < -2.0)"},
+  "hypertension_definition_mmHg": {"systolic": 140, "diastolic": 90, "doc": "OCHMO-STD-100.1A", "page": 74, "quote": "Hypertension, as defined by sustained systolic blood pressure of 140 mmHg or greater or diastolic of 90 mmHg or greater"},
+  "bradycardia_review_bpm": {"value": 30, "doc": "OCHMO-STD-100.1A", "page": 76, "quote": "Prolonged sinus pause > 3 seconds or heart rate < 30 beats per minute not during sleep", "note": "requires AMB review and may be disqualifying"},
+  "in_flight_schedule": {"doc": "OCHMO-STD-100.1A", "table": "Table 8 Mission Medical Examinations for Assigned Crew on > 30-day Missions", "pages": [31, 34, 36],
+     "aerobic_capacity_[6028]": "L-90/30 d; FD14, FD75, FD165, FD255, R-14 d; R+5 d, R+30 d",
+     "strength_conditioning_[6025]": "in-flight L+14 days (NET 3rd session) and then at least every 30 days thereafter (p.51); Resistance 3x/wk (60 min) Aerobic 3x/wk (30 min)",
+     "bone_densitometry_[6013]": "AME L-21/18 m; L-180/30 d; R+ <30 days, R+1 year, then as clinically indicated (p.45)",
+     "functional_fitness_[6024]": "AME L-9/6 m, L-90/30 d; R+5/7 d, R+30 d (p.36, p.51: includes isokinetic testing)"},
+  "postflight_reconditioning_window_days": {"value": 45, "doc": "OCHMO-TB-031", "page": 2, "quote": "return to preflight values for aerobic capacity and muscle strength during the rehabilitation period within 45 days postflight"},
+  "bmd_recovery_time": {"doc": "OCHMO-TB-031", "page": 2, "quote": "for many crewmembers, it requires a year to recover back to preflight values"},
+  "bedrest_70d_control_vo2_decline_pct": {"value": 10, "doc": "OCHMO-TB-031", "page": 8, "quote": "Peak aerobic capacity was maintained from pre to post bed rest in all exercise groups compared to a 10% decline in controlled group"},
+  "bedrest_10d_vo2_decline_pct": {"value": 14, "doc": "OCHMO-TB-031", "page": 7, "quote": "Previous bed rest study showed 14% decline after 10-day bed rest (no exercise)"},
+  "bedrest_10d_vo2_decline_pct_convertino": {"range": [6, 16], "doc": "NASA-STD-3001 Vol 1 Rev C", "page": 33, "quote": "Convertino et al. (1997) demonstrated a 6-16% reduction in VO2max after 10 days of bedrest"}
+ },
+ "not_found": [
+  "A '>=20% VO2 drop = performance loss' statement: not in OCHMO-TB-031 as such; the 80% floor [V1 4003] and its rationale ('decrements up to 20% do not impair mission objectives', NASA-STD-3001 V1 p.34) are the closest text.",
+  "Bone loss rate in %/month for spaceflight (e.g. '1-1.5% per month'): not in any of the three fetched documents.",
+  "Any in-flight limit for resting heart rate, blood pressure, SpO2 or HRV: none in the three documents (OCHMO-STD-100.1A only lists vital signs as examined, p.38, and the selection-level hypertension/bradycardia definitions above).",
+  "Isokinetic torque thresholds (ft-lb or % change) for knee/ankle/trunk: none; the pre-mission strength table is deadlift/bench press x body weight.",
+  "Reference means/SDs needed to turn the generator's g/cm2 into T-scores: not in the fetched documents."
+ ]
+}

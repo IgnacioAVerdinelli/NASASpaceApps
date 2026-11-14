@@ -1,0 +1,303 @@
+"""Checks for the DataService: units, the cleaning rules, the inert store, gravsim's readings going
+through the pipeline, and processed results.
+
+Run from sim/:  python -m pytest -q
+"""
+import json
+import logging
+import threading
+import urllib.request
+
+import pytest
+
+import gravsim as gs
+from gravsim.serve import data_routes, make_server
+
+
+def sensor(**fields):
+    """A raw record as a real wearable might send it."""
+    record = {"crew_id": "CM-1", "measure": "resting_hr", "timestamp": "2027-03-01T08:00:00Z",
+              "value": 72, "unit": "bpm", "instrument": "wearable"}
+    return {**record, **fields}
+
+
+# ---- units ----------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("value,unit,to,expected", [
+    (100, "N·m", "ft-lb", 73.756),
+    (1, "ft-lb", "N·m", 1.35582),
+    (135.582, "Nm", "ft-lb", 100),
+    (17.5, "kg", "g", 17500),
+    (950, "mg/cm²", "g/cm²", 0.95),
+    (1.2, "beats/s", "bpm", 72),
+    (73.756, "ft-lb", "N·m", 100),
+])
+def test_convert(value, unit, to, expected):
+    assert gs.convert(value, unit, to) == pytest.approx(expected, rel=1e-4)
+
+
+def test_convert_refuses_unknown_units_and_other_kinds():
+    with pytest.raises(ValueError, match="unknown unit"):
+        gs.convert(1, "furlong", "g")
+    with pytest.raises(ValueError, match="can't convert"):
+        gs.convert(1, "kg", "bpm")
+
+
+def test_every_measure_has_a_known_unit_and_limits():
+    for mid, m in gs.MEASURES.items():
+        stored = gs.STORED_UNITS[mid]
+        assert gs.UNITS[stored] == (stored, 1.0), mid                 # stored in a canonical unit
+        assert gs.UNITS[m["unit"]][0] == stored, mid                  # gravsim's unit converts to it
+        assert mid in gs.LIMITS, mid
+    strength = set(gs.GROUPS["strength"])
+    assert {gs.STORED_UNITS[mid] for mid in strength} == {"N·m"}
+    assert {gs.MEASURES[mid]["unit"] for mid in strength} == {"ft-lb"}   # the fit and the dynamometer keep ft-lb
+    assert all(gs.STORED_UNITS[mid] == m["unit"] for mid, m in gs.MEASURES.items() if mid not in strength)
+
+
+# ---- cleaning -------------------------------------------------------------------------------
+
+def test_wearable_in_beats_per_second_is_stored_in_bpm():
+    [r] = gs.clean([sensor(value=1.2, unit="beats/s")])
+    assert (r.value, r.unit, r.quality) == (72.0, "bpm", "ok")
+    assert r.label == gs.MEASURES["resting_hr"]["label"] and r.synthetic is False
+
+
+def test_strength_is_stored_in_newton_metres():
+    dyno = {"measure": "knee_extension_60", "instrument": "dynamometer"}
+    [r] = gs.clean([sensor(**dyno, value=100, unit="ft-lb")])
+    assert (r.value, r.unit, r.quality) == (135.6, "N·m", "ok")
+    [r] = gs.clean([sensor(**dyno, value=135.6, unit="Nm")])
+    assert (r.value, r.unit, r.quality) == (135.6, "N·m", "ok")
+    [r] = gs.clean([sensor(**dyno, value=1200, unit="ft-lb")])         # 1627 N·m: over the 1000 ft-lb limit
+    assert (r.unit, r.quality) == ("N·m", "out_of_range") and r.value == pytest.approx(1627, abs=0.1)
+
+
+def test_times_become_utc_iso():
+    stamps = ["2027-03-01T10:00:00+02:00", "2027-03-01T08:00:00", "2027-03-01 08:00:00Z", 1803888000]
+    assert {r.timestamp for r in gs.clean([sensor(timestamp=t, instrument=str(i)) for i, t in enumerate(stamps)])} \
+        == {"2027-03-01T08:00:00Z"}
+
+
+def test_missing_values_are_flagged_not_dropped():
+    readings = gs.clean([sensor(value=v, instrument=str(i)) for i, v in enumerate([None, "", "n/a", float("nan")])])
+    assert len(readings) == 4 and all(r.value is None and r.quality == "missing" for r in readings)
+
+
+def test_values_outside_physiological_limits_are_flagged():
+    [low, ok, high] = gs.clean([sensor(value=v, timestamp=f"2027-03-01T0{i}:00:00Z") for i, v in enumerate([1.2, 72, 400])])
+    assert (low.quality, ok.quality, high.quality) == ("out_of_range", "ok", "out_of_range")
+    assert low.value == 1.2            # kept as sent, so nothing is lost
+
+
+def test_unknown_or_wrong_units_are_flagged():
+    by_unit = {r.unit: r for r in gs.clean([sensor(unit="kg"), sensor(unit="bananas", instrument="other")])}
+    assert (by_unit["kg"].quality, by_unit["kg"].value) == ("bad_unit", 72.0)      # value and unit kept as sent
+    assert by_unit["bananas"].quality == "bad_unit"
+
+
+def test_records_without_who_what_or_when_are_dropped(caplog):
+    with caplog.at_level(logging.WARNING):
+        kept = gs.clean([sensor(), sensor(crew_id=None), sensor(measure="body_temp"), sensor(timestamp="yesterday"),
+                         {"crew_id": "CM-1", "measure": "resting_hr"}])
+    assert len(kept) == 1 and "dropped 4 records" in caplog.text
+
+
+def test_duplicates_keep_the_last_and_output_is_sorted():
+    readings = gs.clean([sensor(timestamp="2027-03-02T08:00:00Z"), sensor(value=70), sensor(value=71),
+                         sensor(timestamp="2027-03-01T10:00:00+02:00", value=75)])
+    assert [(r.timestamp, r.value) for r in readings] == [("2027-03-01T08:00:00Z", 75.0), ("2027-03-02T08:00:00Z", 72.0)]
+
+
+# ---- the inert store ------------------------------------------------------------------------
+
+def primary_key(store, table):
+    return [row[1] for row in sorted(store.db.execute(f"PRAGMA table_info({table})"), key=lambda row: row[5]) if row[5]]
+
+
+def test_store_has_the_schema_but_saves_and_finds_nothing():
+    store = gs.SqliteStore()
+    assert primary_key(store, "readings") == ["crew_id", "measure", "timestamp", "instrument", "side"]
+    assert [row[1] for row in store.db.execute("PRAGMA table_info(processed)")] == \
+        ["crew_id", "kind", "timestamp", "computed_at", "model_version", "payload"]
+    assert primary_key(store, "processed") == ["crew_id", "kind", "timestamp", "model_version"]
+
+    store.save(gs.clean([sensor()]))
+    store.save_results([gs.DataService().save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"a": 1})])
+    assert store.query("CM-1") == [] and store.query_results("CM-1") == []
+    for table in ("readings", "processed"):
+        assert store.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone() == (0,)
+
+
+# ---- gravsim through the DataService --------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def mission_and_data():
+    m = gs.Mission.random(seed=5)
+    data = gs.DataService()
+    generated = m.timeline(seed=5)
+    kept = data.ingest(generated)
+    return m, data, generated, kept
+
+
+def test_generator_readings_go_through_the_pipeline_unchanged_but_strength_in_newton_metres(mission_and_data):
+    m, data, generated, kept = mission_and_data
+    assert len(kept) == len(generated)                       # nothing dropped or merged, same order
+    strength = set(gs.GROUPS["strength"])
+    assert any(g.measure in strength for g in generated)
+    for g, k in zip(generated, kept):
+        expected = g.to_dict()
+        if g.measure in strength:                            # the dynamometer reports ft-lb, the DataService keeps N·m
+            assert (g.unit, k.unit) == ("ft-lb", "N·m")
+            nm = {"value": None if g.value is None else round(gs.convert(g.value, "ft-lb", "N·m"), 1), "unit": "N·m",
+                  "truth": {**g.truth, "value": round(gs.convert(g.truth["value"], "ft-lb", "N·m"), 3)}}
+            expected.update(nm)
+        assert k.to_dict() == {**expected, "quality": k.quality}
+    # gravsim clamps every reading to the same LIMITS the pipeline checks, so nothing it makes is flagged
+    assert all(r.quality == "ok" for r in kept)
+
+
+def test_readings_filter_by_crew_measure_and_time(mission_and_data):
+    m, data, _, _ = mission_and_data
+    found = data.readings("CM-2", "bone", start=m.timestamp(0), end=m.timestamp(m.landing + 30))
+    assert found and {r.measure for r in found} <= set(gs.GROUPS["bone"]) and {r.crew_id for r in found} == {"CM-2"}
+    assert all(m.timestamp(0) <= r.timestamp <= m.timestamp(m.landing + 30) for r in found)
+    assert data.readings("nobody") == []
+
+
+def test_latest_is_the_newest_usable_reading_of_each_measure(mission_and_data):
+    m, _, _, kept = mission_and_data
+    data = gs.DataService()
+    data.ingest(kept)
+    latest = data.latest("CM-1", ["knee_extension_60", "vo2peak"], at=m.timestamp(100))
+    assert set(latest) == {"knee_extension_60", "vo2peak"}
+    assert latest["knee_extension_60"].day_label == "FD75" and latest["vo2peak"].day_label == "FD75"
+    data.ingest([sensor(measure="vo2peak", unit="ml/kg/min", value=None, timestamp=m.timestamp(99))])
+    assert data.latest("CM-1", "vo2peak", at=m.timestamp(100))["vo2peak"].day_label == "FD75"   # a gap doesn't hide it
+
+
+# ---- processed results ----------------------------------------------------------------------
+
+def test_results_are_saved_and_read_back_by_kind_and_time():
+    data = gs.DataService()
+    payload = {"knee_extension_60": {"change_pct": -12.5}}
+    for day in (3, 1, 2):
+        data.save_result("CM-1", "measure_change", f"2027-03-0{day}T12:00:00Z", payload)
+        data.save_result("CM-1", "dashboard", f"2027-03-0{day}T14:00:00+02:00", {"version": 1})
+    data.save_result("CM-2", "dashboard", "2027-03-01T12:00:00Z", {"version": 1})
+    payload["knee_extension_60"]["change_pct"] = 0        # the saved copy must not follow later edits
+
+    everything = data.results("CM-1")
+    assert len(everything) == 6 and [r.timestamp for r in everything] == sorted(r.timestamp for r in everything)
+    changes = data.results("CM-1", kind="measure_change")
+    assert [r.timestamp[:10] for r in changes] == ["2027-03-01", "2027-03-02", "2027-03-03"]
+    assert changes[0].payload == {"knee_extension_60": {"change_pct": -12.5}}
+    assert changes[0].model_version == gs.MODEL_VERSION and changes[0].computed_at.endswith("Z")
+    window = data.results("CM-1", start="2027-03-02T00:00:00Z", end="2027-03-02T23:59:59Z")
+    assert {(r.kind, r.timestamp) for r in window} == {("measure_change", "2027-03-02T12:00:00Z"),
+                                                       ("dashboard", "2027-03-02T12:00:00Z")}
+    assert data.results("CM-3") == []
+
+
+def test_computing_a_result_again_replaces_it_and_a_new_model_version_adds_one():
+    data = gs.DataService()
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 1})
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 2})
+    assert [r.payload for r in data.results("CM-1")] == [{"n": 2}]
+    data.save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"n": 3}, model_version="9.9.9")
+    assert sorted(r.model_version for r in data.results("CM-1")) == [gs.MODEL_VERSION, "9.9.9"]
+
+
+# ---- the HTTP API ---------------------------------------------------------------------------
+
+@pytest.fixture
+def api(mission_and_data):
+    """The DataService API on a free port, with the mission clock stopped at day 100. Yields get(path), post(path, body)."""
+    m, _, _, kept = mission_and_data
+    data = gs.DataService()
+    data.ingest(kept)
+    server = make_server(data_routes(m, data, clock=lambda: 100.0), port=0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+
+    def call(path, body=None):
+        req = urllib.request.Request(base + path, method="GET" if body is None else "POST",
+                                     data=None if body is None else json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as e:
+            return e.code, json.load(e)
+    call.base = base
+    yield m, data, call
+    server.shutdown()
+    server.server_close()
+
+
+def test_api_readings_and_latest_stop_at_the_mission_clock(api):
+    m, data, call = api
+    status, readings = call("/api/v1/readings?crew=CM-2&measures=knee_extension_60&truth=1")
+    assert status == 200 and readings == [r.to_dict() for r in data.readings("CM-2", "knee_extension_60", end=m.timestamp(100))]
+    assert readings[-1]["day_label"] == "FD75" and {r["unit"] for r in readings} == {"N·m"}
+    status, strength = call("/api/v1/latest?crew=CM-2&measures=strength")
+    assert status == 200 and set(strength) == set(gs.GROUPS["strength"]) and {r["unit"] for r in strength.values()} == {"N·m"}
+    status, latest = call("/api/v1/latest?crew=CM-2&measures=bone,vo2peak&day=300")
+    assert status == 200 and set(latest) == {"hip_bmd", "spine_bmd", "heel_bmd", "vo2peak"}
+    assert call("/api/v1/latest?crew=CM-9")[0] == 404
+    assert call("/api/v1/latest?measures=elbow")[0] == 400
+    assert call("/api/v1/nothing")[0] == 404
+
+
+def test_api_saves_and_reads_results(api):
+    m, data, call = api
+    study = {"crew_id": "CM-1", "kind": "study", "timestamp": m.timestamp(60), "payload": {"study": "bone_densitometry"}}
+    status, saved = call("/api/v1/results", study)
+    assert status == 201 and saved["payload"] == study["payload"] and saved["timestamp"] == m.timestamp(60)
+    assert [r.kind for r in data.results("CM-1")] == ["study"]
+    assert data.publisher.messages[-1] == {"topic": "data.result_saved", "message": {
+        "crew_id": "CM-1", "kind": "study", "timestamp": saved["timestamp"], "computed_at": saved["computed_at"],
+        "model_version": gs.MODEL_VERSION}}
+    assert call("/api/v1/results?crew=CM-1&kind=study")[1] == [saved]
+    assert call(f"/api/v1/results?crew=CM-1&end={m.timestamp(50)}")[1] == []   # it is for day 60
+    assert call("/api/v1/results", {"crew_id": "CM-1"})[0] == 400       # kind, timestamp and payload missing
+
+
+def test_api_shows_studies_booked_after_the_mission_clock(api):
+    m, _, call = api                                   # the clock is at day 100
+    ahead = {"crew_id": "CM-2", "kind": "study", "timestamp": m.timestamp(120), "payload": {"study": "vo2peak"}}
+    assert call("/api/v1/results", ahead)[0] == 201
+    assert [r["timestamp"] for r in call("/api/v1/results?crew=CM-2&kind=study")[1]] == [m.timestamp(120)]
+
+
+def test_api_refuses_bad_results_and_other_methods(api):
+    m, data, call = api
+    good = {"crew_id": "CM-1", "kind": "x", "timestamp": m.timestamp(10), "payload": {}}
+    assert call("/api/v1/results", {**good, "crew_id": "CM-99"})[0] == 404
+    assert call("/api/v1/results", {**good, "payload": "hello"})[0] == 400
+    assert call("/api/v1/results", {**good, "colour": "red"})[0] == 400
+    assert data.results("CM-1", "x") == [] and data.results("CM-99") == []
+    with pytest.raises(urllib.error.HTTPError) as refused:
+        urllib.request.urlopen(urllib.request.Request(call.base + "/api/v1/results", method="DELETE"))
+    assert refused.value.code == 405 and "GET and POST" in json.load(refused.value)["error"]
+
+
+def test_api_describes_the_mission_its_clock_and_crew(api):
+    m, _, call = api                                   # the clock is stopped at day 100
+    status, info = call("/api/v1/mission")
+    assert status == 200 and info["name"] == m.name and info["launch_date"] == m.timestamp(0)
+    assert info["now_day"] == 100.0 and info["now"] == m.timestamp(100)
+    assert info["phases"] == [{"name": p.name, "start": p.start, "end": p.end, "gravity_g": p.gravity_g} for p in m.phases]
+    assert info["crew"] == [{"id": c.id, "sex": c.sex} for c in m.crew] and {c["sex"] for c in info["crew"]} <= {"F", "M"}
+    assert call("/api/v1/mission?day=12.5")[1]["now"] == m.timestamp(12.5)
+    json.dumps(info)
+
+
+def test_api_hides_the_simulators_hidden_state_unless_asked(api):
+    _, _, call = api
+    plain = call("/api/v1/readings?crew=CM-1&measures=bone")[1]
+    assert plain and all("truth" not in r and "status" not in r for r in plain)
+    latest = call("/api/v1/latest?crew=CM-1&measures=bone")[1]
+    assert latest and all("truth" not in r and "status" not in r for r in latest.values())
+    scored = call("/api/v1/readings?crew=CM-1&measures=bone&truth=1")[1]
+    assert all("value" in r["truth"] and "adherence" in r["status"] for r in scored)

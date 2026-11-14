@@ -85,6 +85,11 @@ def make_server(routes: dict, port: int = 0, origin: str = "*") -> ThreadingHTTP
         def do_POST(self):
             self._answer("POST")
 
+        def do_PUT(self):                   # PUT, PATCH and DELETE are not part of the API
+            self._send(405, {"error": "this API only answers GET and POST"})
+
+        do_PATCH = do_DELETE = do_PUT
+
         def log_message(self, *a):
             pass
 
@@ -142,12 +147,19 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
         return 200, None if found is None else found.to_dict()
 
     def results(q, _):
-        found = data.results(who(q), q.get("kind"), start=q.get("start"), end=q.get("end", now(q)))
+        # no default end: a study the scheduler has booked for a later day must still show up
+        found = data.results(who(q), q.get("kind"), start=q.get("start"), end=q.get("end"))
         return 200, [r.to_dict() for r in found]
 
     def save_result(_, body):
-        if not isinstance(body, dict):
+        fields = {"crew_id", "kind", "timestamp", "payload"}
+        if not isinstance(body, dict) or not fields <= body.keys():
             raise ValueError("send a JSON object with crew_id, kind, timestamp and payload")
+        if set(body) - fields - {"model_version"}:
+            raise ValueError(f"unknown fields: {sorted(set(body) - fields - {'model_version'})}")
+        if not isinstance(body["payload"], dict):
+            raise ValueError("payload must be a JSON object")
+        who({"crew": body["crew_id"]})      # an unknown crew member answers 404, as on the GET endpoints
         return 201, data.save_result(**body).to_dict()
 
     return {("GET", "/api/v1/readings"): readings, ("GET", "/api/v1/latest"): latest,

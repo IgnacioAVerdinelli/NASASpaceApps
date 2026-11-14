@@ -209,7 +209,7 @@ class Mission:
                              severity_pct=float(rng.uniform(5, 15)), recovery_days=float(rng.uniform(10, 40)),
                              label="lower-limb injury")
         # drawn after every crew member, so the crew are the same as before spacewalks existed
-        if n_crew >= 2 and flight_end > 30 and rng.random() < 0.5:
+        if n_crew >= 2 and flight_end >= 30 and rng.random() < 0.5:     # 30: the Artemis preset can have one too
             day, hours = float(np.floor(rng.uniform(10, flight_end - 10))), round(float(rng.uniform(5.5, 7.5)), 1)
             for i in sorted(rng.choice(n_crew, size=2, replace=False)):
                 m.crew[int(i)].add_eva(day, start_hour=12.0, hours=hours)

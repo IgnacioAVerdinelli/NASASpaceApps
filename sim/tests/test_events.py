@@ -119,3 +119,25 @@ def test_the_mock_logs_and_keeps_a_bounded_history(caplog):
     assert 'data.result_saved {"n": 4}' in caplog.text
     with pytest.raises(TypeError):
         pub.publish("data.result_saved", {"when": object()})          # not JSON: refused at once
+
+
+def test_a_failing_publisher_still_sends_the_other_messages_and_keeps_the_data(mission):
+    class Flaky:
+        def __init__(self):
+            self.calls = []
+
+        def publish(self, topic, message):
+            self.calls.append(message["crew_id"])
+            if len(self.calls) == 1:
+                raise ConnectionError("queue down")
+
+    data = gs.DataService(publisher=Flaky())
+    readings = mission.timeline(seed=7, until=10)
+    with pytest.raises(ConnectionError):
+        data.ingest(readings)
+    assert sorted(data.publisher.calls) == ["CM-1", "CM-2", "CM-3", "CM-4"]     # every crew member announced
+    assert len(data.readings("CM-1")) == sum(r.crew_id == "CM-1" for r in readings)
+
+
+def test_random_artemis_missions_can_include_a_spacewalk():
+    assert any(any(c.evas for c in gs.Mission.random("artemis_30", seed=s).crew) for s in range(40))

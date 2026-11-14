@@ -45,6 +45,18 @@ class DataService:
         self._context: dict[tuple, ContextRecord] = {}
         self._results: dict[tuple, Result] = {}
 
+    def _announce(self, topic: str, messages) -> None:
+        """Publish every message, even if one fails, so each crew member's subscribers hear about it;
+        then re-raise the first failure for the caller. The data is already stored either way."""
+        failure = None
+        for message in messages:
+            try:
+                self.publisher.publish(topic, message)
+            except Exception as e:          # noqa: BLE001 - any publisher error, re-raised below
+                failure = failure or e
+        if failure is not None:
+            raise failure
+
     # ---- raw data
     def ingest(self, records: Iterable[Reading | dict]) -> list[Reading]:
         """Clean the records, keep them and return them as kept. A reading sent again replaces the old one."""
@@ -52,8 +64,7 @@ class DataService:
         self.store.save(readings)
         for r in readings:
             self._readings[key(r)] = r
-        for message in events.readings_stored(readings):
-            self.publisher.publish(events.READINGS_STORED, message)
+        self._announce(events.READINGS_STORED, events.readings_stored(readings))
         return readings
 
     def readings(self, crew_id: str, measures: str | Iterable[str] | None = None,
@@ -84,8 +95,7 @@ class DataService:
         self.store.save_context(records)
         for c in records:
             self._context[context_key(c)] = c
-        for message in events.context_updated(records):
-            self.publisher.publish(events.CONTEXT_UPDATED, message)
+        self._announce(events.CONTEXT_UPDATED, events.context_updated(records))
         return records
 
     def context(self, crew_id: str, start=None, end=None) -> list[ContextRecord]:

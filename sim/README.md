@@ -158,7 +158,7 @@ Making it real means an `INSERT OR REPLACE` in `save()`, `save_context()` and `s
 | `GET /api/v1/latest` | the newest usable reading of each measure |
 | `GET /api/v1/context` | context records under way between `start` and `end` (default: the 24 hours up to now) |
 | `GET /api/v1/context/current` | the context record under way at `at` (default: now), or `null` |
-| `GET /api/v1/results` | processed results up to now, of one `kind` or all |
+| `GET /api/v1/results` | processed results of one `kind` or all, including ones dated later than the mission clock (a study booked ahead); `start` and `end` narrow it |
 | `POST /api/v1/results` | saves a result sent as JSON (`crew_id`, `kind`, `timestamp`, `payload`, optional `model_version`) and returns it, status 201 |
 
 Query parameters, all optional: `crew=CM-2` (default: the first), `day=150` (the mission day used as now; default: the mission clock), `measures=bone,vo2peak` (`/readings` and `/latest`), `start` and `end` (ISO times), `at` (an ISO time), `kind=study`. A bad parameter answers 400 and an unknown crew member 404, with the error as JSON. `--speed 20` moves the mission clock 20 days per real minute, so a client that polls sees the mission unfold.
@@ -203,7 +203,7 @@ data.current_context("CM-1", "2027-06-19T08:45:00Z").activity     # 'hygiene': t
 | 22:00 to 22:30 | hygiene | Tranquility | timeline |
 | 22:30 to 24:00 | sleep, until 06:00 the next day | Harmony | timeline |
 
-Each exercise block happens with probability equal to the person's exercise adherence that day, so `adherence=0` never exercises and `adherence=[(0, 1.0), (60, 0.2), ...]` mostly stops on day 60. On top of the plan come one to three unplanned toilet visits of 5 to 15 minutes, inside work blocks, reported by the room sensor.
+Each exercise block happens with probability equal to the person's exercise adherence that day, so `adherence=0` never exercises and `adherence=[(0, 1.0), (60, 0.2), ...]` mostly stops on day 60. One to three unplanned toilet visits of 5 to 15 minutes, reported by the room sensor, replace that stretch of a work block, so the timeline's own records have short gaps there and the two sources together cover the day.
 
 **Spacewalks.** `crew.add_eva(day, start_hour=12, hours=6.5)` sends a crew member outside on the UTC date of mission `day`. That day's routine gets an hour in the Quest airlock to suit up, the spacewalk itself (`eva`, `outside`, source `suit`), an hour in the airlock after, and no exercise. It must be on a day away from Earth, start at 08:00 or later and end by 21:00, one per date. `gs.Mission.random()` sends two crew members out together, for 5.5 to 7.5 hours on one flight day, in about half the missions.
 
@@ -374,9 +374,9 @@ These are choices, not facts from the data. Each one can be undone in one place,
 13. Context covers launch to landing by default, the time on board; on the ground `current_context()` returns `None`. [`context_timeline()` in `routine.py`]
 14. When context records overlap, observed beats planned (suit, then room sensor, then timeline), then the newest record wins. A record is identified by crew member, source and start. [`current_context()` in `dataservice.py`, `context_key()` in `pipeline.py`]
 15. `Mission.random` draws its spacewalk after the crew, so a seed gives the same people it gave before spacewalks existed. [`Mission.random` in `core.py`]
-16. Events say what changed, not the data: one message per crew member per call and one per saved result, a replaced result announced again, nothing when nothing was stored. The DataService stores first and publishes after, so if `publish()` raises, the data is kept and the error reaches the caller. [`events.py`, `dataservice.py`]
+16. Events say what changed, not the data: one message per crew member per call and one per saved result, a replaced result announced again, nothing when nothing was stored. The DataService stores first and publishes after. If `publish()` raises, the data is kept, the remaining messages of that call are still sent, and the first error reaches the caller. [`events.py`, `dataservice.py`]
 17. A study the scheduler records is a result of kind `study`, not a table of its own. [`save_result()` in `dataservice.py`]
-18. The DataService's API listens on port 8000 and the HealthService mock on 3000, as the 3D page expects. `POST /api/v1/results` lets services in other processes save results and studies; sensors cannot post readings or context over HTTP yet. [`serve.py`]
+18. The DataService's API listens on port 8000 and the HealthService mock on 3000, as the 3D page expects. Both listen on every network interface with `Access-Control-Allow-Origin: *` and no login, which suits a demo on a team network, not a real deployment. `POST /api/v1/results` lets services in other processes save results and studies; sensors cannot post readings or context over HTTP yet. [`serve.py`]
 19. The HealthService mock builds its dashboards from a DataService in its own process; it does not call the DataService's API. [`mocks/healthservice/serve.py`]
 
 ## Limits

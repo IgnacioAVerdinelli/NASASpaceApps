@@ -203,6 +203,7 @@ def api(mission_and_data):
                 return r.status, json.load(r)
         except urllib.error.HTTPError as e:
             return e.code, json.load(e)
+    call.base = base
     yield m, data, call
     server.shutdown()
     server.server_close()
@@ -230,5 +231,24 @@ def test_api_saves_and_reads_results(api):
         "crew_id": "CM-1", "kind": "study", "timestamp": saved["timestamp"], "computed_at": saved["computed_at"],
         "model_version": gs.MODEL_VERSION}}
     assert call("/api/v1/results?crew=CM-1&kind=study")[1] == [saved]
-    assert call("/api/v1/results?crew=CM-1&day=50")[1] == []            # it is for day 60, after "now"
+    assert call(f"/api/v1/results?crew=CM-1&end={m.timestamp(50)}")[1] == []   # it is for day 60
     assert call("/api/v1/results", {"crew_id": "CM-1"})[0] == 400       # kind, timestamp and payload missing
+
+
+def test_api_shows_studies_booked_after_the_mission_clock(api):
+    m, _, call = api                                   # the clock is at day 100
+    ahead = {"crew_id": "CM-2", "kind": "study", "timestamp": m.timestamp(120), "payload": {"study": "vo2peak"}}
+    assert call("/api/v1/results", ahead)[0] == 201
+    assert [r["timestamp"] for r in call("/api/v1/results?crew=CM-2&kind=study")[1]] == [m.timestamp(120)]
+
+
+def test_api_refuses_bad_results_and_other_methods(api):
+    m, data, call = api
+    good = {"crew_id": "CM-1", "kind": "x", "timestamp": m.timestamp(10), "payload": {}}
+    assert call("/api/v1/results", {**good, "crew_id": "CM-99"})[0] == 404
+    assert call("/api/v1/results", {**good, "payload": "hello"})[0] == 400
+    assert call("/api/v1/results", {**good, "colour": "red"})[0] == 400
+    assert data.results("CM-1", "x") == [] and data.results("CM-99") == []
+    with pytest.raises(urllib.error.HTTPError) as refused:
+        urllib.request.urlopen(urllib.request.Request(call.base + "/api/v1/results", method="DELETE"))
+    assert refused.value.code == 405 and "GET and POST" in json.load(refused.value)["error"]

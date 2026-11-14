@@ -1,8 +1,10 @@
-# Plan del prototipo
+# Visor muscular por capas
 
-1. Usar el modelo 3D de Open Anatomy 3D, con cuerpo claro y regiones musculares seleccionables.
-2. Adaptar la idea de puntuación de 0 a 100 de MuscleMap para colorear cada región; usar valores simulados y editables, sin umbrales clínicos.
-3. Ofrecer selección desde el modelo y desde una lista, controles de intensidad y una leyenda visible.
-4. Verificar compilación, carga del modelo e interacción, y documentar ejecución, límites y licencias.
+Implementado con React y Three.js sobre Open Anatomy 3D:
 
-El modelo agrupa algunos músculos: el prototipo muestra las estructuras disponibles en su catálogo, no todos los músculos anatómicos individualmente.
+- Piel con mapas de regiones por triángulo para ambos cuerpos, compartidos por colores y clics.
+- Capas de superficie, músculos y huesos; aislamiento muscular con contexto óseo.
+- Selección, intensidad 0–100, centrado y controles accesibles fuera del canvas.
+- Generador reproducible de regiones y pruebas de correspondencia con los GLB y lateralidad.
+
+El modelo ofrece 41 grupos musculares, 27 con representación superficial. Las regiones de piel son aproximadas, con límites condicionados por la resolución de la malla. No hay mediciones clínicas, diagnóstico, sensores ni persistencia. Ver README.md y docs/surface-regions.md para ejecución, reproducción, licencias y límites.

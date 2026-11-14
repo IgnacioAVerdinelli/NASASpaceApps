@@ -1,6 +1,6 @@
 # Atlas muscular 3D
 
-Prototipo web para explorar y colorear regiones musculares sobre un modelo humano 3D. Los valores iniciales son simulados y la escala es visual, sin interpretación clínica.
+Explorador web del cuerpo humano por capas, con intensidad simulada editable de 0 a 100 por grupo muscular. Los colores no representan salud ni criterios clínicos.
 
 ## Ejecutar
 
@@ -11,20 +11,41 @@ npm install
 npm run dev
 ```
 
-Abrí la dirección local que indique Vite. Para generar una versión estática:
+Abrí la dirección local que indique Vite. Para verificar y generar la versión estática:
 
 ```bash
+npm test
 npm run build
 npm run preview
 ```
 
-Elegí el modelo masculino o femenino desde el selector del visor. Seleccioná una región en la lista o haciendo clic sobre el cuerpo y ajustá el deslizador. Arrastrá el modelo para girarlo y usá la rueda o el gesto de pellizcar para acercarlo. «Limpiar valores» vuelve todas las intensidades a cero. Los cambios se mantienen solo mientras la página esté abierta.
+## Explorar
 
-## Alcance
+- **Superficie:** piel lisa con 27 regiones coloreables alrededor del cuerpo. Seleccioná una región con clic o desde la lista.
+- **Músculos:** muestra las 41 estructuras del modelo. El mismo valor de cada grupo controla la piel y su malla interna; los grupos profundos se pueden editar desde el panel y visualizar aquí.
+- **Huesos:** muestra el esqueleto como referencia, sin aplicar intensidades musculares.
+- **Aislar selección:** en la vista muscular, deja visible el grupo seleccionado junto al esqueleto. Al salir de esa capa se desactiva.
+- **Centrar selección:** acerca la cámara a la región elegida. Arrastrá para girar y usá rueda o pellizco para acercar o alejar.
 
-Los modelos masculino y femenino contienen 41 estructuras o grupos musculares; algunos reúnen varios músculos. La piel es opaca y las regiones se proyectan de forma aproximada sobre su superficie. Los músculos profundos, como el diafragma, pueden no aparecer o ser poco visibles. El mapa usa puntuaciones de 0 a 100 inspiradas en MuscleMap, pero no incorpora su código ni sus SVG. Los nombres de las estructuras provienen del catálogo original en inglés. Los valores de demostración no son mediciones ni umbrales médicos.
+Los modelos masculino y femenino comparten selección y valores; cambiar de cuerpo reencuadra la cámara. Cambiar de capa mantiene la orientación. El contorno marca la selección sin sustituir el color de intensidad. Los datos permanecen únicamente mientras la página está abierta; «Limpiar valores» los vuelve a cero.
+
+## Mapas de piel
+
+Los mapas asignan una región por triángulo de piel y se usan tanto para pintar como para resolver clics. Son independientes para ambos cuerpos y no usan proyecciones frontales/posteriores. El modelo está fijado en `open-anatomy-3d@0.1.0` porque los mapas dependen del orden de sus triángulos.
+
+```bash
+npm run generate:surfaces
+npm test
+```
+
+La generación es reproducible y no requiere red. Las pruebas comprueban el hash del GLB, la cantidad de triángulos, los identificadores, la cobertura de regiones y la lateralidad. Después de regenerar se debe revisar visualmente el cuerpo completo. Ver [preparación y límites de las regiones](docs/surface-regions.md).
+
+Algunas estructuras agrupan varios músculos: por ejemplo, el brazo no permite seleccionar bíceps y tríceps individualmente. Los límites de la piel son aproximados y su resolución depende de la malla; no son segmentaciones anatómicas exactas. Los nombres del catálogo se conservan en inglés.
 
 ## Créditos y licencias
 
-- Modelo: [Open Anatomy 3D](https://github.com/MervinR07/open-anatomy-3d), código MIT y modelos CC BY 4.0. Anatomía: BodyParts3D © The Database Center for Life Science, CC BY 4.0; adaptada por Open Anatomy 3D, CC BY 4.0. Ver el archivo `node_modules/open-anatomy-3d/ATTRIBUTION.md` para las fuentes y modificaciones completas.
-- Inspiración para la visualización por intensidad: [MuscleMap](https://github.com/Jsplice/MuscleMap), MIT. No se incluye código ni material gráfico de ese proyecto.
+Anatomía: BodyParts3D © The Database Center for Life Science (CC BY 4.0); órganos femeninos: Human Reference Atlas 3D Reference Organs, HuBMAP (CC BY 4.0); cuerpo femenino: MakeHuman (CC0). Adaptados por [Open Anatomy 3D](https://github.com/MervinR07/open-anatomy-3d), CC BY 4.0. Código de Open Anatomy: MIT; modelos y catálogo: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Fuentes y modificaciones originales en `node_modules/open-anatomy-3d/ATTRIBUTION.md`.
+
+Este proyecto añade mapas derivados de regiones de superficie, materiales de intensidad y controles por capas; no modifica los GLB originales. Los mapas derivados se distribuyen bajo CC BY 4.0.
+
+[MuscleMap](https://github.com/Jsplice/MuscleMap) (MIT) inspira el coloreado por intensidad. No incorporamos su código, imágenes ni SVG.

@@ -54,7 +54,7 @@ El contrato compartido es **el registro del episodio**. Incluye observaciones, p
 
 Como referencia, NASA documenta ECG, frecuencia cardíaca y estimaciones metabólicas durante EVA en procedimientos de la ISS, equipamiento de seguimiento con presión arterial y ECG, y ecografía guiada. La disponibilidad, frecuencia y acceso al flujo de datos se verifican para cada vehículo, traje y fase de misión.
 
-Para la demo usar frecuencia cardíaca, SpO₂, actividad y un síntoma ingresado. El pulso y la SpO₂ de un mismo oxímetro comparten la señal óptica PPG. Si el movimiento degrada esa señal, ambos números pueden verse afectados por un solo artefacto. Un ECG disponible ofrece un canal distinto para corroborar la frecuencia cardíaca. Alinear los tiempos y conservar la procedencia permite reconocer esa diferencia.
+La base propuesta de métricas personales utiliza como referencia el Bio-Monitor y el Actiwatch Spectrum, ambos usados en investigaciones en la ISS, y un check-in voluntario. El catálogo, las unidades propuestas y los límites de esta hipótesis se detallan en [Métricas personales](metricas-personales.md). Para el flujo inicial de episodio se pueden priorizar frecuencia cardíaca, SpO₂, actividad y un síntoma ingresado; el sueño y el check-in amplían la vista de bienestar. La disponibilidad simultánea y la calidad de cada canal deben indicarse en la simulación. Un ECG disponible puede aportar otra señal para corroborar la frecuencia cardíaca, sin asumir independencia de fallas sin conocer el montaje.
 
 Para el MVP usar reglas explícitas y una línea de base personal simple. Las reglas pueden ordenar verificaciones según incertidumbre, disponibilidad y tiempo estimado. La calidad de señal y la elección de mediciones son candidatos posteriores para un modelo entrenado con casos anotados. Los criterios de actuación clínica y los textos de escalamiento requieren revisión profesional antes de probarse con personas.
 
@@ -112,7 +112,7 @@ Antes de la prueba, definir qué campos hacen que el reporte sea suficiente y qu
 - Elegir el episodio, los instrumentos simulados y los criterios de revisión con asesoramiento clínico.
 - Acordar cuándo el informe resulta suficientemente informativo, quién puede liberarlo y qué ocurre si el episodio sigue activo.
 - Definir quién recibe avisos de rutina y qué suplencia se activa si nadie confirma.
-- Elegir el contexto de nave o hábitat del MVP. Dejar sueño y EVA como variantes de interfaz hasta verificar el hardware y los canales de una misión de referencia.
+- Elegir el contexto de nave o hábitat del MVP. El sueño puede explorarse con datos simulados basados en Actiwatch; mantener EVA como variante hasta verificar el hardware y los canales de una misión de referencia.
 - Implementar primero el recorrido completo con un episodio. Usar ese mismo contrato para incorporar las otras variantes y medir los resultados.
 
 ## Pitch para contarle al equipo

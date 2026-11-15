@@ -9,7 +9,7 @@ export function exampleRecommendations(crew, groups) {
       reason: Number.isFinite(point?.pct) ? `The latest calf measurement at ${point.label} is ${Math.abs(point.pct).toFixed(1)}% ${point.pct < 0 ? 'below' : 'above'} the pre-flight baseline. A repeat test could help verify the change.` : 'The related measurement is unavailable.',
     },
     { id: 'routine-strength', type: 'Routine', title: 'Muscle strength assessment', crew: crew.id,
-      day: 135, status: 'Scheduled', view: 'fuerza', reason: 'Routine assessment in the simulated mission schedule.' },
+      day: crew.today + 23, status: 'Scheduled', view: 'fuerza', reason: 'Routine assessment in the simulated mission schedule.' },
   ];
 }
 

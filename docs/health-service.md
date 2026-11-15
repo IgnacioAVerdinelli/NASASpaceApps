@@ -5,7 +5,8 @@
 - El código está en [`health/`](../health/README.md).
 - Lee del DataService de Juan por HTTP (en `main` desde el PR #7, puerto 8000) y guarda ahí sus resultados.
 - Sirve al front de Enzo; probado de punta a punta con el DataService, el HealthService y el front levantados por separado.
-- La regla de alertas está medida contra el `truth` de gravsim (pregunta 9).
+- La regla de alertas está medida contra el `truth` de gravsim (pregunta 9). Se sumó una segunda regla, el estándar de NASA para VO2peak, medida igual.
+- Sirve también la página de mediciones en vuelo (`vuelo.html`, pestañas de fuerza y capacidad aeróbica) con `GET /api/v1/analyses`: nivel de cada prueba, banda de ruido, alertas y próximas pruebas.
 - El PR #7 y [data-service-status.md](data-service-status.md) respondieron las preguntas 1, 2, 3, 10, 12 y 14. Quedan abiertas la 4 y la 13 para Juan, y las del resto del equipo.
 
 Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): procesa los datos del astronauta, entrega los resultados al front y a la base (a través del DataService), y publica las alertas en la cola de notificaciones. Las alertas las envía el sistema de notificaciones, no el HealthService.
@@ -14,10 +15,10 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 
 1. **Lee** las lecturas de cada tripulante desde el DataService, y recalcula cuando el DataService anuncia datos nuevos en la cola de eventos.
 2. **Procesa:** calcula la referencia previa al vuelo, el cambio de cada medida y su score, y lo compara con lo que se vio en los estudios de reposo en cama.
-3. **Sirve al front** `GET /api/v1/dashboard`, con la versión 1 del contrato de Enzo ([frontend-backend.md](frontend-backend.md), en `main`).
+3. **Sirve al front** `GET /api/v1/dashboard`, con la versión 1 del contrato de Enzo, y `GET /api/v1/analyses` para la página de mediciones en vuelo ([frontend-backend.md](frontend-backend.md)).
 4. **Guarda lo que calcula** a través del DataService, para poder compararlo después.
 5. **Publica hallazgos** en la cola de eventos, así el planificador de análisis puede pedir un estudio extra.
-6. **Decide a quién avisar** según el contexto del tripulante (dónde está y qué está haciendo), y publica la alerta ya ruteada en la cola de notificaciones. Ejemplo de la arquitectura: si el astronauta está en una caminata espacial o en el baño, se le avisa a otro tripulante.
+6. **Decide a quién avisar** según el contexto del tripulante (dónde está y qué está haciendo), y publica el aviso ya ruteado en la cola de notificaciones ([contrato v1](health-notices.md)). Ejemplo de la arquitectura: si el astronauta está en una caminata espacial o en el baño, se le avisa a otro tripulante.
 
 ## Qué no hace
 
@@ -39,7 +40,7 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 | Front (Enzo) | El front lee del HealthService | `GET /api/v1/dashboard`, contrato v1 | El contrato existe |
 | Cola de eventos | HealthService se suscribe | `data.readings_stored`, que publica el DataService (nombre provisorio) | El DataService ya tiene dónde publicarlo; falta cómo llega a otro proceso (pregunta 13) |
 | Cola de eventos | HealthService publica | Hallazgos, para el planificador de análisis | Planeada; en la demo se simula |
-| Cola de notificaciones | HealthService publica | Alertas ya ruteadas (ver abajo) | Planeada; en la demo se simula |
+| Cola de notificaciones | HealthService publica | Avisos ya ruteados, topic `health.notice` ([health-notices.md](health-notices.md)) | Planeada; en la demo se simula |
 
 ## Punto de partida: `build_dashboard` de gravsim
 
@@ -88,9 +89,9 @@ Campos de cada medida:
 | `typical_no_exercise_pct`, `typical_exercise_pct` | Comparación con los estudios |
 | `extrapolated`, `synthetic` | Se heredan de las lecturas |
 
-## Hallazgo y alerta (propuesta)
+## Hallazgo y aviso
 
-Un **hallazgo** es el dato analítico: va a la cola de eventos, para el planificador. Una **alerta** es el mensaje para personas: va a la cola de notificaciones, con los destinatarios ya decididos.
+Un **hallazgo** es el dato analítico: va a la cola de eventos, para el planificador. Un **aviso** es el mensaje para personas: va a la cola de notificaciones, con los destinatarios ya decididos.
 
 Hallazgo:
 
@@ -106,49 +107,30 @@ Hallazgo:
 }
 ```
 
-Alerta, ruteada por contexto. El HealthService la publica en la cola de notificaciones y el sistema de notificaciones es quien la envía. En este ejemplo CM-2 está afuera, en una caminata espacial, y se le avisa a CM-3:
+**Aviso.** El mensaje para personas sigue el contrato v1 de la [issue #11](https://github.com/IgnacioAVerdinelli/NASASpaceApps/issues/11), documentado en [health-notices.md](health-notices.md). El HealthService lo publica en la cola de notificaciones (topic `health.notice`) y el Notification Center es quien lo envía. En resumen:
 
-```json
-{
-  "type": "alert",
-  "subject_crew_id": "CM-2",
-  "notify": ["CM-3", "ship_center"],
-  "routing_reason": "CM-2 unavailable: eva",
-  "context": {
-    "CM-2": {"activity": "eva", "location": "outside", "source": "suit",
-             "start": "2027-06-29T11:00:00Z", "end": "2027-06-29T14:00:00Z", "synthetic": true},
-    "CM-3": {"activity": "work", "location": "Destiny", "source": "timeline",
-             "start": "2027-06-29T09:00:00Z", "end": "2027-06-29T13:00:00Z", "synthetic": true}
-  },
-  "phase": {"name": "flight", "gravity_g": 0.0},
-  "measure": "knee_extension_60",
-  "severity": "warning",
-  "message": "Knee extension strength −22% since pre-flight, beyond the typical loss without exercise.",
-  "mission_day": 120,
-  "created_at": "2027-06-29T12:00:00Z",
-  "synthetic": true
-}
-```
+- Lleva la prioridad, el estado (`active`, `resolved` o `cancelled`), un `notification_id` estable y una `revision` creciente.
+- Lleva cada salida ya decidida: canal (`wearable`, `earth`, `room`, `ship_center`, `radio`), destinatario y el texto para ese destinatario. Tierra va siempre.
+- Lleva dos ubicaciones distintas: `crew_location`, dónde está el tripulante dentro de la nave (módulo u `outside`), y `mission_location`, dónde está la nave, para el enlace con Tierra.
+- Reemplaza la alerta con `notify` y `context` de la versión anterior.
 
-El ruteo está en `health/healthservice/demo.py` y usa `GET /api/v1/context/current` del DataService:
+**Cuándo alertar.** La regla implementada (detalle y números en la pregunta 9 y en [`health/README.md`](../health/README.md#alert-rules)). Son dos; cada alerta trae `rule` y `severity`.
 
-- **A quién.** Si el tripulante está en `eva`, `hygiene` o `sleep`, `notify` pasa a ser otro tripulante disponible más el centro de la nave, y `routing_reason` lo explica.
-- **`context`.** Qué está haciendo y dónde está ahora el tripulante de la alerta y cada tripulante de `notify` (`ship_center` no tiene). Es el registro del DataService sin `crew_id`:
-  - `activity`: `sleep`, `exercise`, `work`, `meal`, `hygiene` o `eva`.
-  - `location`: un módulo de la ISS, u `outside` durante una caminata espacial.
-  - `source`, `start`, `end` y `synthetic`.
-
-  Si no hay registro para ese momento, el valor es `null`.
-- **`phase`.** La fase de la misión ahora y su gravedad, de `/api/v1/mission`.
-
-Con `context` y `phase`, el sistema de notificaciones puede decir dónde está cada uno, por ejemplo: "CM-2 está afuera, en una caminata espacial, hasta las 14:00; se le avisa a CM-3, que está en Destiny".
-
-**Cuándo alertar.** La regla implementada (detalle y números en la pregunta 9 y en [`health/README.md`](../health/README.md#alert-rule)):
+**Pérdida más rápida de lo esperado** (`beyond_typical`, `warning`):
 
 - Mira las **dos últimas pruebas** de una medida desde el lanzamiento.
 - Calcula cuánto se pasan, en promedio, de la pérdida típica sin ejercicio de los estudios de reposo en cama para esos mismos días sin gravedad.
 - Alerta si se pasan por más de 1,645 veces el ruido de medición de ese promedio. Solo por ruido, eso pasa 1 de cada 20 veces.
 - Solo alertan las medidas cuya pérdida típica en la misión es más grande que el ruido de una prueba. Quedan afuera la dorsiflexión del tobillo (−7 % contra 12 % de ruido) y la masa magra de los brazos (no cambia en reposo en cama). Se siguen mostrando en la página.
+
+**Estándar de NASA** (`nasa_standard`, `critical`, solo VO2peak):
+
+- Alerta si el promedio de las dos últimas pruebas desde el lanzamiento está 20 % o más por debajo de antes del vuelo (pérdida de rendimiento, OCHMO-TB-031) o por debajo de 32,9 ml/kg/min (mínimo en vuelo, NASA-STD-3001 Vol 1 [V1 4001]).
+- No depende del reposo en cama: el estándar habla de lo que la persona todavía puede hacer.
+- Si las dos reglas aplican a una medida, sale la crítica. Si cambia la severidad, se vuelve a publicar.
+- La fuerza no tiene una regla así: con 8–12 % de ruido por prueba, "20 % por debajo" en el promedio de dos fue falsa en 53 de 57 alertas de cuádriceps en 200 personas al azar (contra 22 de 65 en VO2peak).
+
+**Nivel de cada prueba** (lo que pinta la página de mediciones en vuelo, `healthservice/levels.py`): 1 = menos de 5 % peor que antes del vuelo, 2 = 5 a 10 %, 3 = 10 a 20 %, 4 = 20 % o más, o debajo de un mínimo de NASA. Es descriptivo y no alerta: una sola prueba puede caer en nivel 4 por ruido. Por eso cada prueba trae también si su cambio cabe en el ruido de un solo test (1,645 × el ruido, ±16,8 puntos en la extensión de rodilla).
 
 Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarmas cuesta más: cada falsa alarma puede terminar en un estudio innecesario.
 
@@ -179,14 +161,11 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
 
 **Para quien hace las notificaciones**
 
-5. **Colas y formato de alerta.**
-   - Las dos colas son publicar/suscribir y en la demo se simulan. ¿Con qué las simulamos: en memoria dentro del mismo proceso, una tabla, Redis…?
-   - ¿El formato de alerta de arriba les sirve?
-   - Enzo armó una maqueta de alertas en el reloj (`/alerts/` en el front), con `priority`, `level`, `title` y `short`. Para que muestre las del HealthService, la alerta podría traer un título y un texto corto además de `message`.
+5. **Colas y formato de alerta.** Lo definió la issue #11: contrato v1 en [health-notices.md](health-notices.md). En la demo la cola es el SQLite de gravsim; falta el broker compartido. Quedan para acordar con Nacho los IDs de destinatarios y los campos extra (ver "Para acordar" en ese doc).
 
 **Para el equipo**
 
-11. **Reglas de ruteo:** ¿a quién se le avisa cuando el astronauta no está disponible?
+11. **Reglas de ruteo:** ¿a quién se le avisa cuando el astronauta no está disponible? Las definió la issue #11 por prioridad (ver [health-notices.md](health-notices.md#prioridad)); lo que sigue es la propuesta anterior.
     - Propuesta: si está en `eva`, `hygiene` o `sleep`, a otro tripulante que no esté en `eva` ni en `sleep`, más el centro de la nave.
     - A Tierra, solo si la severidad es alta, porque hay demora de comunicación.
     - Una pérdida muscular no es urgente, así que otra opción es esperar a que el astronauta esté disponible.
@@ -225,3 +204,15 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
    - Necesita dos pruebas y el dinamómetro es mensual, así que la primera alerta llega como pronto el día 44. Propuesta: después de una sola prueba fuera de lo esperado (por ejemplo, a más de 1 vez el ruido), publicar un **hallazgo** en la cola de eventos para que el planificador pida una prueba extra antes. La alerta sale cuando esa segunda prueba lo confirma.
    - Una lesión en alguien que hace ejercicio casi nunca pasa la línea de "sin ejercicio", y se recupera entre pruebas mensuales: de las 19 con una pérdida clara, avisó a 1. Para eso habría que comparar con la propia tendencia de la persona, no con los grupos de reposo en cama.
    - El umbral (1,645) es configurable: `check(..., confidence=...)`. Con 2 hay menos alertas falsas y llegan más tarde.
+
+   **Estándar de NASA (VO2peak), con los mismos números.** Una alerta cuenta como falsa si el VO2peak real (`truth`) no pasó el estándar en esa prueba:
+
+   | Tripulación | Alertas (falsas) | Pruebas pasadas del estándar que detecta |
+   |---|---|---|
+   | La de la demo (semilla 7) | 3 (2) | 4 de 5 |
+   | 50 misiones al azar (200 personas) | 65 (22) | 132 de 177 |
+   | 7 casos armados × 25 personas | 81 (12) | 233 de 278 |
+
+   En la demo, CM-1 alerta en FD165 y es real (VO2peak real 32,0). Las dos falsas son de CM-2, que queda apenas arriba del mínimo (33,8 real): en FD75 dos pruebas bajas (31,5 y 32,2) llevan el promedio abajo de 32,9, y en R+30 lo hace una sola muy baja (30,1).
+
+   **Para decidir:** la regla también corre después del aterrizaje, aunque 32,9 es el estándar en vuelo. ¿La cortamos al aterrizar?

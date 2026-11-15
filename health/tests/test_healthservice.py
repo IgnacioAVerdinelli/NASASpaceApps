@@ -173,7 +173,11 @@ def flight(**kwargs):
 def test_no_false_alerts_for_the_demo_crew():
     # gravsim's truth says nobody in this crew goes beyond the typical loss without exercise; the old
     # one-test rule raised alerts here (evaluation/alert_rule.py)
-    assert walk_flight(*flight(n_crew=4, seed=7)) == []
+    published = walk_flight(*flight(n_crew=4, seed=7))
+    assert [a for a in published if a.rule == "beyond_typical"] == []
+    # NASA's VO2peak standard is another claim: CM-1 and CM-2 start close to 32.9 ml/kg/min and go below it
+    assert {(a.crew_id, a.measure, a.severity, a.rule) for a in published} == {
+        ("CM-1", "vo2peak", "critical", "nasa_standard"), ("CM-2", "vo2peak", "critical", "nasa_standard")}
 
 
 def exercising_and_not():
@@ -188,8 +192,12 @@ def test_skipping_exercise_is_alerted_and_exercising_is_not():
     published = walk_flight(*flight(mission=exercising_and_not(), seed=7))
     assert {a.crew_id for a in published} == {"CM-2"}
     for a in published:
-        assert a.severity == "warning" and a.synthetic
-        assert "beyond the typical change without exercise" in a.message
+        assert a.synthetic
+        if a.rule == "beyond_typical":
+            assert a.severity == "warning" and "beyond the typical change without exercise" in a.message
+        else:
+            assert (a.rule, a.severity, a.measure) == ("nasa_standard", "critical", "vo2peak")
+    assert any(a.rule == "beyond_typical" for a in published)
 
 
 def test_an_alert_is_published_once_while_it_lasts():

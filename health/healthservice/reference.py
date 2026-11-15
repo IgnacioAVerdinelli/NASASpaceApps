@@ -18,6 +18,7 @@ class Reference:
     def __init__(self, params: dict):
         self.measures: dict = params["measures"]
         self.model_version: str = params["model_version"]
+        self.standards: dict = params.get("astronaut_standards", {})
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> "Reference":
@@ -45,6 +46,11 @@ class Reference:
         """
         loss = self.measures[measure].get("loss_pct") or -1
         return max(0.0, -change_pct if loss < 0 else change_pct)
+
+    def minimum(self, measure: str) -> float | None:
+        """NASA's in-mission minimum for a measure, if it has one (VO2peak: 32.9 ml/kg/min, NASA-STD-3001 Vol 1
+        [V1 4001], the `astronaut_standards` of params.json)."""
+        return self.standards.get(f"{measure}_min")
 
     def plateau(self, measure: str) -> float:
         """Size of the no-exercise loss used as 100 on the score scale (at least 10%)."""

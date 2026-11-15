@@ -42,3 +42,5 @@
 .many-events .mission-event{padding:0 0 12px 36px}.many-events .mission-event:last-child{padding-bottom:0}.many-events .mission-event::before{width:2px;height:auto;top:9px;bottom:-9px;left:8px;right:auto}.many-events .mission-event:last-child::before{display:none}.many-events .event-node{top:12px;left:0}.many-events .event-button{min-height:0}
 
 .overview-link{display:inline-block;color:#51458b;font-size:13px;font-weight:700;margin-bottom:5px;text-underline-offset:3px}.overview-link:focus-visible{outline:3px solid #6055a5;outline-offset:3px}
+
+.vuelo-head .mission select{font:inherit;font-size:16px;padding:3px 8px;border:1px solid #969db9;border-radius:4px;background:#fff;color:inherit}.vuelo-head .mission select:focus-visible{outline:2px solid #6258a0;outline-offset:2px}

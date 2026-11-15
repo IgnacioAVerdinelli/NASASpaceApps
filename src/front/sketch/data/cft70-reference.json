@@ -1,18 +1,19 @@
 {
- "source": "NASA Life Sciences Portal, MR079G Isokinetic Muscle Function, estudio CFT70 (UTMB, 70 días de reposo en cama a −6°). DOI 10.83263/bk5h-r757",
+ "source": "NASA Life Sciences Portal, MR079G Isokinetic Muscle Function, CFT70 study (UTMB, 70 days of −6° head-down bed rest). DOI 10.83263/bk5h-r757",
  "bedRestDays": 70,
- "post1": "R+2 a R+4",
- "post2": "R+10 a R+13",
+ "post1": "R+2 to R+4",
+ "post2": "R+10 to R+13",
  "groups": {
-  "CONTROL": "Sin contramedida",
-  "EXERCISE": "Con ejercicio",
-  "FLY": "Grupo FLY (por confirmar: probablemente equipo compacto de volante de inercia)"
+  "CONTROL": "No countermeasure",
+  "EXERCISE": "Exercise",
+  "FLY": "FLY group (to be confirmed: probably a compact flywheel device)"
  },
  "tests": [
   {
    "code": "KES60",
+   "measure": "knee_extension_60",
    "muscle": "quadriceps",
-   "test": "Extensión de rodilla, 60°/s",
+   "test": "Knee extension, 60°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {
@@ -70,8 +71,9 @@
   },
   {
    "code": "KFS60",
+   "measure": "knee_flexion_60",
    "muscle": "hamstrings",
-   "test": "Flexión de rodilla, 60°/s",
+   "test": "Knee flexion, 60°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {
@@ -129,8 +131,9 @@
   },
   {
    "code": "APFCS30",
+   "measure": "ankle_plantarflexion_30",
    "muscle": "calf",
-   "test": "Flexión plantar del tobillo, 30°/s",
+   "test": "Ankle plantarflexion, 30°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {
@@ -188,8 +191,9 @@
   },
   {
    "code": "ADFCS30",
+   "measure": "ankle_dorsiflexion_30",
    "muscle": "shin_muscles",
-   "test": "Flexión dorsal del tobillo, 30°/s",
+   "test": "Ankle dorsiflexion, 30°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {
@@ -247,8 +251,9 @@
   },
   {
    "code": "TES60",
+   "measure": "trunk_extension_60",
    "muscle": "back_muscles",
-   "test": "Extensión de tronco, 60°/s",
+   "test": "Trunk extension, 60°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {
@@ -306,8 +311,9 @@
   },
   {
    "code": "TFS60",
+   "measure": "trunk_flexion_60",
    "muscle": "abdominal_muscles",
-   "test": "Flexión de tronco, 60°/s",
+   "test": "Trunk flexion, 60°/s",
    "unit": "N·m",
    "groups": {
     "CONTROL": {

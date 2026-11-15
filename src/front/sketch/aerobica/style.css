@@ -1,4 +1,4 @@
-/* Vista de capacidad aeróbica: reutiliza los estilos de fuerza (overview, timeline, detail, method). */
+/* Aerobic capacity tab: reuses the strength styles (overview, timeline, detail, method). */
 .aerobica{background:#f8f9fe}
 .component-legend{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding:0;position:relative;z-index:2}
 .component-legend button{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:700;color:#2f3756;background:#fff;border:1px solid #dcdcec;border-radius:20px;padding:6px 14px 6px 10px;cursor:pointer;transition:background-color .2s,border-color .2s}
@@ -29,3 +29,5 @@
 .check::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
 .check.ok{color:#2f6b47}
 .check.no{color:#a4242f}
+.validity td.not-recorded{color:#6b7290;font-style:italic;white-space:normal}
+.vo2-figure .alert-message{margin-top:4px;font-size:14.5px}

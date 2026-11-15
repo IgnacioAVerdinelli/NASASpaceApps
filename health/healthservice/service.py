@@ -4,6 +4,7 @@ from __future__ import annotations
 import threading
 
 from .alerts import AlertQueue, check
+from .analyses import build_analyses
 from .dashboard import build_dashboard
 from .models import CrewInfo, Reading
 from .processing import MeasureResult, compute_results
@@ -19,7 +20,7 @@ class HealthService:
         self.queue = queue or AlertQueue()
         self.process_on_read = process_on_read
         self._seen: dict[str, tuple] = {}            # crew id -> identity of the last readings processed
-        self._active: dict[str, set[str]] = {}       # crew id -> measures currently alerting
+        self._active: dict[str, dict[str, str]] = {}  # crew id -> measure currently alerting -> its severity
         self._lock = threading.Lock()
 
     def crew(self, crew_id: str | None = None) -> CrewInfo:
@@ -38,6 +39,18 @@ class HealthService:
         new readings have arrived, so the front polling every 3 seconds does not fill the database with copies.
         With `day` it is a look at that day only: nothing is saved and no alert is raised.
         """
+        crew, mission, readings, results, day = self._process(crew_id, day)
+        return build_dashboard(self.reference, mission, crew, readings, results, day)
+
+    def analyses(self, crew_id: str | None = None, day: float | None = None) -> dict:
+        """Flight-measurement JSON for one crew member (strength and aerobic capacity, test by test), with the
+        alerts that hold right now. `day` works as in dashboard()."""
+        crew, mission, readings, results, day = self._process(crew_id, day)
+        alerts = check(self.reference, mission, results)
+        return build_analyses(self.reference, mission, crew, readings, results, alerts,
+                              self.source.studies(crew.id), day)
+
+    def _process(self, crew_id: str | None, day: float | None):
         live = day is None
         day = self.source.current_day() if live else float(day)
         crew = self.crew(crew_id)
@@ -46,7 +59,7 @@ class HealthService:
         results = compute_results(self.reference, mission, crew, readings, day)
         if live and self.process_on_read:
             self._on_readings(crew, readings, results)
-        return build_dashboard(self.reference, mission, crew, readings, results, day)
+        return crew, mission, readings, results, day
 
     def _on_readings(self, crew: CrewInfo, readings: list[Reading], results: list[MeasureResult]) -> None:
         last = max(readings, key=lambda r: r.mission_day, default=None)
@@ -56,9 +69,9 @@ class HealthService:
                 return
             self.source.save_results(results)
             now = check(self.reference, self.source.mission(), results)
-            active = self._active.setdefault(crew.id, set())
+            active = self._active.setdefault(crew.id, {})
             for measure, alert in now.items():
-                if measure not in active:
+                if active.get(measure) != alert.severity:      # new, or it moved between warning and critical
                     self.queue.publish(alert)
-            self._active[crew.id] = set(now)
+            self._active[crew.id] = {m: a.severity for m, a in now.items()}
             self._seen[crew.id] = key

@@ -38,6 +38,33 @@ Las claves de músculos son las del catálogo `muscles` exportado por `src/front
 
 Los textos admiten hasta 1000 caracteres. Las listas de resultados y gráficos admiten hasta 100 elementos cada una y cada gráfico hasta 10 000 puntos. Los IDs de cada lista no pueden repetirse. El validador ejecutable del contrato está en `src/front/sketch/data/contract.js`; si un campo requerido o un valor es inválido, se rechaza toda la respuesta y se conserva el último estado válido.
 
+## Mediciones en vuelo: `GET /api/v1/analyses`
+
+La página principal `/` (pestañas "Muscle strength" y "Aerobic capacity") consume un segundo JSON del mismo HealthService, test por test. El frontend no calcula nada: cada valor, nivel, banda de ruido y alerta viene de acá, y son los mismos que el HealthService guarda y manda a la cola. El frontend solo los pasa a colores y texto.
+
+- **Transporte:** el mismo que el dashboard (sondeo cada 3 s, sin caché, cancelación a los 8 s, se conserva el último estado válido). La URL sale de `VITE_DASHBOARD_URL` cambiando `/dashboard` por `/analyses` y conservando sus parámetros; `?crew=` elige tripulante y `?day=` mira un día pasado sin guardar nada. Un tripulante desconocido devuelve `404` con la lista de tripulantes. Con `VITE_DASHBOARD_MODE=example` se usa [analyses.example.json](../src/front/sketch/data/analyses.example.json) (CM-1, semilla 7, día 170).
+- **Validador:** `validateAnalyses` en `src/front/sketch/data/contract.js`, con su copia en `health/healthservice/contract.py` para los tests.
+
+| Campo | Tipo y significado |
+| --- | --- |
+| `version`, `updatedAt`, `simulated` | Igual que en el dashboard. |
+| `notice` | Texto fijo para mostrar ("Synthetic data, …", "Not a health assessment."). |
+| `crew` | `{ id, body }`; `body` es `male` o `female`, para el modelo 3D. |
+| `mission` | `{ name, today, todayLabel, landing }`: día de misión actual (número, 0 = FD1), su etiqueta (`L-30`, `FD15`, `R+5`) y el día del aterrizaje. |
+| `levels` | Los 4 niveles, en orden: `{ level, label, range }`. Nivel 1 = menos de 5% peor que antes del vuelo, 2 = 5 a 10%, 3 = 10 a 20%, 4 = 20% o más, o por debajo de un mínimo de NASA. |
+| `strength.evaluations` | Una por sesión de dinamómetro: `{ id, day, label, phase }`. La primera es siempre `id: "pre"` (la referencia, promedio de los tests previos); las demás `id: "d14"`, `"d44"`… `phase` es `pre`, `flight` o `post`. |
+| `strength.groups` | Un grupo muscular por medida del dinamómetro (cuádriceps, isquiotibiales, gemelos, tibiales, espalda): `key`, `measure`, `name`, `test`, `region`, `muscleKeys` (claves del catálogo, abajo), `unit`, `baseline` (número o `null`), `referenceTests` (tests previos promediados), `noiseBandPct`, `alert` y `points`. |
+| `strength.groups[].points` | Un punto por evaluación, en el mismo orden, con `evaluation` (su `id`) y los campos de punto (abajo). |
+| `strength.upcoming`, `aerobic.upcoming` | Tests por venir: `{ day, label, reason }`, `reason` es `routine` o `retest` (pedido tras un hallazgo). Salen de los estudios que registra el planificador de la demo (`kind=study`); sin él, la lista está vacía. |
+| `aerobic` | VO2peak del test en bicicleta: `measure`, `name`, `test`, `unit`, `baseline`, `referenceTests`, `noiseBandPct`, `minimum` (32.9 ml/kg/min, NASA-STD-3001 [V1 4001]), `standardLossPct` (20), `alert`, `upcoming` y `evaluations`. |
+| `aerobic.evaluations` | Una por test: los campos de evaluación y los de punto juntos, más `test`: los datos propios del test (FC pico, RER, Borg, motivo de corte). Hoy siempre `null`, porque el DataService no los registra; la página muestra "Not recorded". |
+
+**Campos de punto:** `value` (número o `null`), `changePct` (% contra la referencia, `null` sin dato), `level` (1–4 o `null`), `withinNoise` (si el cambio cabe en el ruido de un solo test), `belowMinimum` (solo VO2peak; `null` en fuerza) y `quality`: `ok`, `not measured`, `no reference` o la marca del DataService (`out_of_range`, …). Un test marcado conserva su lugar sin valor.
+
+**Banda de ruido (`noiseBandPct`):** `1.645 × ruido de un test` contra una referencia de `referenceTests` tests, en puntos porcentuales. Un test cae ahí por puro ruido de medición el 90% de las veces. Ejemplo: extensión de rodilla con 2 tests previos, ±16.8.
+
+**`alert`:** `null`, o `{ severity, rule, message }`. `critical` / `nasa_standard`: VO2peak cruzó el estándar de NASA en vuelo (promedio de los dos últimos tests 20% o más por debajo, o por debajo de 32.9). `warning` / `beyond_typical`: la pérdida es más rápida que la típica sin ejercicio en reposo en cama. Las reglas están en [health/README.md](../health/README.md#alert-rules). El nivel de un solo test es descriptivo y no dispara alertas: por eso un test puede tener nivel 4 sin alerta.
+
 ## Puesta en marcha del frontend
 
 Seguir las instrucciones de arranque del [README](../README.md) para levantar DataService, HealthService y Vite. Para usar el ejemplo sin backend, iniciar Vite con `VITE_DASHBOARD_MODE=example npm run dev`.
@@ -90,6 +117,6 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 
 ## Prototipo de recomendaciones
 
-La página `vuelo.html` incluye recomendaciones **simuladas** en `vuelo/recommendations.js`, independientes del scheduler. El ejemplo usa la última medición simulada de pantorrilla de la vista de fuerza. El estado se mantiene solo mientras la página está abierta; no se envía al servidor.
+La página principal `/` incluye recomendaciones **simuladas** en `vuelo/recommendations.js`, independientes del scheduler. El ejemplo usa la última medición simulada de pantorrilla de la vista de fuerza. El estado se mantiene solo mientras la página está abierta; no se envía al servidor.
 
 Para integrar el scheduler, acordar con su responsable un contrato que proporcione identificador, tripulante, estudio, fecha o día de misión, estado, motivo y referencia a la medición relacionada. El formato y las transiciones definitivas aún no están acordados; los ejemplos no representan resultados del servicio.

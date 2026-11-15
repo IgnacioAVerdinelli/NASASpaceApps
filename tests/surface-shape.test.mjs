@@ -7,13 +7,13 @@ test('flattens the front of the groin and leaves surrounding areas in place', ()
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute([
     0, .8, .1, .15, .8, .1, 0, .95, .1,
-    0, .8, -.1, .15, .8, -.1, 0, .95, -.1,
+    0, .8, -.2, .15, .8, -.1, 0, .95, -.1,
   ], 3));
   geometry.setAttribute('normal', new Float32BufferAttribute(Array(18).fill(0), 3));
   const before = Array.from(geometry.attributes.position.array);
   softenMaleGroin(geometry, new Matrix4());
   const after = geometry.attributes.position.array;
-  assert.ok(Math.abs(after[1] - .85) < 1e-6);
+  assert.ok(Math.abs(after[1] - .87) < 1e-6);
   assert.ok(Math.abs(after[2] - .025) < 1e-6);
   for (let i = 3; i < before.length; i++) assert.ok(Math.abs(after[i] - before[i]) < 1e-6);
   assert.equal(geometry.attributes.position.count, 6);
@@ -44,12 +44,12 @@ test('reshapes the real male mesh without changing its topology or distant norma
     assert.ok(Number.isFinite(normal.x) && Number.isFinite(normal.y) && Number.isFinite(normal.z));
     if (after.distanceTo(before[i]) > 1e-6) {
       changed++;
-      assert.ok(Math.abs(before[i].x) < .055 && before[i].y > .70 && before[i].y < .90 && before[i].z > -.08);
+      assert.ok(Math.abs(before[i].x) < .055 && before[i].y > .70 && before[i].y < .90 && before[i].z > -.15);
     } else if (Math.abs(before[i].x) > .055 || before[i].y > .90 || before[i].y < .70) {
       assert.ok(normal.distanceTo(oldNormals[i]) < 1e-6);
     }
-    if (Math.abs(before[i].x) < .025 && before[i].y > .735 && before[i].y < .84 && before[i].z > -.035) {
-      assert.ok(after.y >= .845 && (before[i].z <= .025 || after.z <= .045));
+    if (Math.abs(before[i].x) < .025 && before[i].y > .735 && before[i].y < .84 && before[i].z > -.11) {
+      assert.ok(after.y >= .865 && (before[i].z <= .025 || after.z <= .045));
     }
   }
   assert.ok(changed > 100);

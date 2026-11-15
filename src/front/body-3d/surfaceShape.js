@@ -26,10 +26,11 @@ export function softenMaleGroin(geometry, matrixWorld) {
     const front = smoothstep(-0.08, -0.035, point.z);
     const lower = smoothstep(0.70, 0.735, point.y);
     const weight = lateral * front * lower;
+    const underside = lateral * lower * smoothstep(-0.15, -0.11, point.z);
     const flatten = weight * (1 - smoothstep(0.84, 0.90, point.y));
-    point.y += Math.max(0, 0.85 - point.y) * weight;
+    point.y += Math.max(0, 0.87 - point.y) * underside;
     point.z -= Math.max(0, point.z - 0.025) * flatten;
-    weights[i] = Math.max(weight * (1 - smoothstep(0.85, 0.87, point.y)), flatten);
+    weights[i] = Math.max(underside * (1 - smoothstep(0.87, 0.89, point.y)), flatten);
     point.applyMatrix4(inverse);
     position.setXYZ(i, point.x, point.y, point.z);
     groups[group].point = point.clone();

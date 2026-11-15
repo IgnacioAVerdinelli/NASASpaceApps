@@ -43,7 +43,7 @@ function App() {
   return <div className="alerts-app">
     <Backdrop/>
     <header className="alerts-bar glass-bar"><div className="alerts-bar-inner">
-      <a className="alert-brand" href={'../' + window.location.search + '#summary'} aria-label="Trama health overview"><Brand/></a>
+      <a className="alert-brand" href={'../' + window.location.search + '#summary'} aria-label="GraviTal health overview"><Brand/></a>
       <a className="back-link btn-link" href={'../' + window.location.search + '#vitales'}><Arrow back /> Vital signs</a>
     </div></header>
 

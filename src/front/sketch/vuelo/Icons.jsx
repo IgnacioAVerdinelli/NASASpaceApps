@@ -29,6 +29,6 @@ export function Brand() {
         <path d="m7 24 8-14 5 9 4-7 7 12"/><path d="m13 26 7-12 6 11"/>
       </g>
     </svg>
-    Trama
+    GraviTal
   </span>;
 }

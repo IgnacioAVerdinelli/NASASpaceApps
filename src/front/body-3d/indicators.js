@@ -145,7 +145,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
   const entries = new Map(), previousPlacements = new Map(), previousAnchors = new Map(), display = new Map();
   const measure = document.createElement('canvas').getContext?.('2d');
   const raycaster = new THREE.Raycaster();
-  const samples = buildIndicatorSamples(view);
+  const samples = view.indicatorSamples ??= buildIndicatorSamples(view);
   // The model is static; bounding boxes rule out almost all meshes before triangle raycasts.
   const bounds = new Map();
   for (const mesh of [view.skin, ...view.muscleMeshes.map(item => item.mesh), ...view.skeletonMeshes]) {
@@ -155,12 +155,14 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
   const point = new THREE.Vector3(), normal = new THREE.Vector3(), toCamera = new THREE.Vector3();
   const projected = new THREE.Vector3(), normalMatrix = new THREE.Matrix3(), boxHit = new THREE.Vector3();
   let lastUpdate = -Infinity, lastFrame = null, job = null, lastValues = null, currentValues = null;
+  let lastFrameCamera = null, lastJobCamera = null, settling = false;
 
   // Projection is cheap and follows every camera frame; visibility checks stay budgeted below.
   function projectEntries(now, width, height, reducedMotion) {
     const delta = lastFrame === null ? 0 : Math.max(0, Math.min(100, now - lastFrame));
     lastFrame = now;
     view.camera.updateMatrixWorld();
+    let moving = false;
     for (const [key, state] of display) {
       const entry = entries.get(key), sample = state.sample;
       point.copy(sample.point).applyMatrix4(sample.mesh.matrixWorld);
@@ -182,6 +184,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
         state.current.top += (state.rect.top - state.current.top) * amount;
         // A side change snaps to the new lane so the label never travels across the body.
         if (state.current.side !== state.rect.side) state.current = { ...state.rect };
+        moving ||= Math.abs(state.rect.left - state.current.left) > .25 || Math.abs(state.rect.top - state.current.top) > .25;
         const rect = { ...state.current, right: state.current.left + state.labelWidth };
         entry.style.setProperty('--dot-x', `${x}px`); entry.style.setProperty('--dot-y', `${y}px`);
         entry.style.setProperty('--label-x', `${rect.left}px`); entry.style.setProperty('--label-y', `${rect.top}px`);
@@ -189,13 +192,14 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
         entry.children[1].children[0].setAttribute('d', indicatorLinePath(x, y, rect, height, state.variation));
       }
     }
+    return moving;
   }
 
   function update(values, now, reducedMotion = false) {
     currentValues = values;
     const { layer, isolated, scores, selected, checkpointItems } = values;
     const width = container.clientWidth, height = container.clientHeight;
-    const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.width !== width || lastValues.height !== height;
+    const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.indicatorText !== values.indicatorText || lastValues.width !== width || lastValues.height !== height;
     if (!['surface', 'muscles', 'organs'].includes(layer) || width < 60 || height < 60) {
       for (const entry of entries.values()) entry.style.display = 'none';
       display.clear(); previousAnchors.clear(); previousPlacements.clear();
@@ -203,15 +207,20 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       return true;
     }
     if (lastValues && lastValues.layer !== layer) { display.clear(); previousAnchors.clear(); previousPlacements.clear(); for (const entry of entries.values()) entry.style.display = 'none'; }
-    projectEntries(now, width, height, reducedMotion);
+    view.camera.updateMatrixWorld();
+    const cameraState = [...view.camera.matrixWorld.elements, ...view.camera.projectionMatrix.elements];
+    const differs = previous => !previous || cameraState.some((value, i) => value !== previous[i]);
+    if (changed || differs(lastFrameCamera) || settling) settling = projectEntries(now, width, height, reducedMotion);
+    lastFrameCamera = cameraState;
     if (changed) { job = null; lastUpdate = -Infinity; }
     if (!job) {
-      if (now - lastUpdate < 150) return true;
+      if ((!changed && !differs(lastJobCamera)) || now - lastUpdate < 150) return true;
       const camera = view.camera.clone(); camera.updateMatrixWorld();
       const targets = layer === 'surface' ? [view.skin] : view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh);
       if (layer === 'muscles' && view.skeletonGroup.visible) targets.push(...view.skeletonMeshes.filter(mesh => mesh.visible));
       job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected).filter(item => !values.indicatorFilter || values.indicatorFilter(item.key)), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
-      lastValues = { layer, isolated, scores, selected, checkpointItems, width, height };
+      lastValues = { layer, isolated, scores, selected, checkpointItems, indicatorText: values.indicatorText, width, height };
+      lastJobCamera = cameraState;
     }
     const { camera, targets, ordered, occupied, seen, body } = job;
     const started = performance.now();
@@ -316,7 +325,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
     if (job.index < ordered.length) return false;
     for (const [key, entry] of entries) if (!seen.has(key)) { entry.style.display = 'none'; display.delete(key); previousAnchors.delete(key); previousPlacements.delete(key); }
     job = null; lastUpdate = now;
-    projectEntries(now, width, height, reducedMotion);
+    settling = projectEntries(now, width, height, reducedMotion);
     return true;
   }
 

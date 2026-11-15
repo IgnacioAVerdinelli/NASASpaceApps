@@ -20,3 +20,7 @@
 @keyframes signal{0%{opacity:.45;transform:scale(.72)}100%{opacity:0;transform:scale(1.18)}}
 @keyframes arrive{from{transform:scale(.85)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.watch-symbol::after,.watch-symbol svg{animation:none}}
+
+/* Local queue controls reuse the wearable demo; these are not central ship screens. */
+.strap-top{top:calc(50% - 350px);height:230px}.strap-bottom{top:calc(50% + 120px);bottom:auto;height:230px}
+.demo-controls{width:100%;margin-top:26px;font-size:12px;line-height:1.6}.demo-controls label{display:flex;align-items:center;gap:8px}.demo-controls select{font:inherit;padding:6px;border:1px solid #ccc7df;border-radius:8px;background:white}.demo-controls p{margin:10px 0;color:#65657a}.scenario-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.scenario-buttons button{padding:8px 10px;border:1px solid #d4cfe5;border-radius:9px;background:#f0edf9;color:#44385f;font-size:11px}.scenario-buttons button:hover{background:#e1daf2}button:disabled{cursor:default;opacity:.6}.demo-controls .api-error{color:#992f3d}.empty-inbox{padding:18px 0;color:#65657a;font-size:12px}.alert-list{margin-top:28px;max-height:340px;overflow:auto}.watch-symbol{width:55px;height:55px;margin-bottom:6px}.watch-symbol svg{width:30px;height:30px}.watch-body h2{font-size:18px;max-width:18ch}.watch-body p{font-size:10px;line-height:1.4}.watch-action{flex:none;margin-top:5px}.watch-body{overflow:auto}.watch-screen{min-height:0}

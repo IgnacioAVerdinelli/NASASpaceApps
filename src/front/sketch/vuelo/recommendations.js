@@ -1,16 +1,28 @@
 // Illustrative decisions only; replace with the agreed scheduler response when available.
-export function exampleRecommendations(crew, groups) {
-  const calf = groups.find(group => group.key === 'calf');
-  const point = calf?.points?.at(-1);
-  return [
-    {
+export function exampleRecommendations(crew, groups, upcoming = []) {
+  const calf = groups.find(group => group.key === 'calves');
+  const point = calf?.points?.findLast(point => Number.isFinite(point.pct) && point.label);
+  const examples = [];
+  if (point && Number.isFinite(crew.today) && crew.today < crew.landing - 1) {
+    const change = `${Math.abs(point.pct).toFixed(1)}% ${point.pct < 0 ? 'below' : point.pct > 0 ? 'above' : 'at' } pre-flight`;
+    examples.push({
       id: 'calf-retest', type: 'Follow-up', title: 'Repeat calf strength test', crew: crew.id,
-      day: crew.today + 1, status: 'Scheduled', view: 'fuerza', muscle: 'calf_l',
-      reason: Number.isFinite(point?.pct) ? `The latest calf measurement at ${point.label} is ${Math.abs(point.pct).toFixed(1)}% ${point.pct < 0 ? 'below' : 'above'} the pre-flight baseline. A repeat test could help verify the change.` : 'The related measurement is unavailable.',
-    },
-    { id: 'routine-strength', type: 'Routine', title: 'Muscle strength assessment', crew: crew.id,
-      day: crew.today + 23, status: 'Scheduled', view: 'fuerza', reason: 'Routine assessment in the simulated mission schedule.' },
-  ];
+      day: Math.floor(crew.today) + 1, dayLabel: `FD${Math.floor(crew.today) + 2}`,
+      status: 'Scheduled', view: 'fuerza', muscle: 'calf_l',
+      measurement: { title: 'Calf strength', detail: `Last measured ${point.label}` },
+      finding: { title: change, detail: 'Change compared with the pre-flight baseline.' },
+      action: { title: 'Repeat the test', detail: 'Illustrative follow-up to verify the change.' },
+    });
+  }
+  const routine = upcoming.find(item => Number.isFinite(item.day) && item.day >= crew.today && item.label);
+  if (routine) examples.push({
+    id: 'routine-strength', type: 'Routine', title: 'Muscle strength assessment', crew: crew.id,
+    day: routine.day, dayLabel: routine.label, status: 'Scheduled', view: 'fuerza',
+    measurement: { title: 'Strength assessment', detail: 'Part of the measurement schedule.' },
+    finding: { title: 'Routine schedule', detail: 'No individual finding is needed for this example.' },
+    action: { title: 'Complete assessment', detail: `Next scheduled assessment: ${routine.label}.` },
+  });
+  return examples;
 }
 
 export function updateStatus(items, id, status) {
@@ -18,17 +30,9 @@ export function updateStatus(items, id, status) {
   return items.map(item => item.id === id ? { ...item, status } : item);
 }
 
-export function timelineItems(items, today) {
-  return [...items, { id: '__today__', day: today, today: true }].sort((a, b) => {
-    const aDay = Number.isFinite(a.day) ? a.day : Infinity;
-    const bDay = Number.isFinite(b.day) ? b.day : Infinity;
-    return aDay - bDay || Number(Boolean(b.today)) - Number(Boolean(a.today));
-  });
-}
-
 export function dayDistance(day, today) {
   if (!Number.isFinite(day) || !Number.isFinite(today)) return 'Date unavailable';
-  const difference = day - today;
+  const difference = Math.floor(day) - Math.floor(today);
   if (difference === 0) return 'Today';
   const days = Math.abs(difference);
   return difference > 0 ? `In ${days} ${days === 1 ? 'day' : 'days'}` : `${days} ${days === 1 ? 'day' : 'days'} ago`;

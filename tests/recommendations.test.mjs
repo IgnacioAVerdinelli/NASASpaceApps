@@ -1,16 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayDistance, exampleRecommendations, timelineItems, updateStatus } from '../src/front/sketch/vuelo/recommendations.js';
+import { dayDistance, exampleRecommendations, updateStatus } from '../src/front/sketch/vuelo/recommendations.js';
+import example from '../src/front/sketch/data/analyses.example.json' with { type: 'json' };
 
-test('examples use the selected crew and latest calf measurement', () => {
-  const items = exampleRecommendations({ id: 'CM-2', today: 112 }, [{ key: 'calf', points: [{ label: 'FD 105', pct: -13.6 }] }]);
-  assert.equal(items[0].crew, 'CM-2');
-  assert.equal(items[0].day, 113);
-  assert.match(items[0].reason, /13\.6% below/);
-  assert.equal(items[0].muscle, 'calf_l');
+const crew = { id: 'CM-1', today: 170, landing: 180 };
+const mapped = example.strength.groups.map(group => ({ key: group.key, points: group.points.map((point, i) => ({ pct: point.changePct, label: example.strength.evaluations[i]?.label })) }));
+
+test('examples use an available measurement and preserve the actual next assessment label', () => {
+  const items = exampleRecommendations(crew, mapped, example.strength.upcoming);
+  assert.equal(items[0].crew, 'CM-1');
+  assert.equal(items[0].dayLabel, 'FD172');
+  assert.equal(items[0].measurement.title, 'Calf strength');
+  assert.match(items[0].finding.title, /pre-flight/);
+  assert.equal(items[1].dayLabel, 'R+5');
   assert.equal(items[1].type, 'Routine');
-  assert.match(exampleRecommendations({ id: 'CM-2', today: 112 }, [])[0].reason, /unavailable/);
-  assert.match(exampleRecommendations({ id: 'CM-2', today: 112 }, [{ key: 'calf', points: [{}] }])[0].reason, /unavailable/);
+});
+
+test('missing measurements and dates do not produce invented actions', () => {
+  assert.deepEqual(exampleRecommendations(crew, [], []), []);
+  assert.deepEqual(exampleRecommendations(crew, [{ key: 'calves', points: [{}] }], []), []);
+  assert.deepEqual(exampleRecommendations({ ...crew, today: 179 }, mapped, []), []);
+  assert.deepEqual(exampleRecommendations(crew, [], [{ day: 160, label: 'FD161' }]), []);
 });
 
 test('status changes affect only the selected recommendation and reject unknown values', () => {
@@ -20,15 +30,6 @@ test('status changes affect only the selected recommendation and reject unknown 
   assert.equal(updated[1].status, 'Scheduled');
   assert.equal(items[0].status, 'Scheduled');
   assert.equal(updateStatus(items, 'a', 'invalid'), items);
-});
-
-test('timeline sorts dates, keeps same-day actions and handles missing dates', () => {
-  const items = [{ id: 'late', day: 135 }, { id: 'unknown' }, { id: 'same', day: 112 }, { id: 'soon', day: 113 }, { id: 'same2', day: 112 }];
-  assert.deepEqual(timelineItems(items, 112).map(item => item.id), ['__today__', 'same', 'same2', 'soon', 'late', 'unknown']);
-  assert.equal(dayDistance(113, 112), 'In 1 day');
-  assert.equal(dayDistance(135, 112), 'In 23 days');
-  assert.equal(dayDistance(112, 112), 'Today');
-  assert.equal(dayDistance(110, 112), '2 days ago');
-  assert.equal(dayDistance(null, 112), 'Date unavailable');
-  assert.deepEqual(timelineItems([], 112).map(item => item.id), ['__today__']);
+  assert.equal(dayDistance(171, 170), 'In 1 day');
+  assert.equal(dayDistance(185, 170), 'In 15 days');
 });

@@ -196,3 +196,22 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - [ ] Funciona a 1440, 1180, 760 y 390px de ancho, sin scroll horizontal.
 - [ ] Con `prefers-reduced-transparency` se ve sólido y legible.
 - [ ] Focus visible (`outline: 3px solid var(--link)`), botones reales, nada clickeable en un `div`.
+
+---
+
+## 9. Logo
+
+La marca es la variante **B3 · Superficie de gravedad** con corazón, que eligió el equipo en el canvas de
+diseño (página "Logo · GraviTal"). La línea gruesa es el cuerpo, que se hunde en un pozo de gravedad; el
+corazón queda en el fondo, y las líneas finas de abajo son la superficie del espacio-tiempo deformada.
+
+| Dónde | Archivo | Colores |
+|---|---|---|
+| Header (dashboard, simulador de alertas) | `Brand()` / `BrandMark()` en `vuelo/Icons.jsx` | `--brand-ink` (= `--ink-strong`), `--brand-heart` (= `--accent`), `--brand-field` `#9AA8E0` |
+| Favicon de todas las páginas | `public/favicon.svg` | Tile `#0E1630`; línea `#EEF2FF`, corazón `#8C9EFF`, líneas finas blancas al 40 % |
+
+- La marca va siempre con sus tres piezas; no se recolorea con los tonos de estado.
+- En el header se usa a 36px junto a "GraviTal" en Chakra Petch 700. Por debajo de 24px las líneas finas
+  casi no se ven: para tamaños chicos se usa el favicon (sobre tile oscuro, líneas finas más gruesas).
+- No usar elementos del logo de la NASA (esfera, órbita roja, "worm") junto a la marca.
+- El logo se hizo con asistencia de IA (Claude): declararlo en el campo de uso de IA de la entrega.

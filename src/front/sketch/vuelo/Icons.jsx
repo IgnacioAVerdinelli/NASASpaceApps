@@ -21,14 +21,20 @@ export function Icon({ name, size = 18 }) {
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
+// GraviTal mark ("superficie de gravedad"): the body line sinks into a gravity well with the
+// heart at the bottom; the thin lines below are the curved space-time surface. Rules in
+// docs/design-system.md (section 9). The same mark lives in public/favicon.svg on a dark tile.
+export function BrandMark({ size = 36 }) {
+  return <svg aria-hidden="true" viewBox="0 6 100 100" width={size} height={size} fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 50 H16 C34 50 36 76 50 76 C64 76 66 50 84 50 H94 M6 70 H14 C34 70 38 88 50 88 C62 88 66 70 86 70 H94" stroke="var(--brand-field)" strokeWidth="3"/>
+    <path d="M6 28 H18 C34 28 34 64 50 64 C66 64 66 28 82 28 H94" stroke="var(--brand-ink)" strokeWidth="9"/>
+    <path d="M50 57.2 C44.6 53.6 41 50 41 46 C41 42.8 43.3 41 45.9 41 C47.8 41 49.3 42.1 50 43.9 C50.7 42.1 52.2 41 54.1 41 C56.7 41 59 42.8 59 46 C59 50 55.4 53.6 50 57.2 Z" fill="var(--brand-heart)"/>
+  </svg>;
+}
+
 export function Brand() {
   return <span className="trama-brand" translate="no">
-    <svg aria-hidden="true" viewBox="0 0 38 38" width="34" height="34" fill="none">
-      <rect width="38" height="38" rx="11" fill="#2F45C0"/>
-      <g stroke="white" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m7 24 8-14 5 9 4-7 7 12"/><path d="m13 26 7-12 6 11"/>
-      </g>
-    </svg>
+    <BrandMark/>
     GraviTal
   </span>;
 }

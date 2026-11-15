@@ -244,8 +244,13 @@ def main(argv=None):
     parser.add_argument('--queue', help='SQLite message queue file for the local demo')
     parser.add_argument('--run-booked', action='store_true',
                         help="run the retests the Planner books (the Planner turns a repeated finding into a review, not another retest)")
+    parser.add_argument('--demo-cases', action='store_true', help='use the fixed five-case ISS demonstration crew')
     args = parser.parse_args(argv)
-    mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
+    if args.demo_cases:
+        from .demo_cases import demo_mission
+        mission = demo_mission()
+    else:
+        mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     apply_fatigue(mission, args.fatigue)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
     clock = mission_clock(mission, args.day, args.speed)

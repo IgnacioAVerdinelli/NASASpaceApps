@@ -35,41 +35,43 @@ Arranca, en este orden:
 | Planner | 3001 | Arma el plan de cada tripulante desde la norma de la NASA |
 | Página (Vite) | 5190 | `http://127.0.0.1:5190/vuelo.html?crew=CM-3#summary` |
 
-Tarda unos 40 segundos: genera la misión entera, con unas 100 lecturas del reloj por día y tripulante. Las bases, los logs y los temporales van a `.demo/` (está en `.gitignore`). `Ctrl+C` detiene todo. Cada arranque empieza una misión nueva.
+El arranque genera el historial de cinco personas y espera a que salud y planificación procesen los eventos antes de anunciar que está listo. Puede tardar más de un minuto. Las bases, los logs y los temporales van a `.demo/` (está en `.gitignore`). `Ctrl+C` detiene todo. Cada arranque reemplaza las bases `data.sqlite` y `queue.sqlite` de la demo y empieza una misión nueva.
 
 Opciones, todas por variables de entorno:
 
 | Variable | Por defecto | Para qué |
 |---|---|---|
 | `DAY` | 130 | Día de misión al arrancar (0 = lanzamiento, 180 = aterrizaje) |
-| `SPEED` | 0.5 | Días de misión por minuto real; 0 deja el reloj quieto |
-| `FATIGUE` | `CM-3:126:7` | Episodio de fatiga que solo ve el reloj: tripulante, día de inicio y duración en días |
+| `SPEED` | 0 | Días de misión por minuto real; 0 deja los cinco casos en el momento preparado |
 | `DEMO_DIR` | `.demo/` | Dónde guardar bases, logs y temporales |
 | `PORT` | 5190 | Puerto de la página |
+| `DATA_PORT`, `HEALTH_PORT`, `PLANNER_PORT` | 8000, 3000, 3001 | Puertos de los servicios; cambiarlos si ya están ocupados |
 
-Para levantar cada servicio por separado, ver el [README](../README.md).
+Los casos están preparados para `DAY=130` y `SPEED=0`; con otros valores pueden cambiar o dejar de verse. Para levantar cada servicio por separado, ver el [README](../README.md).
 
-## 3. Qué mostrar (unos 3 minutos)
+## 3. Qué mostrar
 
 La página es `/vuelo.html`. El selector de tripulante está arriba.
 
-1. **Health summary, CM-3: el reloj como primera línea.**
+En Surface, las regiones con mediciones usan sus resultados; las demás muestran colores ilustrativos distintos para cada tripulante. Esos colores no son lecturas, no generan alertas y no representan un diagnóstico. El mapa interno y las tablas conservan las mediciones disponibles.
+
+1. **CM-1: referencia estable.** Recorrer los signos vitales y las mediciones para comparar con los demás casos.
+2. **CM-2: fatiga reciente.** En Vital signs se observa un cambio reciente en la calidad del sueño; es una señal simulada, no un diagnóstico.
+3. **Health summary, CM-3: fatiga persistente.**
    - La banda amarilla dice "Check needed": la FC en reposo está alta hace 3 días.
    - El panel "Now · from your watch" tiene una tarjeta por signo vital, con la banda personal sombreada.
    - Más abajo, la frecuencia cardíaca de hoy contra ayer, hace una semana o antes del vuelo, con el sueño y el ejercicio sombreados.
    - En "To do", el Planner ya agendó "Review by the flight surgeon: resting heart rate".
-2. **Vital signs, CM-3.**
-   - Cada signo a 30 días: la banda personal sombreada y los días fuera de rango en naranja.
-   - El promedio semanal de toda la misión.
-   - El texto explica por qué un cambio de 3 días agenda una revisión.
-3. **Health summary, CM-2: las pruebas periódicas como segunda línea.**
+   - En Vital signs se muestran los últimos 30 días, la banda personal y el promedio semanal de toda la misión.
+4. **CM-4: pérdida de fuerza.** En Muscle strength y el cuerpo 3D se ven las mediciones de piernas y las alertas correspondientes.
+5. **CM-5: capacidad aeróbica.**
    - Alarma roja de capacidad aeróbica: el VO2pico está por debajo del mínimo de la NASA (32,9 ml/kg/min).
-   - El cuerpo 3D colorea cada grupo muscular según cuánta fuerza perdió.
-4. **Mission plan.**
+   - El Planner incluye una revisión de la capacidad aeróbica.
+6. **Mission plan.**
    - "Open now" y "Coming up this week", con lenguaje simple.
    - Al abrir una tarea: pasos, qué hacer si algo sale anormal y la cita de la norma con su página.
    - "Mark as done" pide confirmación y lo guarda en el Planner.
-5. **Muscle strength y Aerobic capacity:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
+7. **Muscle strength y Aerobic capacity:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
 
 **Mensaje para cerrar:** el reloj mira todos los días cómo estás comparado con vos mismo; las pruebas periódicas miran si perdés más rápido de lo esperado; y el Planner convierte las dos cosas en tareas concretas, siguiendo la norma médica de la NASA (OCHMO-STD-100.1A).
 
@@ -80,7 +82,7 @@ La página es `/vuelo.html`. El selector de tripulante está arriba.
 | La página tarda segundos en cada actualización | Algún servicio usa `localhost`: en Windows prueba IPv6 primero y pierde unos 2 s por consulta. Usar `http://127.0.0.1:8000`; ya es el valor por defecto. |
 | "Unable to reach the Planner (port 3001)" | El Planner no arrancó o se cayó. Ver `.demo/planner.log`. |
 | `database or disk is full` | Disco lleno. Mover `DEMO_DIR` a otro disco. |
-| `Port 5190 is in use` | Otro Vite está corriendo. Usar `PORT=5191 bash scripts/demo.sh`. |
+| Un puerto está ocupado | Cambiar la variable correspondiente; por ejemplo, `PORT=5191 bash scripts/demo.sh`. |
 | CM-3 ya no muestra el desvío | El reloj de la misión avanzó y el episodio terminó. Reiniciar o usar `SPEED=0`. |
 | En "Missed" nunca hay nada | Es esperado: `--simulate-crew` marca como hechas las tareas de la tripulación a mitad de su ventana. |
 

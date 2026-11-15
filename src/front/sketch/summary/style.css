@@ -71,20 +71,24 @@
 .ov-status-top .chip { padding: 4px 10px; font-size: 12px; }
 .ov-status-lead { margin: 10px 0 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
 .ov-status-detail { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
-.ov-alerts { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.ov-alerts { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 6px; }
 .ov-alert {
   --a-icon-bg: var(--kind-review-bg); --a-icon-ink: var(--warn-ink);
-  padding: 14px; border-radius: calc(var(--r-card) - 4px);
+  border-radius: var(--r-sm);
   background: var(--warn-wash); border: 1px solid var(--warn-wash-border);
 }
 .ov-alert[data-tone=crit] { --a-icon-bg: var(--crit-bg); --a-icon-ink: var(--crit-ink); background: var(--ov-crit-wash); border-color: var(--crit-border); }
-.ov-alert-body { display: flex; gap: 10px; font-size: 13px; line-height: 1.45; }
-.ov-alert-body strong { display: block; font-weight: 600; }
-.ov-alert-body span { display: block; }
-.ov-alert-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--a-icon-bg); color: var(--a-icon-ink); }
+.ov-alert-body { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-height: 44px; padding: 11px; border: 0; border-radius: inherit; background: transparent; color: var(--ink); text-align: left; font: 13px/1.4 var(--font); cursor: pointer; }
+.ov-alert-body:hover { background: var(--glass-hover); }
+.ov-alert-copy { flex: 1; min-width: 0; }
+.ov-alert-copy strong, .ov-alert-copy > span, .ov-alert-copy small { display: block; }
+.ov-alert-copy strong { font-weight: 600; }
+.ov-alert-copy > span { margin-top: 2px; color: var(--ink-2); }
+.ov-alert-copy small { margin-top: 4px; color: var(--a-icon-ink); font-size: 11px; font-weight: 600; }
+.ov-alert-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--a-icon-bg); color: var(--a-icon-ink); }
 .ov-alert-icon .alert-icon { width: 16px; height: 16px; }
-.ov-alert-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 10px; }
-.ov-alert-plan { padding-inline: 4px; }
+.ov-alert-arrow { flex: none; color: var(--link); font-size: 17px; line-height: 28px; }
+.ov-alert-plan { margin-top: 4px; }
 
 /* ---- Mission schedule ---- */
 .ov-schedule { margin-top: 24px; padding: 16px 22px 18px; }

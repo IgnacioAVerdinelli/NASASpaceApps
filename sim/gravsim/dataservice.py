@@ -15,8 +15,7 @@ Whatever is stored is announced on the event queue through the publisher (events
 member for each ingest() and ingest_context() call, one per saved result. The default publisher is a mock
 that logs and keeps the messages.
 
-Everything is kept in memory. The SQLite store (store.py) is wired in but inert: it saves nothing and
-finds nothing, so for now memory holds the whole data set.
+Records are persisted by the SQLite store; its default database is in memory.
 """
 from __future__ import annotations
 
@@ -37,7 +36,7 @@ SOURCE_PRIORITY = {"suit": 3, "room_sensor": 2, "timeline": 1}
 
 class DataService:
     def __init__(self, store: SqliteStore | None = None, publisher: events.Publisher | None = None):
-        """store: the database (default: the inert SQLite store). publisher: anything with
+        """store: the database (default: an in-memory SQLite store). publisher: anything with
         publish(topic, message) (default: events.MockPublisher, which logs and keeps the messages)."""
         self.store = store or SqliteStore()
         self.publisher = publisher if publisher is not None else events.MockPublisher()
@@ -77,7 +76,7 @@ class DataService:
         wanted = set(expand(measures))
         start, end = _utc_range(start, end)
         found = {key(r): r for r in self.store.query(crew_id, sorted(wanted), start, end)}   # [] for now
-        for r in self._readings.values():
+        for r in list(self._readings.values()):
             if r.crew_id == crew_id and r.measure in wanted and _between(r.timestamp, start, end):
                 found[key(r)] = r          # memory holds the newest copy, so it wins over the store
         return sorted(found.values(), key=order)
@@ -103,7 +102,7 @@ class DataService:
         leaves that end open), oldest first. Times in any form readings() takes."""
         start, end = _utc_range(start, end)
         found = {context_key(c): c for c in self.store.query_context(crew_id, start, end)}   # [] for now
-        for c in self._context.values():
+        for c in list(self._context.values()):
             if c.crew_id == crew_id and (start is None or c.end > start) and (end is None or c.start <= end):
                 found[context_key(c)] = c
         return sorted(found.values(), key=context_order)
@@ -134,7 +133,7 @@ class DataService:
         the mission times the results are for, as in readings()."""
         start, end = _utc_range(start, end)
         found = {_result_key(r): r for r in self.store.query_results(crew_id, kind, start, end)}   # [] for now
-        for r in self._results.values():
+        for r in list(self._results.values()):
             if r.crew_id == crew_id and kind in (None, r.kind) and _between(r.timestamp, start, end):
                 found[_result_key(r)] = r
         return sorted(found.values(), key=lambda r: (r.timestamp, r.kind, r.model_version))

@@ -115,7 +115,7 @@ def primary_key(store, table):
     return [row[1] for row in sorted(store.db.execute(f"PRAGMA table_info({table})"), key=lambda row: row[5]) if row[5]]
 
 
-def test_store_has_the_schema_but_saves_and_finds_nothing():
+def test_store_saves_and_finds_records():
     store = gs.SqliteStore()
     assert primary_key(store, "readings") == ["crew_id", "measure", "timestamp", "instrument", "side"]
     assert [row[1] for row in store.db.execute("PRAGMA table_info(processed)")] == \
@@ -124,9 +124,9 @@ def test_store_has_the_schema_but_saves_and_finds_nothing():
 
     store.save(gs.clean([sensor()]))
     store.save_results([gs.DataService().save_result("CM-1", "dashboard", "2027-03-01T12:00:00Z", {"a": 1})])
-    assert store.query("CM-1") == [] and store.query_results("CM-1") == []
+    assert len(store.query("CM-1")) == 1 and len(store.query_results("CM-1")) == 1
     for table in ("readings", "processed"):
-        assert store.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone() == (0,)
+        assert store.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone() == (1,)
 
 
 # ---- gravsim through the DataService --------------------------------------------------------

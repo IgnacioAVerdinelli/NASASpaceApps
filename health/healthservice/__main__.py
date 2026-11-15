@@ -28,6 +28,7 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=3000)
     ap.add_argument("--origin", default="*", help="origin allowed by CORS")
+    ap.add_argument("--queue", help="SQLite queue file for the local demo")
     sim = ap.add_argument_group("with --gravsim (the same options as gravsim.serve)")
     sim.add_argument("--gravsim", action="store_true", help="run gravsim's DataService in this process")
     sim.add_argument("--preset", default="iss_180", choices=["iss_180", "artemis_30", "mars"])
@@ -47,7 +48,12 @@ def main(argv=None):
         except DataServiceError as e:
             sys.exit(f"{e}\nStart the DataService first (python -m gravsim.serve), or run with --gravsim.")
         data = f"DataService {args.data_url}, mission {source.mission().name}"
-    app = create_app(HealthService(source), allow_origin=args.origin)
+    if args.queue:
+        from gravsim.queue import Queue
+        delivery_queue = Queue(args.queue)
+    else:
+        delivery_queue = None
+    app = create_app(HealthService(source, process_on_read=not bool(args.queue)), allow_origin=args.origin, delivery_queue=delivery_queue)
     print(f"HealthService on http://localhost:{args.port}/api/v1/dashboard "
           f"({data}, crew {[c.id for c in source.crew()]})", flush=True)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

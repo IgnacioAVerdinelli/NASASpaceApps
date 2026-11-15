@@ -1,5 +1,7 @@
 # gravsim: the DataService and the simulated data behind it
 
+**Local demo update:** `SqliteStore` now persists readings, context and results. `gravsim.serve --db PATH --queue PATH` uses file-backed storage and publishes events to a SQLite queue while the mission clock advances. See the [root README](../README.md) for the full multi-process demo. The older descriptions of the store as inert and the queue as exclusively mocked below describe the original design; the mock remains the default without `--queue`.
+
 This folder is the health monitor's data service. The `DataService` takes in everything the sources on board produce (instrument readings and crew context: where each astronaut is and what they are doing), cleans it, keeps it, answers queries for it over Python or HTTP, and announces what it stored on the team's event queue. See `docs/architecture.md` for where it sits: Sources → DataService ↔ Database.
 
 We have none of those sources: no dynamometer, DXA scanner, metabolic cart, flight wearable, room sensors or spacesuit. The `gravsim` generator stands in for all of them. It produces readings for a crew member on any mission day, following the curves measured in NASA's open bed-rest studies (the files in `data/nlsp/` and `sim/fit/source_data/`), and a daily routine with spacewalks for the context. Readings are random by default and fully controllable: exercise adherence over time, fast responders, injuries on a chosen day, broken instruments, spacewalks.

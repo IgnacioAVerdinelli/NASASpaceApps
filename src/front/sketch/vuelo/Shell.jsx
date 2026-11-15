@@ -4,6 +4,7 @@ import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
 import { SummaryView } from '../summary/SummaryView.jsx';
 import { VitalsView } from '../vitals/VitalsView.jsx';
+import { EyesView } from '../ojos/EyesView.jsx';
 import { loadVitals, vitalsUrl } from '../data/vitals.js';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'plan', label: 'Mission plan' },
   { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
   { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
+  { id: 'ojos', label: 'Eyes' },
 ];
 const fromHash = () => TABS.some(t => `#${t.id}` === window.location.hash) ? window.location.hash.slice(1) : TABS[0].id;
 const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew') || '';
@@ -97,6 +99,9 @@ export function Shell() {
     <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden={tab !== 'plan'}>{exampleMode
       ? <div className="connection-notice" role="status">The mission plan needs the Planner service (port 3001); it is not available in example mode.</div>
       : <PlanView crew={crewId}/>}</section>
+    <section id="panel-ojos" role="tabpanel" aria-labelledby="tab-ojos" hidden={tab !== 'ojos'}>{exampleMode
+      ? <div className="connection-notice" role="status">The eye exams need the HealthService; they are not available in example mode.</div>
+      : <EyesView apiUrl={apiUrl} crewId={crewId}/>}</section>
     {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
     </>}
   </main>;

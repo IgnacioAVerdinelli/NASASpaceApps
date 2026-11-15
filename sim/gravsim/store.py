@@ -70,9 +70,17 @@ class SqliteStore:
 
     def query(self, crew_id: str, measures: list[str] | None = None, start: str | None = None,
               end: str | None = None) -> list[Reading]:
+        # Filtered by measure in SQL: the primary key starts with (crew_id, measure, timestamp), so this is an index
+        # lookup; the watch alone stores ~100 readings a day per crew member, which a crew-wide scan would parse.
+        where, args = "crew_id=? AND (? IS NULL OR timestamp>=?) AND (? IS NULL OR timestamp<=?)", [crew_id, start, start, end, end]
+        if measures is not None:
+            if not measures:
+                return []
+            where += f" AND measure IN ({','.join('?' * len(measures))})"
+            args += list(measures)
         with self.lock:
-            rows = self.db.execute("SELECT extra FROM readings WHERE crew_id=? AND (? IS NULL OR timestamp>=?) AND (? IS NULL OR timestamp<=?) ORDER BY timestamp", (crew_id, start, start, end, end)).fetchall()
-        return [r for r in (Reading(**json.loads(row[0])) for row in rows) if measures is None or r.measure in measures]
+            rows = self.db.execute(f"SELECT extra FROM readings WHERE {where} ORDER BY timestamp", args).fetchall()
+        return [Reading(**json.loads(row[0])) for row in rows]
 
     def save_context(self, records: Iterable[ContextRecord]) -> None:
         with self.lock, self.db:

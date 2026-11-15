@@ -40,7 +40,7 @@ class DataService:
         publish(topic, message) (default: events.MockPublisher, which logs and keeps the messages)."""
         self.store = store or SqliteStore()
         self.publisher = publisher if publisher is not None else events.MockPublisher()
-        self._readings: dict[tuple, Reading] = {}
+        self._readings: dict[tuple, dict[tuple, Reading]] = {}     # (crew_id, measure) -> {key: Reading}
         self._context: dict[tuple, ContextRecord] = {}
         self._results: dict[tuple, Result] = {}
 
@@ -62,7 +62,7 @@ class DataService:
         readings = clean(records)
         self.store.save(readings)
         for r in readings:
-            self._readings[key(r)] = r
+            self._readings.setdefault((r.crew_id, r.measure), {})[key(r)] = r
         self._announce(events.READINGS_STORED, events.readings_stored(readings))
         return readings
 
@@ -76,9 +76,10 @@ class DataService:
         wanted = set(expand(measures))
         start, end = _utc_range(start, end)
         found = {key(r): r for r in self.store.query(crew_id, sorted(wanted), start, end)}   # [] for now
-        for r in list(self._readings.values()):
-            if r.crew_id == crew_id and r.measure in wanted and _between(r.timestamp, start, end):
-                found[key(r)] = r          # memory holds the newest copy, so it wins over the store
+        for measure in wanted:
+            for r in list(self._readings.get((crew_id, measure), {}).values()):
+                if _between(r.timestamp, start, end):
+                    found[key(r)] = r      # memory holds the newest copy, so it wins over the store
         return sorted(found.values(), key=order)
 
     def latest(self, crew_id: str, measures: str | Iterable[str] | None = None, at=None) -> dict[str, Reading]:

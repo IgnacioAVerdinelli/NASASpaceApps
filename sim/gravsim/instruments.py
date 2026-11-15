@@ -344,8 +344,9 @@ class Watch(Instrument):
         minutes), and the night's sleep reported at 06:00 UTC."""
         hr, context = day_heart_rate(crew, day)
         midnight = crew.mission.day_of(context[0].start)
-        out = [self._read(crew, midnight + m / 1440, "watch_hr", true_value=float(hr[m:m + self.every_minutes].mean()))
-               for m in range(0, 1440, self.every_minutes)]
+        means = hr.reshape(-1, self.every_minutes).mean(axis=1)          # one average per 15-minute slot
+        out = [self._read(crew, midnight + i * self.every_minutes / 1440, "watch_hr", true_value=float(v))
+               for i, v in enumerate(means)]
         hours, score = self.sleep_true(crew, day)
         wake = midnight + self.wake_hour / 24
         out += [self._read(crew, wake, "sleep_hours", true_value=hours), self._read(crew, wake, "sleep_quality", true_value=score)]

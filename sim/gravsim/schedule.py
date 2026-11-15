@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Spacesuit, Wearable
+from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Spacesuit, Watch, Wearable
 from .reading import Reading
 
 
@@ -31,7 +31,7 @@ def default_instruments(seed: int | None = None, faults: dict | None = None, noi
     faults = faults or {}
     # seed + 1, + 2, ...: each instrument gets its own random stream
     return {cls.name: cls(seed=None if seed is None else seed + k, faults=faults.get(cls.name, ()), noise=noise)
-            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit), start=1)}
+            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit, Watch), start=1)}
 
 
 def nasa_days(mission, instrument: str) -> list[float]:
@@ -45,7 +45,7 @@ def nasa_days(mission, instrument: str) -> list[float]:
     elif instrument == "cycle":   # [6028] FD14, FD75, FD165, FD255 (then every 90 days), R-14; R+5, R+30
         flight = [fd - 1.0 for fd in [14, 75, 165] + list(range(255, int(land), 90))]
         days = pre + sorted({d for d in flight if 0 <= d < land - 14} | {land - 14.0}) + [land + 5, land + 30]
-    elif instrument == "wearable":
+    elif instrument in ("wearable", "watch"):     # every day: the watch all day long, the wearable's daily values
         days = [float(d) for d in range(-14, int(land + 30))]
     elif instrument == "suit":    # the days of the crew's spacewalks; it reads whoever is outside
         days = sorted({ev.day for cm in mission.crew for ev in cm.evas})

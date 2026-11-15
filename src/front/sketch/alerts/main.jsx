@@ -1,12 +1,22 @@
+import '../fonts/typography.css';
+import '../theme/glass.css';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Brand } from '../vuelo/Icons.jsx';
+import { Backdrop } from '../vuelo/Backdrop.jsx';
 import { request, presentation } from './api.js';
 import './style.css';
 
+const ALERT_DOTS = {
+  warning: [[7,1],[6,3],[8,3],[5,5],[9,5],[4,7],[10,7],[3,9],[11,9],[2,11],[12,11],[1,13],[3,13],[5,13],[7,13],[9,13],[11,13],[13,13],[7,5],[7,7],[7,10]],
+  complete: [[1,7],[3,9],[5,11],[7,9],[9,7],[11,5],[13,3]],
+};
+
 function Icon({ type }) {
-  if (type === 'high') return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.7 19h18.6L12 3Z"/><path d="M12 9v4.5M12 16.5h.01"/></svg>;
-  if (type === 'medium') return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.7 19h18.6L12 3Z"/><path d="M12 9v4.5M12 16.5h.01"/></svg>;
-  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>;
+  const dots = ALERT_DOTS[type === 'low' ? 'complete' : 'warning'];
+  return <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    {dots.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.5" height="1.5" rx=".2"/>)}
+  </svg>;
 }
 
 function Arrow({ back = false }) {
@@ -61,70 +71,47 @@ function App() {
     finally { setBusy(false); }
   }
 
-  return <main className="page">
-    <header className="header">
-      <a className="brand" href="../">HBARAI<span>.</span></a>
-      <span className="header-title">Wearable experience</span>
-      <a className="back-link" href="../"><Arrow back /> Body overview</a>
-    </header>
+  return <div className="alerts-app">
+    <Backdrop/>
+    <header className="alerts-bar glass-bar"><div className="alerts-bar-inner">
+      <a className="alert-brand" href={'../' + window.location.search + '#summary'} aria-label="Trama health overview"><Brand/></a>
+      <a className="back-link btn-link" href={'../' + window.location.search + '#vitales'}><Arrow back /> Vital signs</a>
+    </div></header>
 
-    <section className="experience" aria-label="Wearable alerts demonstration">
-      <div className="overview">
-        <div className="intro">
-          <div className="status"><span /> SIMULATED EXPERIENCE</div>
-          <h1>Clarity when<br /><em>it matters.</em></h1>
-          <p>Mensajes de la cola local, enviados a Tierra y a bordo en el mismo ciclo. Todos los datos y canales son simulados.</p>
-        </div>
-
-        <div className="demo-controls">
-          <label>Reloj de <select value={crew} onChange={event => setCrew(event.target.value)}>
-            {(demo?.crew || ['CM-1', 'CM-2', 'CM-3']).map(who => <option key={who}>{who}</option>)}
-          </select></label>
-          <p role="status">{loading ? 'Conectando…' : connected ? 'Servicio local conectado · horas UTC' : 'Servicio desconectado · últimos mensajes recibidos'}</p>
-          <div className="scenario-buttons">
-            {Object.entries(demo?.scenarios || {}).map(([key, label]) => <button key={key} disabled={busy || !connected} onClick={() => action('/demo/scenarios', { scenario: key, crew_id: crew })}>{label}</button>)}
+    <main className="page">
+      <div className="page-heading"><h1>Wearable alert simulator</h1><span className="chip" data-tone="info">Simulated demo</span></div>
+      <section className="experience" aria-label="Wearable alerts demonstration">
+        <div className="overview glass">
+          <p className="intro">Mensajes de la cola local, enviados a Tierra y a bordo en el mismo ciclo. Todos los datos y canales son simulados.</p>
+          <div className="demo-controls">
+            <label>Reloj de <select value={crew} onChange={event => setCrew(event.target.value)}>{(demo?.crew || ['CM-1','CM-2','CM-3']).map(who => <option key={who}>{who}</option>)}</select></label>
+            <p role="status">{loading ? 'Conectando…' : connected ? 'Servicio local conectado · horas UTC' : 'Servicio desconectado · últimos mensajes recibidos'}</p>
+            <div className="scenario-buttons">{Object.entries(demo?.scenarios || {}).map(([key,label]) => <button key={key} disabled={busy || !connected} onClick={() => action('/demo/scenarios',{scenario:key,crew_id:crew})}>{label}</button>)}</div>
+            {demo && <label><input type="checkbox" checked={demo.channels.earth} disabled={busy || !connected} onChange={event => { const available=event.target.checked; setDemo(previous => ({...previous,channels:{...previous.channels,earth:available}})); action('/demo/channels',{channel:'earth',available}); }}/> Enlace Tierra disponible (simulado)</label>}
+            {(error || actionError) && <p className="api-error" role="alert">{actionError || error}</p>}
           </div>
-          {demo && <label><input type="checkbox" checked={demo.channels.earth} disabled={busy || !connected}
-            onChange={event => {
-              const available = event.target.checked;
-              setDemo(previous => ({ ...previous, channels: { ...previous.channels, earth: available } }));
-              action('/demo/channels', { channel: 'earth', available });
-            }}/> Enlace Tierra disponible (simulado)</label>}
-          {(error || actionError) && <p className="api-error" role="alert">{actionError || error}</p>}
+          <div className="alert-list" role="group" aria-label="Choose an alert">
+            <div className="list-heading"><h2>Bandeja de {crew}</h2><span>{alerts.length} avisos</span></div>
+            {!alerts.length && <p className="empty-inbox">{loading ? 'Cargando mensajes…' : 'Sin avisos. Publicá un escenario para probar la cola.'}</p>}
+            {alerts.map(alert => <button key={alert.id} type="button" className={'alert-row' + (active?.id === alert.id ? ' selected' : '')} aria-pressed={active?.id === alert.id} onClick={() => choose(alert.id)}>
+              <span className={'row-icon ' + alert.level}><Icon type={alert.level}/></span><span className="row-copy"><strong>{alert.title}</strong><span>{alert.priorityLabel} · {alert.time} UTC{alert.acknowledged_at ? ' · Recibido' : ''}</span></span><Arrow/>
+            </button>)}
+          </div>
+          <p className="disclaimer">For demonstration only. These fictional alerts are not health assessments.</p>
         </div>
-
-        <div className="alert-list" role="group" aria-label="Choose an example alert">
-          <div className="list-heading"><h2>Bandeja de {crew}</h2><span>{alerts.length} AVISOS</span></div>
-          {!alerts.length && <p className="empty-inbox">{loading ? 'Cargando mensajes…' : 'Sin avisos. Publicá un escenario para probar la cola.'}</p>}
-          {alerts.map((alert, index) => <button key={alert.id} type="button" className={'alert-row' + (active?.id === alert.id ? ' selected' : '')} aria-pressed={active?.id === alert.id} onClick={() => choose(alert.id)}>
-            <span className={'row-icon ' + alert.level}><Icon type={alert.level}/></span>
-            <span className="row-copy"><strong>{alert.title}</strong><span>{alert.priorityLabel} · {alert.time} UTC{alert.acknowledged_at ? ' · Recibido' : ''}</span></span>
-            <span className="row-number">0{index + 1}</span><Arrow />
-          </button>)}
+        <div className="preview glass">
+          <div className="preview-heading"><span className="eyebrow">Wearable preview</span><span className="chip">Interactive</span></div>
+          <div className="watch-scene"><div className="watch-halo" aria-hidden="true"/><div className="strap strap-top" aria-hidden="true"/><div className="strap strap-bottom" aria-hidden="true"/>
+            <div className="watch"><div className={'watch-screen ' + (active?.level || 'low')}>
+              <div className="watch-top"><span>{active?.time || '—'} UTC</span><span>{active?.priorityLabel || crew}</span></div>
+              <div className="watch-body" aria-live="polite" key={active?.id || 'empty'}><div className="watch-symbol"><Icon type={active?.level || 'low'}/></div><h2>{active?.title || 'Sin avisos'}</h2><p>{active?.message || 'Esperando mensajes de la cola local.'}</p></div>
+              {active?.requires_ack && <button className="watch-action" disabled={busy || !connected || !!active.acknowledged_at} onClick={() => action(`/deliveries/${active.id}/ack`,{crew_id:crew})}>{active.acknowledged_at ? 'Recepción confirmada' : 'Confirmar recepción'}</button>}
+            </div></div>
+          </div>
         </div>
-        <p className="disclaimer">For demonstration only. These fictional alerts are not health assessments.</p>
-      </div>
-
-      <div className="preview">
-        <div className="preview-heading"><span>WEARABLE PREVIEW</span><span className="preview-live"><i /> INTERACTIVE</span></div>
-        <div className="watch-scene">
-          <div className="strap strap-top" aria-hidden="true"/><div className="strap strap-bottom" aria-hidden="true"/>
-          <div className="watch"><div className={'watch-screen ' + (active?.level || 'low')}>
-            <div className="watch-top"><span>{active?.time || '—'} UTC</span><span>{active?.priorityLabel || crew}</span></div>
-            <div className="watch-body" aria-live="polite" key={active?.id || 'empty'}>
-              <div className="watch-symbol"><Icon type={active?.level || 'low'}/></div>
-              <h2>{active?.title || 'Sin avisos'}</h2>
-              <p>{active?.message || 'Esperando mensajes de la cola local.'}</p>
-            </div>
-            {active?.requires_ack && <button className="watch-action" disabled={busy || !connected || !!active.acknowledged_at}
-              onClick={() => action(`/deliveries/${active.id}/ack`, { crew_id: crew })}>{active.acknowledged_at ? 'Recepción confirmada' : 'Confirmar recepción'}</button>}
-          </div></div>
-        </div>
-        <div className="preview-footer"><span>DESIGNED FOR A QUICK GLANCE</span><span>SELECT AN ALERT TO PREVIEW <Arrow /></span></div>
-      </div>
-    </section>
-    <footer><span>HBARAI <span className="brand-dot">·</span> WEARABLE CONCEPT</span><span>SIMULATED DATA</span></footer>
-  </main>;
+      </section>
+    </main>
+  </div>;
 }
 
 createRoot(document.getElementById('root')).render(<App/>);

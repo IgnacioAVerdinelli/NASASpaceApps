@@ -41,6 +41,7 @@ function surfaceMaterial() {
 }
 
 function updateView(view, values) {
+  view.invalidate();
   const { layer, isolated, selected, scores } = values;
   // Optional caller-defined scale (score -> THREE.Color); defaults to the intensity palette.
   const colorOf = values.colorScale ?? intensityColor;
@@ -114,6 +115,7 @@ function focusSelection(view, selected, layer, animate = false) {
     for (const item of view.structureMeshes ?? []) if (item.key === selected) box.expandByObject(item.mesh);
   }
   if (box.isEmpty()) return;
+  view.autoFit = false;
   const target = box.getCenter(new THREE.Vector3());
   const offset = view.camera.position.clone().sub(view.controls.target);
   const size = box.getSize(new THREE.Vector3()).length();
@@ -134,13 +136,13 @@ function orientCamera(view, direction) {
   view.controls.update();
 }
 
-export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0, viewRequest = null, framing = 1.15, showIndicators = false, checkpointItems = null, explorationRequest = null, colorScale = null, indicatorText = null, structureColors = null }) {
+export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0, viewRequest = null, framing = 1.15, showIndicators = false, checkpointItems = null, explorationRequest = null, colorScale = null, indicatorText = null, indicatorFilter = null, structureColors = null }) {
   const containerRef = useRef(null);
   const viewRef = useRef(null);
   const pendingFocusRef = useRef(false);
-  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, structureColors });
+  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, indicatorFilter, structureColors });
   const [status, setStatus] = useState('loading');
-  valuesRef.current = { scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, structureColors };
+  valuesRef.current = { scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, indicatorFilter, structureColors };
 
   useEffect(() => {
     if (viewRef.current) updateView(viewRef.current, valuesRef.current);
@@ -197,10 +199,20 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     keyLight.position.set(3, 4, 5); scene.add(keyLight);
     const fillLight = new THREE.DirectionalLight(0xe1edff, 1.2);
     fillLight.position.set(-3, 2, -4); scene.add(fillLight);
+    let needsRender = true;
+    const invalidate = () => { needsRender = true; };
+    controls.addEventListener('change', invalidate);
+    renderer.domElement.addEventListener('webglcontextrestored', invalidate);
     const resize = () => {
+      invalidate();
       const width = Math.max(1, container.clientWidth), height = Math.max(1, container.clientHeight);
       renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
+      // The model may load while the container is still being laid out (0 wide, or about to grow): until the
+      // person moves the camera, keep the whole body framed for the current size instead of the first one.
+      if (viewRef.current?.autoFit) viewRef.current.fit();
     };
+    const stopAutoFit = () => { if (viewRef.current) viewRef.current.autoFit = false; };
+    controls.addEventListener('start', stopAutoFit);
     const observer = new ResizeObserver(resize);
     observer.observe(container); resize();
     let active = true, root = null, frame = 0, indicators = null, checkpoints = null;
@@ -300,12 +312,13 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
             structureMeshes.push({ mesh, key: node.name, material });
           });
         }
-        const view = { root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, structureGroups, structureMeshes, regions: data.regions, surfaceWeights, camera, controls };
+        const view = { invalidate, root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, structureGroups, structureMeshes, regions: data.regions, surfaceWeights, camera, controls };
         view.moveCamera = (target, position) => {
           controls.autoRotate = false;
           controls.enableDamping = false;
           controls.update();
           controls.enableDamping = true;
+          view.autoFit = false;
           transition = { fromTarget: controls.target.clone(), fromPosition: camera.position.clone(), target, position, elapsed: 0 };
         };
         viewRef.current = view;
@@ -327,16 +340,20 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
             view.moveCamera(center, center.clone().addScaledVector(direction, distance));
           }
         };
-        if (!bounds.isEmpty()) {
+        view.fit = () => {
+          if (bounds.isEmpty()) return;
           const center = bounds.getCenter(new THREE.Vector3());
           const size = bounds.getSize(new THREE.Vector3());
           const verticalFov = THREE.MathUtils.degToRad(camera.fov);
           const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
           const distance = Math.max(size.y / (2 * Math.tan(verticalFov / 2)), size.x / (2 * Math.tan(horizontalFov / 2))) * framing + size.z / 2;
+          const direction = view.autoFit === undefined ? new THREE.Vector3(0, 0, 1) : camera.position.clone().sub(controls.target).normalize();
           controls.target.copy(center);
-          camera.position.copy(center).add(new THREE.Vector3(0, 0, distance));
+          camera.position.copy(center).addScaledVector(direction, distance);
           controls.update();
-        }
+        };
+        view.fit();
+        view.autoFit = true;
         updateView(view, valuesRef.current);
         if (valuesRef.current.viewRequest) orientCamera(view, valuesRef.current.viewRequest.direction);
         if (pendingFocusRef.current) {
@@ -393,13 +410,24 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         camera.position.lerpVectors(transition.fromPosition, transition.position, eased);
         if (progress === 1) transition = null;
       }
-      if (visible) { controls.update(delta); indicators?.update(valuesRef.current, now, motion.matches); checkpoints?.update(valuesRef.current, now, motion.matches); renderer.render(scene, camera); }
+      if (visible) {
+        controls.update(delta);
+        indicators?.update(valuesRef.current, now, motion.matches);
+        checkpoints?.update(valuesRef.current, now, motion.matches);
+        if (needsRender) {
+          renderer.render(scene, camera);
+          needsRender = false;
+        }
+      }
       frame = requestAnimationFrame(animate);
     };
     animate();
     return () => {
       active = false; cancelAnimationFrame(frame); observer.disconnect();
       visibility?.disconnect();
+      controls.removeEventListener('change', invalidate);
+      renderer.domElement.removeEventListener('webglcontextrestored', invalidate);
+      controls.removeEventListener('start', stopAutoFit);
       controls.removeEventListener('start', cancelTransition);
       controls.removeEventListener('end', endInteraction);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
@@ -414,14 +442,14 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
   }, [body, framing, showIndicators, Boolean(checkpointItems)]);
 
   const message = {
-    loading: 'Cargando modelo 3D…',
-    'webgl-error': 'No se pudo iniciar el visor 3D. Comprobá que tu navegador tenga WebGL habilitado.',
-    'load-error': 'No se pudo cargar el modelo 3D. Recargá la página.',
-    'asset-error': 'El mapa de regiones no corresponde al modelo 3D.',
-    'model-error': 'El modelo 3D no contiene las capas esperadas.',
+    loading: 'Loading 3D model…',
+    'webgl-error': 'The 3D viewer could not start. Check that WebGL is enabled in the browser.',
+    'load-error': 'The 3D model could not be loaded. Reload the page.',
+    'asset-error': 'The region map does not match the 3D model.',
+    'model-error': 'The 3D model does not contain the expected layers.',
   }[status];
-  return <div ref={containerRef} aria-label="Modelo 3D interactivo de grupos musculares" style={{ width: '100%', height: '100%', minHeight: 360, position: 'relative' }}>
-    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Intensidades musculares">{orderedIndicators(scores, selected).map(item => { const custom = indicatorText?.(item.key, item.value); return <li key={item.key}>{custom?.name ?? item.label}: {custom?.value ?? `${Math.round(item.value)}%`}</li>; })}</ul>}
+  return <div ref={containerRef} aria-label="Interactive 3D model of the muscle groups" style={{ width: '100%', height: '100%', minHeight: 360, position: 'relative' }}>
+    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Muscle values">{orderedIndicators(scores, selected).map(item => { const custom = indicatorText?.(item.key, item.value); return <li key={item.key}>{custom?.name ?? item.label}: {custom?.value ?? `${Math.round(item.value)}%`}</li>; })}</ul>}
     {message && <div role={status === 'loading' ? 'status' : 'alert'} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', pointerEvents: 'none' }}>{message}</div>}
   </div>;
 }

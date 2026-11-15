@@ -16,6 +16,21 @@ RETEST_DAYS = 7          # a retest is booked in the 7 days that start tomorrow 
 REVIEW_DAYS = 7          # a review by the flight surgeon is due within 7 days (ours)
 RETEST_COOLDOWN = 14     # a retest done in the last 14 days turns a new suspected finding into a review (ours)
 NOTIFY_MISSED = ("study", "retest", "review")    # missed routines and treatments do not page the ship center
+# Plain names for the measures a finding can name, so titles never show a raw id.
+MEASURE_NAMES = {
+    "knee_extension_60": "knee extension strength", "knee_flexion_60": "knee flexion strength",
+    "ankle_plantarflexion_30": "ankle plantarflexion strength", "ankle_dorsiflexion_30": "ankle dorsiflexion strength",
+    "trunk_extension_60": "trunk extension strength", "trunk_flexion_60": "trunk flexion strength",
+    "vo2peak": "aerobic capacity (VO2peak)", "hip_bmd": "hip bone density", "spine_bmd": "spine bone density",
+    "heel_bmd": "heel bone density", "lean_legs": "leg lean mass", "lean_arms": "arm lean mass",
+    "lean_trunk": "trunk lean mass", "resting_hr": "resting heart rate", "resting_sbp": "systolic blood pressure",
+    "resting_dbp": "diastolic blood pressure", "spo2": "blood oxygen", "hrv_rmssd": "heart rate variability",
+    "sleep_hours": "sleep", "sleep_quality": "sleep quality", "watch_hr": "heart rate",
+}
+
+
+def measure_name(measure: str) -> str:
+    return MEASURE_NAMES.get(measure, measure.replace("_", " "))
 
 
 def _window(mission: Mission, day_from: float, day_to: float, label: str, day: float | None = None) -> dict:
@@ -154,7 +169,7 @@ def _first_free_day(day: float, evas: list[Eva]) -> float:
 
 def _finding_summary(f: dict) -> dict:
     keep = ("measure", "state", "basis", "level", "change_pct", "typical_no_exercise_pct", "beyond_noise",
-            "mission_day")
+            "mission_day", "source", "text")
     return {k: f[k] for k in keep if k in f}
 
 
@@ -163,7 +178,7 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
     """What a HealthService finding books (docs/planner.md, "Finding rules"), in place. Returns the transitions
     as (status, item): ("booked", new item) or ("cancelled", item)."""
     crew_id, measure = finding["crew_id"], finding["measure"]
-    state = finding.get("state") or "suspected"     # the HealthService sends no state yet: its findings are alerts
+    state = finding.get("state") or "suspected"     # findings from before health/healthservice/findings.py carry none
     day = float(finding.get("mission_day", today))
     synthetic = bool(finding.get("synthetic", True))
     ids = {i["id"] for i in items}
@@ -188,7 +203,7 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
             return []
         start = max(today, day)
         item = _item(item_id=iid, crew_id=crew_id, item_type="review", routine=routine,
-                     title=f"Review by the flight surgeon: {measure}", mission=mission, day_from=start,
+                     title=f"Review by the flight surgeon: {measure_name(measure)}", mission=mission, day_from=start,
                      day_to=start + REVIEW_DAYS, label=mission.label(start), reason="finding", completion="crew",
                      measure=measure, finding=_finding_summary(finding) | {"why": why}, synthetic=synthetic)
         items.append(item)
@@ -196,6 +211,8 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
 
     if state == "confirmed":
         return review("confirmed finding")
+    if finding.get("source") == "watch":     # docs/wearable.md: no test repeats a watch reading; a person looks at it
+        return review(finding.get("text") or f"the watch: {finding.get('basis', 'beyond the personal band')}")
     if open_("retest"):
         return []
     recent = [i for i in items if i["type"] == "retest" and i.get("measure") == measure and i["status"] == "done"

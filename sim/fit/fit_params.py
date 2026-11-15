@@ -48,6 +48,7 @@ DIRECTION = {
     "hip_bmd": -1, "spine_bmd": -1, "heel_bmd": -1, "lean_legs": -1, "lean_arms": -1, "lean_trunk": -1,
     "vo2peak": -1, "resting_hr": 1, "resting_sbp": 1, "resting_dbp": 1,
     "spo2": -1, "hrv_rmssd": -1, "heart_rate": 1,
+    "watch_hr": 1, "sleep_hours": -1, "sleep_quality": -1,
 }
 
 # Generator-wide settings. Fitted where the data allows, otherwise assumed and listed here.
@@ -94,6 +95,9 @@ DEVICE = {
     "spo2": (0.01, "pulse oximeter, about ±1 point (assumed)"),
     "hrv_rmssd": (0.05, "wearable HRV, about ±5 % (assumed)"),
     "heart_rate": (0.03, "spacesuit heart rate, about ±3 % (assumed)"),
+    "watch_hr": (0.03, "wrist optical heart rate, about ±3 % (assumed)"),
+    "sleep_hours": (0.05, "actigraphy sleep estimate, about ±5 % (assumed)"),
+    "sleep_quality": (0.08, "self-rated score (assumed spread)"),
 }
 
 QUANTILES = list(range(0, 101, 5))     # percentiles stored for sampling baselines (0 = min, 100 = max)
@@ -805,6 +809,63 @@ ASSUMED_SUIT = {
 }
 
 
+# The watch (instruments.Watch): heart rate every 15 minutes and sleep. "derived": the instrument computes them
+# from the person's resting heart rate and routine, so they have no baseline of their own.
+ASSUMED_WATCH = {
+    "watch_hr": {
+        "instrument": "watch",
+        "code": None,
+        "label": "Heart rate (watch, every 15 minutes)",
+        "region": None,
+        "muscle_keys": [],
+        "unit": "bpm",
+        "decimals": 0,
+        "model": "derived",
+        "noise_cv": 0.03,
+        "responder_sd": 0.0,
+        "source": "not in the data",
+        "assumed": [
+            "whole measure: the wearable's 24-hour trace (resting level, daily rhythm, sleep dip, exercise and spacewalks; instruments.day_heart_rate) averaged over 15 minutes; replace with a cited source"
+        ]
+    },
+    "sleep_hours": {
+        "instrument": "watch",
+        "code": None,
+        "label": "Sleep (watch, hours per night)",
+        "region": None,
+        "muscle_keys": [],
+        "unit": "h",
+        "decimals": 1,
+        "model": "derived",
+        "noise_cv": 0.05,
+        "responder_sd": 0.0,
+        "source": "Barger et al. 2014, Lancet Neurology: 6.09 h a night on the ISS (85 astronauts)",
+        "assumed": [
+            "6.9 h before and after flight",
+            "6.09 h in flight (Barger 2014)",
+            "about 0.6 h of night-to-night variation",
+            "a fatigue spell takes about 1.6 h"
+        ]
+    },
+    "sleep_quality": {
+        "instrument": "watch",
+        "code": None,
+        "label": "Sleep quality (self-rated, 1 to 7)",
+        "region": None,
+        "muscle_keys": [],
+        "unit": "score",
+        "decimals": 0,
+        "model": "derived",
+        "noise_cv": 0.08,
+        "responder_sd": 0.0,
+        "source": "scale from OCHMO-STD-100.1A [6039] (1 very poor to 7 excellent)",
+        "assumed": [
+            "the score follows the hours slept: 4.8 at 6.1 h, about +0.9 per extra hour, 1.5 lower in a fatigue spell"
+        ]
+    }
+}
+
+
 def finish(mid, m):
     """Rules every measure gets after its fit: direction, the exercise cap, no improvement while unloaded,
     and the noise split."""
@@ -838,6 +899,7 @@ def main():
     measures.update(aer)
     measures.update(ASSUMED_WEARABLE)
     measures.update(ASSUMED_SUIT)
+    measures.update(ASSUMED_WATCH)
     measures = {mid: finish(mid, m) for mid, m in measures.items()}
     lean = {k: v for k, v in lean_subj.items() if k.startswith("lean_")}
     params = {

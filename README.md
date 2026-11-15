@@ -36,9 +36,13 @@ npm run dev
 
 La demostración de alertas para wearable está disponible en `/alerts/` desde el mismo servidor. Sus alertas son ejemplos simulados y se pueden seleccionar para explorar el reloj.
 
-La página principal (`/`) reúne alertas, estudios programados y las mediciones en vuelo, con dos pestañas: fuerza muscular por grupo y capacidad aeróbica (VO₂pico). Muestran cada prueba con su nivel, la banda de ruido de medición, las alertas y las próximas pruebas que agenda el planificador; todo sale de `GET /api/v1/analyses` del HealthService y se actualiza solo. El mapa corporal está en `/overview.html`; ambas páginas conservan el tripulante elegido (`?crew=`).
+La página principal (`/` o `/vuelo.html`) abre **Health overview**. Muestra el modelo 3D, los indicadores de fuerza y capacidad aeróbica, el reloj y la agenda del tripulante. La barra superior permite entrar al detalle de músculos, capacidad aeróbica, wearable, y plan de misión. El detalle de músculos incluye el mapa corporal y las tendencias. Los enlaces conservan la pestaña y el tripulante (`?crew=CM-3#vitales`, por ejemplo). `/overview.html` abre el detalle de músculos.
 
-La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
+**Forma rápida:** `bash scripts/demo.sh` levanta todo en una terminal y deja la página en `http://127.0.0.1:5190/vuelo.html`. Ver la [guía de la demo](docs/guia-demo.md) (instalación, qué mostrar y problemas comunes) y el [contexto de lo construido](docs/handoff/planner-y-reloj.md).
+
+La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo a mano, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
+
+También podés iniciar todos los servicios juntos desde la raíz con `bash scripts/start.sh`. El script instala las dependencias faltantes y se detiene con `Ctrl+C`.
 
 ```bash
 python3 -m venv health/.venv
@@ -72,6 +76,8 @@ npm run dev
 ```
 
 Vite redirige `/api/v1/plan` y `/api/v1/routines` al Planner (puerto 3001) y el resto de `/api` al HealthService local en el puerto 3000; el DataService escucha en el puerto 8000. Los datos de gravsim son sintéticos. Para usar solo los [datos de ejemplo](src/front/sketch/data/dashboard.example.json), iniciar Vite con `VITE_DASHBOARD_MODE=example npm run dev`. Para otro servidor, usar `VITE_DASHBOARD_URL=https://servidor/api/v1/dashboard npm run dev`; definir la misma variable al generar el build. El servidor remoto debe habilitar CORS para el origen del frontend. El proxy de Vite solo funciona en desarrollo; el build requiere una URL accesible o un proxy del servidor de despliegue.
+
+La página de mediciones en vuelo (`/vuelo.html`) tiene la pestaña **Vital signs** y, arriba del Health summary, el panel **Now · from your watch**: los signos del reloj comparados con las dos últimas semanas de la propia persona, y la frecuencia cardíaca del día contra ayer, hace una semana o antes del vuelo ([diseño](docs/wearable.md)). Para ver un desvío en la demo, agregar al DataService `--fatigue CM-3:126:7` (un episodio de fatiga que solo ve el reloj).
 
 Las entregas simuladas se consultan en `http://localhost:3000/api/v1/deliveries`; no se envían a dispositivos. El plan está en `http://localhost:3001/api/v1/plan?crew=CM-1` y las rutinas de la norma en `/api/v1/routines`. Los archivos SQLite conservan datos y cursores entre reinicios: para comenzar otra misión desde cero, detené todos los servicios y usá rutas nuevas para ambos archivos. No reutilices la misma base con otra semilla, misión o tripulación.
 

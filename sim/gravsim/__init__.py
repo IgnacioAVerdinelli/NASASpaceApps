@@ -17,7 +17,7 @@ bed-rest data. See README.md.
 from .core import GROUPS, MEASURES, MODEL_VERSION, PARAMS, PRESETS, CrewMember, Eva, Event, Mission, Phase, expand
 from .dataservice import DataService
 from .events import TOPICS, MockPublisher
-from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Spacesuit, Wearable
+from .instruments import CycleErgometer, DxaScanner, Dynamometer, Fault, Instrument, Spacesuit, Watch, Wearable
 from .pipeline import LIMITS, STORED_UNITS, clean, clean_context
 from .reading import ACTIVITIES, SOURCES, ContextRecord, Reading, Result, to_dataframe
 from .routine import LOCATIONS, context_timeline, routine
@@ -29,7 +29,7 @@ __version__ = MODEL_VERSION
 __all__ = [
     # generator
     "Mission", "Phase", "CrewMember", "Event", "Eva", "PRESETS", "MEASURES", "GROUPS", "PARAMS", "MODEL_VERSION", "expand",
-    "Instrument", "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable", "Spacesuit", "Fault",
+    "Instrument", "Dynamometer", "DxaScanner", "CycleErgometer", "Wearable", "Spacesuit", "Watch", "Fault",
     "timeline", "nasa_days", "default_instruments", "routine", "context_timeline", "LOCATIONS",
     # the records: raw readings, crew context and processed results
     "Reading", "ContextRecord", "Result", "ACTIVITIES", "SOURCES", "to_dataframe",

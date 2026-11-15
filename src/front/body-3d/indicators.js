@@ -196,7 +196,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
     const { layer, isolated, scores, selected, checkpointItems } = values;
     const width = container.clientWidth, height = container.clientHeight;
     const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.width !== width || lastValues.height !== height;
-    if (layer !== 'surface' && layer !== 'muscles' || width < 60 || height < 60) {
+    if (!['surface', 'muscles', 'organs'].includes(layer) || width < 60 || height < 60) {
       for (const entry of entries.values()) entry.style.display = 'none';
       display.clear(); previousAnchors.clear(); previousPlacements.clear();
       job = null; lastValues = { layer, isolated, scores, selected, width, height };
@@ -210,7 +210,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       const camera = view.camera.clone(); camera.updateMatrixWorld();
       const targets = layer === 'surface' ? [view.skin] : view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh);
       if (layer === 'muscles' && view.skeletonGroup.visible) targets.push(...view.skeletonMeshes.filter(mesh => mesh.visible));
-      job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
+      job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected).filter(item => !values.indicatorFilter || values.indicatorFilter(item.key)), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
       lastValues = { layer, isolated, scores, selected, checkpointItems, width, height };
     }
     const { camera, targets, ordered, occupied, seen, body } = job;

@@ -1,0 +1,159 @@
+/* Overview (#summary) in the "Frosted glass" system: docs/design-system.md §6–7. */
+.ov {
+  /* Local tones not in theme/glass.css yet. */
+  --ov-crit-wash: rgba(251,225,227,.6);       /* critical alert box, the crit twin of --warn-wash */
+  --ov-today-line: rgba(34,56,168,.16);        /* edges of the TODAY column: --link at 16% */
+  color: var(--ink);
+}
+.ov button { font-family: inherit; }
+.ov h2 { margin: 0; }
+
+.ov-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr) 348px; gap: 24px; align-items: stretch; }
+.ov-left, .ov-right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ov-muscles { flex: 1; }
+.ov-wearable { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ov-wearable > * { flex: 1; }
+
+/* ---- Card heads ---- */
+.ov-card-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 8px; }
+.ov-card-head h2 { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.ov-card-head > span { font-size: 11px; color: var(--muted); }
+
+/* ---- Muscle groups ---- */
+.ov-muscles { padding: 18px 20px; }
+.ov-muscle-list { list-style: none; margin: 0; padding: 0; }
+.ov-muscle {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 58px; align-items: center; gap: 10px;
+  width: calc(100% + 16px); min-height: 44px; margin: 0 -8px; padding: 4px 8px;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink);
+  text-align: left; font: inherit; cursor: pointer;
+}
+.ov-muscle:hover { background: var(--glass-hover); }
+.ov-muscle[aria-pressed=true] { background: rgba(255,255,255,.55); box-shadow: inset 0 0 0 1px var(--link); }
+.ov-muscle-name { min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov-muscle-name small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+.ov-muscle-name .alert-icon { margin-right: 4px; vertical-align: -2px; color: var(--warn-ink); }
+.ov-muscle[data-alert=critical] .alert-icon { color: var(--crit-ink); }
+.ov-muscle-track { position: relative; height: 8px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.5); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.ov-muscle-track i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; }
+.ov-muscle-value { font-size: 17px; text-align: right; white-space: nowrap; }
+
+/* ---- Body map: no card, straight on the backdrop ---- */
+.ov-body { position: relative; isolation: isolate; min-width: 0; min-height: 640px; display: flex; flex-direction: column; gap: 12px; }
+.ov-body::before {
+  content: ''; position: absolute; z-index: -1; left: 50%; top: 52%;
+  width: min(520px, 100%); aspect-ratio: 1 / 1.2; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.6), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.ov-body-head, .ov-body-tools { position: relative; z-index: 3; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 12px; }
+.ov-body-head { align-items: flex-start; }
+.ov-body-tools { align-items: center; }
+.ov-body-title { padding: 10px 14px 12px; }
+.ov-body-title h2 { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.ov-body-title p { margin: 2px 0 8px; font-size: 12px; color: var(--muted); }
+.ov-pill {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px;
+  border: 0; border-radius: var(--r-pill); color: var(--link); font: 600 12px var(--font); cursor: pointer;
+}
+.ov-pill:hover { color: var(--link-hover); }
+.ov-body-stage { position: relative; flex: 1; min-height: 460px; }
+.ov-body-canvas { position: absolute; inset: 0; }
+.ov-legend { list-style: none; margin: 0; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--ink-2); }
+.ov-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.ov-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.ov-rotate { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; }
+.ov-rotate > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-2); }
+
+/* ---- Mission status ---- */
+.ov-status { padding: 20px; }
+.ov-status-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ov-status-top .chip { padding: 4px 10px; font-size: 12px; }
+.ov-status-lead { margin: 10px 0 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.ov-status-detail { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ov-alerts { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.ov-alert {
+  --a-icon-bg: var(--kind-review-bg); --a-icon-ink: var(--warn-ink);
+  padding: 14px; border-radius: calc(var(--r-card) - 4px);
+  background: var(--warn-wash); border: 1px solid var(--warn-wash-border);
+}
+.ov-alert[data-tone=crit] { --a-icon-bg: var(--crit-bg); --a-icon-ink: var(--crit-ink); background: var(--ov-crit-wash); border-color: var(--crit-border); }
+.ov-alert-body { display: flex; gap: 10px; font-size: 13px; line-height: 1.45; }
+.ov-alert-body strong { display: block; font-weight: 600; }
+.ov-alert-body span { display: block; }
+.ov-alert-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--a-icon-bg); color: var(--a-icon-ink); }
+.ov-alert-icon .alert-icon { width: 16px; height: 16px; }
+.ov-alert-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 10px; }
+.ov-alert-plan { padding-inline: 4px; }
+
+/* ---- Mission schedule ---- */
+.ov-schedule { margin-top: 24px; padding: 16px 22px 18px; }
+.ov-schedule-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 16px; margin-bottom: 4px; }
+.ov-schedule-head > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.ov-schedule-head h2 { font-size: 17px; font-weight: 600; }
+.ov-schedule-head > div > span { font-size: 12px; color: var(--muted); }
+.ov-timeline { display: grid; grid-template-columns: 250px repeat(7, minmax(0, 1fr)); align-items: center; }
+.ov-timeline-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ov-timeline-head > span:not(:first-child) { text-align: center; }
+.ov-timeline-head > [data-today] { color: var(--link); }
+.ov-timeline-rows { list-style: none; margin: 0; padding: 0; }
+.ov-timeline-rows .ov-timeline {
+  width: 100%; min-height: 46px; padding: 0;
+  border: 0; border-bottom: 1px solid var(--line-soft); background: transparent;
+  color: var(--ink); text-align: left; font: inherit; cursor: pointer;
+}
+.ov-timeline-rows li:last-child .ov-timeline { border-bottom: 0; }
+.ov-timeline-rows .ov-timeline:hover { background: var(--glass-hover); }
+.ov-timeline-rows .ov-timeline:hover .ov-task-title { color: var(--link); }
+.ov-today-col { grid-column: 2; grid-row: 1; align-self: stretch; background: var(--glass-hover); border-inline: 1px solid var(--ov-today-line); }
+.ov-task { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding-block: 6px; padding-right: 12px; }
+.ov-task-title { min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov [data-kind] { background: var(--k-bg); color: var(--k-ink); border: 1px solid var(--k-border); }
+.ov [data-kind=review] { --k-bg: var(--kind-review-bg); --k-ink: var(--kind-review-ink); --k-border: var(--kind-review-border); }
+.ov [data-kind=routine] { --k-bg: var(--kind-routine-bg); --k-ink: var(--kind-routine-ink); --k-border: var(--kind-routine-border); }
+.ov [data-kind=study] { --k-bg: var(--kind-study-bg); --k-ink: var(--kind-study-ink); --k-border: var(--kind-study-border); }
+.ov [data-kind=treatment] { --k-bg: var(--kind-treatment-bg); --k-ink: var(--kind-treatment-ink); --k-border: var(--kind-treatment-border); }
+.ov-kind { flex: none; width: 78px; padding: 4px 0; border-radius: var(--r-pill); text-align: center; font-size: 11px; font-weight: 700; }
+.ov-span {
+  grid-row: 1; z-index: 1; min-width: 0; margin: 0 4px; padding: 6px 10px; border-radius: var(--r-sm);
+  font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ov-empty { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+/* ---- Footer ---- */
+.ov-foot { margin-top: 18px; font-size: 11px; line-height: 1.5; color: var(--ink-2); }
+.ov-foot p { margin: 0; }
+.ov-credits summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; }
+.ov-credits p { max-width: 110ch; margin-bottom: 4px; }
+.ov-credits a { color: var(--link); text-decoration: underline; }
+
+/* ---- Responsive (design-system §7) ---- */
+@media (max-width: 1180px) {
+  .ov-grid { grid-template-columns: minmax(0, 1fr) 320px; }
+  .ov-body { grid-column: 1; grid-row: 1; }
+  .ov-right { grid-column: 2; grid-row: 1; }
+  .ov-left { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  .ov-timeline { grid-template-columns: 210px repeat(7, minmax(0, 1fr)); }
+}
+@media (max-width: 960px) {
+  .ov-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov-muscles { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .ov-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .ov-left, .ov-right { display: contents; }
+  .ov-status { order: 1; }
+  .ov-body { order: 2; grid-column: auto; grid-row: auto; min-height: 560px; }
+  .ov-metric-aerobica { order: 3; }
+  .ov-metric-fuerza { order: 4; }
+  .ov-muscles { order: 5; grid-column: auto; }
+  .ov-wearable { order: 6; }
+  .ov-body-stage { min-height: 400px; }
+  .ov-schedule { margin-top: 16px; padding-inline: 16px; }
+  .ov-timeline-box { overflow-x: auto; margin-inline: -16px; padding-inline: 16px; }
+  .ov-timeline { min-width: 720px; grid-template-columns: 190px repeat(7, minmax(0, 1fr)); }
+}
+@media (max-width: 460px) {
+  .ov .seg > button { min-height: 40px; }
+  .ov-rotate { padding-block: 3px; }
+}

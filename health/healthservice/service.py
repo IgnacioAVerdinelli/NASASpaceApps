@@ -10,6 +10,7 @@ from .models import CrewInfo, Reading
 from .processing import MeasureResult, compute_results
 from .reference import Reference
 from .sources import DataSource
+from . import vitals as vitals_mod
 
 
 class HealthService:
@@ -50,6 +51,14 @@ class HealthService:
         return build_analyses(self.reference, mission, crew, readings, results, alerts,
                               self.source.studies(crew.id), day)
 
+    def vitals(self, crew_id: str | None = None, day: float | None = None) -> dict:
+        """Layer 1, the watch (GET /api/v1/vitals, docs/wearable.md): each vital against the person's own last
+        two weeks, and the day of heart rate against yesterday, a week ago and the pre-flight day. Read-only."""
+        day = self.source.current_day() if day is None else float(day)
+        crew = self.crew(crew_id)
+        mission = self.source.mission()
+        return vitals_mod.build_vitals(mission, crew.id, day, *vitals_inputs(self.source, mission, crew.id, day))
+
     def _process(self, crew_id: str | None, day: float | None):
         live = day is None
         day = self.source.current_day() if live else float(day)
@@ -75,3 +84,18 @@ class HealthService:
                     self.queue.publish(alert)
             self._active[crew.id] = {m: a.severity for m, a in now.items()}
             self._seen[crew.id] = key
+
+
+def vitals_inputs(source, mission, crew_id: str, day: float, curves: bool = True):
+    """What vitals.build_vitals needs, read from the DataService: the daily vitals up to `day`; with `curves`, the
+    watch's heart rate of the last 8 UTC dates, of the 14 days before launch, and today's crew context."""
+    rows = source.records(crew_id, vitals_mod.MEASURES, until_day=day)
+    daily = {m: [r for r in rows if r["measure"] == m] for m in vitals_mod.MEASURES}
+    if not curves:
+        return daily, None, None, None
+    today = mission.timestamp(day)[:10]
+    midnight = mission.day_of(f"{today}T00:00:00Z")
+    watch = source.records(crew_id, [vitals_mod.WATCH_HR], start=mission.timestamp(midnight - 7), until_day=day)
+    pre = source.records(crew_id, [vitals_mod.WATCH_HR], start=mission.timestamp(-14), until_day=min(0.0, day))
+    context = source.context(crew_id, f"{today}T00:00:00Z", f"{today}T23:59:59Z")   # the day's plan, so the page can shade it all
+    return daily, watch, pre, context

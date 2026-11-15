@@ -2,6 +2,8 @@
 
 **Local demo update:** `SqliteStore` now persists readings, context and results. `gravsim.serve --db PATH --queue PATH` uses file-backed storage and publishes events to a SQLite queue while the mission clock advances. See the [root README](../README.md) for the full multi-process demo. The older descriptions of the store as inert and the queue as exclusively mocked below describe the original design; the mock remains the default without `--queue`.
 
+**Watch:** `gs.Watch` is the crew's first line of monitoring: heart rate every 15 minutes, all day, and the night's sleep (6.9 h on the ground, 6.09 h in flight, Barger et al. 2014). The timeline reads it every day, so a 180-day mission has about 23 000 watch readings per crew member; the DataService filters by measure in SQL and in memory, and `GET /api/v1/readings` takes `start` to ask only for a window. `crew.add_fatigue(day, days)` or `--fatigue CM-3:132:6` makes a spell only the watch and the wearable see (resting heart rate +12 %, HRV −30 %, about 1.6 h less sleep). Design and the analysis built on it: [docs/wearable.md](../docs/wearable.md).
+
 **Booked retests:** with `--run-booked`, the generator also runs each retest the Planner books (a `retest` item of its plan, a result of kind `plan`; see docs/planner.md): when its window opens, it measures the test on that measure's instrument at the start of the window and ingests it like any reading (`run_booked_studies()` in `serve.py`). It is off by default. The Planner turns a finding that is still there after a recent retest into a review, so retests no longer loop.
 
 This folder is the health monitor's data service. The `DataService` takes in everything the sources on board produce (instrument readings and crew context: where each astronaut is and what they are doing), cleans it, keeps it, answers queries for it over Python or HTTP, and announces what it stored on the team's event queue. See `docs/architecture.md` for where it sits: Sources → DataService ↔ Database.
@@ -299,6 +301,7 @@ r.truth                           # {'value': 53.927, 'change_pct': -27.917, 'fa
 | `CycleErgometer` | VO2peak (ml/kg/min) | graded test stage by stage: watts, heart rate, VO2, Borg, ending part-way through the last stage at the workload where the person reaches VO2peak |
 | `Wearable` | resting heart rate, systolic and diastolic pressure, SpO2, HRV | 24 hours of minute-by-minute heart rate, following the day's routine |
 | `Spacesuit` | heart rate during a spacewalk (bpm), every 5 minutes | (none; `measure_all()` returns the whole spacewalk) |
+| `Watch` | heart rate every 15 minutes (`watch_hr`, bpm), the night's sleep (`sleep_hours`, h; `sleep_quality`, 1–7) at 06:00 UTC | (none; `measure_all()` returns the whole day) |
 
 `noise=0` on an instrument (or on `timeline()`) turns measurement noise off; `noise=0.5` halves it. Noise has two parts: the instrument's own (assumed from typical device accuracy) and the person's day-to-day variation (the rest of what repeat tests in the data show), which every reading of that measure on that day shares. Inside the data's coverage a reading without a fault is clipped to the data range (see "What the data checks guarantee"); faults may push it out. Every reading, faulty or not, stays inside the hard limits in `LIMITS`.
 

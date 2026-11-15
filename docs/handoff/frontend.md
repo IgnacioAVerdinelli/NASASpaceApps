@@ -8,6 +8,8 @@ Desde: diseño de las pestañas "Mediciones en vuelo". Actualizado: 2026-11-14.
 
 **Estado (14/11/2026, rama `feat/flight-measurements`):** la página ya no usa datos fijos. Lee `GET /api/v1/analyses` del HealthService con el mismo esquema de sondeo, validación y avisos que Trama, y elige tripulante igual. El pedido del punto 2 está resuelto con un contrato propio, documentado en [frontend-backend.md](../frontend-backend.md#mediciones-en-vuelo-get-apiv1analyses). Del punto 3 quedan el 5 y parte del 6.
 
+**Estilo visual (15/11/2026, rama `codex/rediseno-dashboard`):** todo el front sigue el [design system "Frosted glass"](../design-system.md): tokens, vidrio, fondo, tipografía (Chakra Petch) y layout del Overview. Antes de tocar estilos, leerlo.
+
 Lo que sigue explica qué se agregó, qué faltaba para integrarlo al sistema real, por qué y cómo se resolvió.
 
 ## 1. Qué hay en la página (rama `Feat/muscle-strength-view`, integrada en `feat/flight-measurements`)

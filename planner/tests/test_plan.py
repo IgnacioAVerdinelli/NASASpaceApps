@@ -97,6 +97,7 @@ def test_a_finding_again_after_a_recent_retest_books_a_review_not_a_loop():
     assert retest["status"] == "done"
     (_, review), = engine.apply_finding(xs, finding(mission_day=76.0), CATALOG, ISS, 76.5)
     assert review["type"] == "review" and review["completion"] == "crew"
+    assert review["title"] == "Review by the flight surgeon: knee extension strength"
     assert "retest" in review["finding"]["why"]
     assert engine.apply_finding(xs, finding(mission_day=77.0), CATALOG, ISS, 77.0) == []   # review already open
 
@@ -136,3 +137,24 @@ def test_view_flags_open_and_filters():
     v = engine.view(xs, 30.0, from_day=25, to_day=35, item_type="study")
     assert v and all(i["type"] == "study" for i in v)
     assert by_id(v, "6012:30")["open"] is True and by_id(v, "6012:30")["overdue"] is False
+
+
+def test_the_watch_closes_the_sleep_log():
+    xs = items()
+    engine.update(xs, ISS, 31, {"watch": [(30.25, ISS.timestamp(30.25))]})
+    assert by_id(xs, "6039:30")["status"] == "done" and by_id(xs, "6039:30")["done_by"] == "instrument"
+    assert by_id(xs, "6039:29")["status"] == "missed"                 # no report that night
+
+
+def test_a_watch_finding_books_a_review_never_a_retest():
+    xs = items()
+    f = finding(measure="resting_hr", source="watch", state="suspected", change_pct=12.0,
+                text="Higher than usual for the last 3 days")
+    (_, review), = engine.apply_finding(xs, f, CATALOG, ISS, 74.0)
+    assert review["type"] == "review" and review["title"] == "Review by the flight surgeon: resting heart rate"
+    assert review["finding"]["source"] == "watch" and review["finding"]["why"] == "Higher than usual for the last 3 days"
+    sleep = finding(measure="sleep_hours", source="watch", state="suspected", mission_day=75.0)
+    (_, r2), = engine.apply_finding(xs, sleep, CATALOG, ISS, 75.0)
+    assert r2["type"] == "review" and not any(i["type"] == "retest" for i in xs)
+    cancelled = engine.apply_finding(xs, f | {"state": "cleared"}, CATALOG, ISS, 77.0)
+    assert [i["id"] for _, i in cancelled] == [review["id"]]

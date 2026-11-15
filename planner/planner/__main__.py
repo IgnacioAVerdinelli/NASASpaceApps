@@ -26,8 +26,7 @@ def worker(planner: Planner, interval: float) -> None:
     last = 0.0
     while True:
         try:
-            while planner.step():
-                pass
+            planner.drain()
             if time.monotonic() - last >= interval:
                 planner.refresh_all()
                 last = time.monotonic()
@@ -38,7 +37,8 @@ def worker(planner: Planner, interval: float) -> None:
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data-url", default="http://localhost:8000", help="DataService URL")
+    parser.add_argument("--data-url", default="http://127.0.0.1:8000",
+                        help="DataService URL (127.0.0.1, not localhost: on Windows localhost tries IPv6 first, 2 s per request)")
     parser.add_argument("--queue", default=os.environ.get("NASA_QUEUE"),
                         help="SQLite queue file shared with the other services (default: $NASA_QUEUE); "
                              "without it, no findings are received and no reminders sent")

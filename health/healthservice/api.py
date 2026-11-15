@@ -4,6 +4,8 @@ GET /api/v1/dashboard    dashboard JSON for the 3D page (contract version 1). ?c
                          ?day=150 looks at a given mission day without saving anything.
 GET /api/v1/analyses     strength and aerobic capacity test by test, for the flight-measurement page; same
                          ?crew and ?day as /dashboard
+GET /api/v1/vitals       the watch (layer 1): each vital against the person's own last two weeks, and the day of
+                         heart rate; same ?crew and ?day (docs/wearable.md)
 GET /api/v1/alerts       alerts published so far (until the notification system defines its queue)
 GET /api/v1/health       service status
 
@@ -46,6 +48,15 @@ def create_app(service: HealthService, allow_origin: str = "*", delivery_queue=N
     def analyses(response: Response, crew: str | None = None, day: float | None = None):
         try:
             data = service.analyses(crew, day)
+        except KeyError:
+            return unknown_crew(crew)
+        response.headers["Cache-Control"] = "no-store"
+        return data
+
+    @app.get("/api/v1/vitals")
+    def vitals(response: Response, crew: str | None = None, day: float | None = None):
+        try:
+            data = service.vitals(crew, day)
         except KeyError:
             return unknown_crew(crew)
         response.headers["Cache-Control"] = "no-store"

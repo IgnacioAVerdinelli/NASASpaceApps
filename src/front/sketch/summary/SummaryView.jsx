@@ -6,6 +6,8 @@ import { dashboardUrl, loadDashboard } from '../data/dashboard.js';
 import { TYPE_LABEL, displayStatus, loadPlan, timing, upcoming } from '../data/plan.js';
 import { AlertIcon } from '../fuerza/App.jsx';
 import { LEVEL_COLORS, colorScale, fmtNum, fmtPct, levelColor, levelText } from '../fuerza/data.js';
+import { watchNotices } from '../data/vitals.js';
+import { WatchPanel } from '../vitals/WatchPanel.jsx';
 import { aerobicLatest, alertsOf, boneLatest, missionProgress, muscleRows, overallStatus } from './data.js';
 import './style.css';
 
@@ -41,11 +43,13 @@ const inDays = (day, today) => {
   return d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
 };
 
-export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
+export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen, vitals = null }) {
   const { data: dashboard } = useDashboard(exampleMode ? '' : dashboardUrl(apiUrl, crewId), loadDashboard);
   const { data: today } = useDashboard(exampleMode || !crewId ? null : planTodayUrl(crewId), loadPlan);
-  const alerts = useMemo(() => alertsOf(data), [data]);
-  const status = overallStatus(alerts);
+  const testAlerts = useMemo(() => alertsOf(data), [data]);
+  const notices = useMemo(() => watchNotices(vitals), [vitals]);
+  const alerts = [...testAlerts, ...notices];
+  const status = overallStatus(testAlerts, notices);
   const rows = useMemo(() => muscleRows(data), [data]);
   const levels = data.levels;
   const aero = data.aerobic;
@@ -81,7 +85,7 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
       </div>
       {alerts.length > 0 && <ul className="status-alerts">
         {alerts.map(a => <li key={a.id}><button type="button" onClick={() => onOpen(a.tab, a.focus)}>
-          <span className={`sev sev-${a.severity}`}><AlertIcon/>{a.severity === 'critical' ? 'Critical' : 'Warning'}</span>
+          <span className={`sev sev-${a.severity}`}><AlertIcon/>{a.severity === 'critical' ? 'Critical' : a.severity === 'watch' ? 'Watch' : 'Warning'}</span>
           <strong>{a.system}</strong><span className="status-msg">{a.message}</span><span className="go">Details <span aria-hidden="true">→</span></span>
         </button></li>)}
       </ul>}
@@ -90,6 +94,8 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
         <div className="mission-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress.ratio * 100)} aria-label="Mission progress"><i style={{ width: `${progress.ratio * 100}%` }}/></div>
       </div>
     </section>
+
+    {!exampleMode && <WatchPanel vitals={vitals} compact onOpen={() => onOpen('vitales')}/>}
 
     <div className="summary-grid">
       <section className="panel body-card" aria-labelledby="body-title">

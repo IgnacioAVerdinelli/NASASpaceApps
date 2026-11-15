@@ -96,3 +96,4 @@
 @media(max-width:900px){.summary-grid{grid-template-columns:1fr}.indicators{order:1}.todo{order:2}.body-card{order:3}.tiles{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.status-band{grid-template-columns:1fr}.status-mission{grid-column:1;grid-row:auto;justify-items:start;text-align:left}.body-card-stage{height:440px}.muscle-bar{grid-template-columns:minmax(110px,160px) minmax(80px,1fr) 76px minmax(120px,160px)}.mb-level{display:block}}
 @media(max-width:560px){.health-summary{padding:12px 12px 24px}.status-main h2{font-size:27px}.tiles{grid-template-columns:1fr}.muscle-bar{grid-template-columns:1fr 70px;row-gap:4px}.mb-track{grid-column:1/-1}.mb-level{display:none}.status-alerts button{grid-template-areas:"sev go" "sys sys" "msg msg";grid-template-columns:auto 1fr}.go{justify-self:end}}
 @media(prefers-reduced-motion:reduce){.status-critical .status-dot{animation:none}}
+.sev-watch{background:#a86f00;color:#fff}

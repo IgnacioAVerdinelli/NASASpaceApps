@@ -1,0 +1,68 @@
+/* The watch (layer 1): tiles, day chart, vital cards. Readable at arm's length: body 15px+, values 32px+. */
+:root{--ctx-sleep:#ebe9f7;--ctx-exercise:#e2f2e9;--ctx-eva:#fdeedb}
+
+.watch-panel{gap:14px}
+.vital-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.vital-tile{display:flex;flex-direction:column;gap:6px;min-width:0;text-align:left;font:inherit;color:#2f2850;background:#f6f5fc;border:1px solid #e2e1ee;border-radius:12px;padding:14px 16px;cursor:pointer}
+.vital-tile:hover{background:#efedf8}
+.vital-tile[data-status="deviation"]{background:#fff6e0;border-color:#e8c46a}
+.vital-tile[data-status="low_now"]{background:#fde8e8;border-color:#d9727b}
+.vital-tile-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:15px;font-weight:800;color:#3d4462}
+.vital-value{font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.vital-value small{font-size:15px;font-weight:700;color:#59617b;letter-spacing:0;margin-left:4px}
+.vital-value .vital-second{margin-left:6px}
+.vital-spark{height:46px}
+.vital-text{font-size:15px;line-height:1.35;color:#3d4462}
+.vital-text b{color:#765000}
+
+.vital-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;border-radius:999px;padding:4px 9px;white-space:nowrap;background:#e9f5ee;color:#1c633c}
+.vital-pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.vital-pill .alert-icon{width:13px;height:13px}
+.vital-pill[data-status="deviation"]{background:#c98a0b;color:#fff}
+.vital-pill[data-status="low_now"]{background:#a4242f;color:#fff}
+.vital-pill[data-status="out"]{background:#e4edfb;color:#234e86}
+.vital-pill[data-status="no_band"],.vital-pill[data-status="no_data"]{background:#eeeef3;color:#5c6075}
+
+.vital-pattern{background:#fff6e0;border:1px solid #e8c46a;border-radius:10px;padding:12px 16px}
+.vital-pattern p{display:flex;gap:8px;align-items:flex-start;font-size:15.5px;line-height:1.5;color:#3d2f00}
+.vital-pattern .alert-icon{flex:none;margin-top:4px;color:#8a5a00}
+
+.day-chart{margin:0}
+.day-chart figcaption{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px 20px}
+.day-chart figcaption>div:first-child{display:grid;gap:2px}
+.day-chart figcaption strong{font-size:17px}
+.day-chart figcaption span{font-size:14px;color:#59617b}
+.day-compare{display:flex;align-items:center;gap:4px;padding:3px;background:#ecebf5;border-radius:9px}
+.day-compare>span{font-size:13px;font-weight:700;color:#4f5874;padding:0 8px}
+.day-compare button{font:inherit;font-size:14px;font-weight:700;color:#4f5874;background:none;border:0;border-radius:7px;padding:7px 12px;cursor:pointer}
+.day-compare button[aria-checked="true"]{background:#fff;color:#2f2850;box-shadow:0 1px 3px #2f285022}
+.day-chart-plot{height:230px;margin-top:8px}
+.watch-panel[data-compact] .day-chart-plot{height:210px}
+.day-legend{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 0 36px;padding:0;font-size:13.5px;color:#3d4462;font-weight:600}
+.day-legend li{display:flex;align-items:center;gap:7px}
+.day-legend i{width:18px;height:3px;border-radius:2px}
+.day-legend i.dashed{height:0;border-top:2px dashed;background:none}
+.day-legend i.area{width:14px;height:14px;border-radius:3px;border:1px solid #d9d6ea}
+.day-legend .day-unit{margin-left:auto;color:#59617b;font-weight:500}
+
+.vitals-view{padding:16px 24px 28px;display:grid;gap:16px;color:#2f2850}
+.vitals-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.vitals-intro h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:30px;letter-spacing:-.02em}
+.vitals-intro p{font-size:16px;line-height:1.6;color:#3d4462;margin-top:6px;max-width:95ch}
+.vital-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
+.vital-card header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.vital-card h3{font-size:19px}
+.vital-card header p{font-size:15px;color:#3d4462;margin-top:4px}
+.vital-card[data-status="deviation"]{border-color:#e8c46a}
+.vital-card[data-status="low_now"]{border-color:#d9727b}
+.vital-card-now{display:grid;justify-items:end;gap:6px}
+.vital-card-now strong{font-size:28px;font-variant-numeric:tabular-nums}
+.vital-card-now small{font-size:14px;color:#59617b}
+.vital-card h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:#625992;margin:16px 0 4px}
+.month-plot{height:170px}
+.mission-plot{height:90px}
+.vital-band{font-size:14px;line-height:1.5;color:#59617b;margin-top:6px}
+
+@media(max-width:1280px){.vital-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.vital-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.vital-cards{grid-template-columns:1fr}.vitals-view{padding:14px 12px 24px}.day-legend{margin-left:0}}
+@media(max-width:460px){.vital-tiles{grid-template-columns:1fr}}

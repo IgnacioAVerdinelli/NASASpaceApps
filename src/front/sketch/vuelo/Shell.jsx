@@ -3,6 +3,8 @@ import { StrengthView } from '../fuerza/App.jsx';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
 import { SummaryView } from '../summary/SummaryView.jsx';
+import { VitalsView } from '../vitals/VitalsView.jsx';
+import { loadVitals, vitalsUrl } from '../data/vitals.js';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
@@ -18,6 +20,7 @@ const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
 // Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
   { id: 'summary', label: 'Health summary' },
+  { id: 'vitales', label: 'Vital signs' },
   { id: 'plan', label: 'Mission plan' },
   { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
   { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
@@ -41,6 +44,9 @@ export function Shell() {
   const selected = crewList.includes(selectedCrew) ? selectedCrew : crewList[0];
   const { data, error } = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
   const crewId = data?.crew.id ?? selected;
+  // The watch (layer 1): read once here, shown on the summary and on its own tab.
+  const vitalsState = useDashboard(exampleMode || !crewId ? null : vitalsUrl(apiUrl, crewId), loadVitals);
+  const vitals = vitalsState.data?.crew.id === crewId ? vitalsState.data : null;
   const today = data?.mission.today ?? null;
   useEffect(() => {
     if (!crewId || exampleMode) return;
@@ -82,9 +88,12 @@ export function Shell() {
     {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
     {!data ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div> : <>
     <section id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" hidden={tab !== 'summary'}>
-      <SummaryView data={data} crewId={crewId} apiUrl={apiUrl} exampleMode={exampleMode}
+      <SummaryView data={data} crewId={crewId} apiUrl={apiUrl} exampleMode={exampleMode} vitals={vitals}
         onOpen={(id, focusKey) => { if (focusKey) setFocusRequest({ key: focusKey, request: Date.now() }); select(id, true); }}/>
     </section>
+    <section id="panel-vitales" role="tabpanel" aria-labelledby="tab-vitales" hidden={tab !== 'vitales'}>{exampleMode
+      ? <div className="connection-notice" role="status">Vital signs need the HealthService; they are not available in example mode.</div>
+      : <VitalsView vitals={vitals} error={vitalsState.error}/>}</section>
     <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden={tab !== 'plan'}>{exampleMode
       ? <div className="connection-notice" role="status">The mission plan needs the Planner service (port 3001); it is not available in example mode.</div>
       : <PlanView crew={crewId}/>}</section>

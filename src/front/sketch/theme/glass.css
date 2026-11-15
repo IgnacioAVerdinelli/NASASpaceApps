@@ -1,4 +1,4 @@
-/* Trama "Frosted glass" theme. Rules and rationale: docs/design-system.md.
+/* GraviTal "Frosted glass" theme. Rules and rationale: docs/design-system.md.
    Views use these variables and classes; they never hard-code a glass or a status colour. */
 
 @font-face { font-family: 'Chakra Petch'; src: url('../fonts/chakra-petch-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }

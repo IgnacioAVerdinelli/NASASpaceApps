@@ -17,6 +17,6 @@ Notas para los agentes y personas responsables de cada parte del sistema. Salen 
 | Vital signs | Signos del reloj (FC en reposo, presión, SpO₂, HRV, sueño) contra las dos últimas semanas de la persona | Banda personal; sueño en vuelo de Barger 2014 | `src/front/sketch/vitals/` |
 | Mission plan | Plan de controles de OCHMO-STD-100.1A (Tabla 8) | La norma, con cada cita verificada contra el PDF | `src/front/sketch/plan/` |
 
-Para verlo: `bash scripts/demo.sh` ([guía](../guia-demo.md)), o levantar cada servicio como dice el [README](../../README.md) y abrir `/vuelo.html?crew=CM-1` (`#fuerza` o `#aerobica`), o el link "Flight measurements" de la página principal. Sin backend: `VITE_DASHBOARD_MODE=example npm run dev`. La página está en inglés, como Trama.
+Para verlo: `bash scripts/demo.sh` ([guía](../guia-demo.md)), o levantar cada servicio como dice el [README](../../README.md) y abrir `/vuelo.html?crew=CM-1` (`#fuerza` o `#aerobica`), o el link "Flight measurements" de la página principal. Sin backend: `VITE_DASHBOARD_MODE=example npm run dev`. La página está en inglés, como GraviTal.
 
 Se actualiza a medida que se suman análisis (próximos de la lista "a bordo": masa corporal, examen ocular, ecografía venosa, sangre y orina, sueño).

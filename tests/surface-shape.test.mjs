@@ -3,35 +3,56 @@ import assert from 'node:assert/strict';
 import { BufferGeometry, Float32BufferAttribute, Matrix4 } from 'three';
 import { softenMaleGroin } from '../src/front/body-3d/surfaceShape.js';
 
-test('softens the front of the groin and leaves surrounding areas in place', () => {
+test('flattens the front of the groin and leaves surrounding areas in place', () => {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute([
     0, .8, .1, .15, .8, .1, 0, .95, .1,
-    0, .8, -.1, .15, .8, -.1, 0, .95, -.1,
+    0, .8, -.2, .15, .8, -.1, 0, .95, -.1,
   ], 3));
+  geometry.setAttribute('normal', new Float32BufferAttribute(Array(18).fill(0), 3));
   const before = Array.from(geometry.attributes.position.array);
   softenMaleGroin(geometry, new Matrix4());
   const after = geometry.attributes.position.array;
-  assert.ok(after[2] < .06 && after[2] > .035);
+  assert.ok(Math.abs(after[1] - .87) < 1e-6);
+  assert.ok(Math.abs(after[2] - .025) < 1e-6);
   for (let i = 3; i < before.length; i++) assert.ok(Math.abs(after[i] - before[i]) < 1e-6);
   assert.equal(geometry.attributes.position.count, 6);
 });
 
-test('keeps the original quantized normals used by the male model', async () => {
+test('reshapes the real male mesh without changing its topology or distant normals', async () => {
   const { readFile } = await import('node:fs/promises');
   const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const { MeshoptDecoder } = await import('three/addons/libs/meshopt_decoder.module.js');
+  const { Vector3 } = await import('three');
   const bytes = await readFile('node_modules/open-anatomy-3d/models/anatomy-male.glb');
   const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   gltf.scene.updateMatrixWorld(true);
   let skin;
   gltf.scene.getObjectByName('skin').traverse(node => { if (node.isMesh) skin = node; });
-  const normals = skin.geometry.attributes.normal;
-  const before = Array.from({ length: normals.count }, (_, i) => [normals.getX(i), normals.getY(i), normals.getZ(i)]);
-  softenMaleGroin(skin.geometry, skin.matrixWorld);
-  for (let i = 0; i < normals.count; i++) {
-    assert.deepEqual([normals.getX(i), normals.getY(i), normals.getZ(i)], before[i]);
+  const geometry = skin.geometry;
+  const position = geometry.attributes.position;
+  const before = Array.from({ length: position.count }, (_, i) => new Vector3().fromBufferAttribute(position, i).applyMatrix4(skin.matrixWorld));
+  const normals = geometry.attributes.normal;
+  const oldNormals = Array.from({ length: normals.count }, (_, i) => new Vector3().fromBufferAttribute(normals, i));
+  const indices = geometry.index.array.slice();
+  softenMaleGroin(geometry, skin.matrixWorld);
+  assert.deepEqual(geometry.index.array, indices);
+  let changed = 0;
+  for (let i = 0; i < position.count; i++) {
+    const after = new Vector3().fromBufferAttribute(position, i).applyMatrix4(skin.matrixWorld);
+    const normal = new Vector3().fromBufferAttribute(geometry.attributes.normal, i);
+    assert.ok(Number.isFinite(normal.x) && Number.isFinite(normal.y) && Number.isFinite(normal.z));
+    if (after.distanceTo(before[i]) > 1e-6) {
+      changed++;
+      assert.ok(Math.abs(before[i].x) < .055 && before[i].y > .70 && before[i].y < .90 && before[i].z > -.15);
+    } else if (Math.abs(before[i].x) > .055 || before[i].y > .90 || before[i].y < .70) {
+      assert.ok(normal.distanceTo(oldNormals[i]) < 1e-6);
+    }
+    if (Math.abs(before[i].x) < .025 && before[i].y > .735 && before[i].y < .84 && before[i].z > -.11) {
+      assert.ok(after.y >= .865 && (before[i].z <= .025 || after.z <= .045));
+    }
   }
+  assert.ok(changed > 100);
 });
 
 test('smooths the male face without changing the skin topology or the rest of the body', async () => {

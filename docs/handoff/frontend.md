@@ -6,7 +6,7 @@ Para:
 
 Desde: diseño de las pestañas "Mediciones en vuelo". Actualizado: 2026-11-14.
 
-**Estado (14/11/2026, rama `feat/flight-measurements`):** la página ya no usa datos fijos. Lee `GET /api/v1/analyses` del HealthService con el mismo esquema de sondeo, validación y avisos que Trama, y elige tripulante igual. El pedido del punto 2 está resuelto con un contrato propio, documentado en [frontend-backend.md](../frontend-backend.md#mediciones-en-vuelo-get-apiv1analyses). Del punto 3 quedan el 5 y parte del 6.
+**Estado (14/11/2026, rama `feat/flight-measurements`):** la página ya no usa datos fijos. Lee `GET /api/v1/analyses` del HealthService con el mismo esquema de sondeo, validación y avisos que GraviTal, y elige tripulante igual. El pedido del punto 2 está resuelto con un contrato propio, documentado en [frontend-backend.md](../frontend-backend.md#mediciones-en-vuelo-get-apiv1analyses). Del punto 3 quedan el 5 y parte del 6.
 
 **Estilo visual (15/11/2026, rama `codex/rediseno-dashboard`):** todo el front sigue el [design system "Frosted glass"](../design-system.md): tokens, vidrio, fondo, tipografía (Chakra Petch) y layout del Overview. Antes de tocar estilos, leerlo.
 
@@ -38,7 +38,7 @@ Las animaciones de cámara e indicadores son las de `main` sin cambios. Para que
 
 **Resuelto** con `GET /api/v1/analyses` ([contrato](../frontend-backend.md#mediciones-en-vuelo-get-apiv1analyses)). Diferencias con la propuesta de abajo:
 
-- Es un endpoint aparte, versión 1, en vez de un contrato v2 del dashboard: el dashboard de Trama no cambia.
+- Es un endpoint aparte, versión 1, en vez de un contrato v2 del dashboard: el dashboard de GraviTal no cambia.
 - Nivel 4 también cuando VO₂pico está debajo del mínimo de NASA (32,9). Los cortes son sobre "% peor", así que valen para medidas que bajan o suben.
 - Cada prueba trae `withinNoise`: si su cambio cabe en el ruido de un solo test. Con 8–12 % de ruido por test del dinamómetro, una prueba sola puede caer en nivel 3 o 4 por ruido; la página lo aclara ("within test noise") y dibuja la banda real de cada medida en vez de un ±5 % fijo.
 - Cada análisis trae su `alert` (la misma que va a la cola). VO₂pico tiene una regla nueva, crítica: el estándar de NASA (promedio de las dos últimas pruebas 20 % abajo o debajo de 32,9).
@@ -93,7 +93,7 @@ La propuesta original, como referencia:
 
 1. ~~**Integrar al dashboard real.**~~ Hecho: `vuelo/Shell.jsx` usa `useDashboard`, `VITE_DASHBOARD_MODE` y `VITE_DASHBOARD_URL` como `src.jsx`, con selector de tripulante.
 2. ~~**Build.**~~ Hecho: `vite.config.js` compila `vuelo.html`; `fuerza.html` se borró.
-3. ~~**Idioma.**~~ Inglés, como Trama.
+3. ~~**Idioma.**~~ Inglés, como GraviTal.
 4. ~~**Pestañas y página principal.**~~ Página aparte, con links en los dos sentidos que conservan el tripulante (`?crew=`).
 5. **Etiquetas 3D al volver a una pestaña:** al mostrar un visor que estaba oculto, una etiqueta puede deslizarse desde la esquina durante menos de un segundo. Propuesta: limpiar `display` en `indicators.js` cuando el contenedor vuelve a tener tamaño, para que la primera posición no se anime.
 6. **Tests:** `tests/analyses.test.mjs` cubre el validador y la carga de `analyses`. Siguen sin casos `colorScale`, `indicatorText`, `structureColors` y la capa `organs`.

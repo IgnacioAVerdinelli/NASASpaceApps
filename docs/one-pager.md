@@ -1,4 +1,4 @@
-# Trama — conocer tu cuerpo, incluso lejos de la Tierra
+# GraviTal — conocer tu cuerpo, incluso lejos de la Tierra
 
 **Prototipo de seguimiento muscular para astronautas en misiones prolongadas**
 
@@ -12,7 +12,7 @@ La pregunta que nos hacemos es: **¿cómo puede una persona entender qué está 
 
 ## Nuestra propuesta
 
-Trama propone un seguimiento muscular centrado en la persona. Un mapa anatómico interactivo permite explorar una región y consultar su evolución frente a una referencia personal previa a la misión. La intención es reunir en un solo lugar la medición, su fecha, el método utilizado y el contexto necesario para interpretarla.
+GraviTal propone un seguimiento muscular centrado en la persona. Un mapa anatómico interactivo permite explorar una región y consultar su evolución frente a una referencia personal previa a la misión. La intención es reunir en un solo lugar la medición, su fecha, el método utilizado y el contexto necesario para interpretarla.
 
 En vez de presentar un número aislado como diagnóstico, buscamos responder preguntas concretas: **¿qué se midió?, ¿cómo cambió respecto de mi referencia?, ¿las mediciones son comparables? y ¿qué información falta?** La visión a futuro incluye acompañar la adquisición de una medición y preparar un resumen para compartir con especialistas.
 
@@ -39,4 +39,4 @@ El enfoque parte de los [riesgos del vuelo espacial investigados por NASA](https
 
 ## El punch
 
-**Trama busca que, incluso lejos de la Tierra, cada astronauta pueda entender cómo cambia su cuerpo y participar con más autonomía en el cuidado de su salud.**
+**GraviTal busca que, incluso lejos de la Tierra, cada astronauta pueda entender cómo cambia su cuerpo y participar con más autonomía en el cuidado de su salud.**

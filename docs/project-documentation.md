@@ -1,8 +1,8 @@
-# Trama — Project documentation and submission workspace
+# GraviTal — Project documentation and submission workspace
 
 **NASA Space Apps Challenge 2026 · Working document · Updated 15 November 2026**
 
-> Trama is a research-informed prototype. Its demonstration uses synthetic crew data, not astronaut measurements. It is not a medical device, a diagnosis, or a validated clinical decision system. Text marked **[TO COMPLETE]** needs the team's input; **[VERIFY]** marks an unresolved claim or submission requirement.
+> GraviTal is a research-informed prototype. Its demonstration uses synthetic crew data, not astronaut measurements. It is not a medical device, a diagnosis, or a validated clinical decision system. Text marked **[TO COMPLETE]** needs the team's input; **[VERIFY]** marks an unresolved claim or submission requirement.
 
 ## 1. Project at a glance
 
@@ -10,7 +10,7 @@
 
 **The problem.** A crew member needs to understand changes in health over time, but isolated measurements can be hard to interpret. On distant missions, communication delays and limited access to specialists make understandable information and an organized next step especially valuable.
 
-**Our approach.** Trama brings simulated wearable observations, periodic strength and aerobic tests, a personal baseline, an interactive body, and a mission plan into one interface. It compares measurements with the person's own history and bed-rest reference data, surfaces changes and measurement uncertainty, and proposes follow-up tasks. Its purpose is to support a conversation and situational awareness, not replace a flight surgeon.
+**Our approach.** GraviTal brings simulated wearable observations, periodic strength and aerobic tests, a personal baseline, an interactive body, and a mission plan into one interface. It compares measurements with the person's own history and bed-rest reference data, surfaces changes and measurement uncertainty, and proposes follow-up tasks. Its purpose is to support a conversation and situational awareness, not replace a flight surgeon.
 
 **Who uses it.** The primary user is a crew member reviewing their own status and tasks. A crew medical officer or flight surgeon is a potential recipient of findings; actual transmission to people or devices is not implemented.
 
@@ -75,7 +75,7 @@ The software runs locally in the demo. This does not establish flight readiness,
 
 All four experiments below are documented in the [NASA Life Sciences Portal](https://nlsp.nasa.gov/) and the local [dataset inventory](../data/nlsp/README.md). Bed rest is a ground analog of some effects of unloading, not spaceflight. Files are pseudonymized research observations, whereas the displayed mission data are synthetic.
 
-| Dataset | Measures and role in Trama | Source |
+| Dataset | Measures and role in GraviTal | Source |
 |---|---|---|
 | MR079G, Isokinetic Muscle Function | Strength measurements inform simulated baselines, variation, noise and fitted changes. CFT70 supplies the strength reference summary shown by the frontend; additional studies of different durations support the simulator fit. | [DOI 10.83263/bk5h-r757](https://doi.org/10.83263/bk5h-r757); [fit inputs](../sim/fit/source_data/README.md) |
 | MR035G, Bone Densitometry Assessment | DXA bone density and regional lean-mass observations inform the simulator's bone and body-composition parameters. | [DOI 10.83263/7myc-5j86](https://doi.org/10.83263/7myc-5j86) |
@@ -91,7 +91,7 @@ CFT70 includes control and exercise groups and pre/post measurements, but the lo
 - **OCHMO-STD-100.1A:** the [local text](references/OCHMO-STD-100.1A_RevA_2024-09-09.txt) and [PDF](references/OCHMO-STD-100.1A_RevA_2024-09-09.pdf) inform the Planner's selected routine studies, windows and explanatory citations. The implemented schedule is a prototype interpretation, not an official NASA plan. See [Planner design](planner.md).
 - **NASA-STD-3001 Vol. 1 and OCHMO-TB-031:** cited in the [alert-rule documentation](../health/README.md#nasa-standard-vo2peak) as sources for the aerobic minimum and performance-loss criterion. The prototype's calculation and scope still require expert review.
 - **NASA Human Research Program:** [spaceflight hazards](https://www.nasa.gov/hrp/hazards/) and [risks](https://www.nasa.gov/hrp/risks/) provide the broader mission and health context, not measurements or validation of this app.
-- **Canadian Space Agency:** [why research is conducted in space](https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp) and [radiation monitoring](https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp) provide context from challenge resources; radiation monitoring is not implemented in Trama.
+- **Canadian Space Agency:** [why research is conducted in space](https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp) and [radiation monitoring](https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp) provide context from challenge resources; radiation monitoring is not implemented in GraviTal.
 - **Tele-SUS:** [published research](https://pmc.ncbi.nlm.nih.gov/articles/PMC8047175/) informs the team's exploration of muscle monitoring; ultrasound acquisition is not implemented.
 - **3D anatomy:** [Open Anatomy 3D](https://github.com/MervinR07/open-anatomy-3d) supplies the anatomical model and catalog. Its credited sources include BodyParts3D (CC BY 4.0), HuBMAP Human Reference Atlas organs (CC BY 4.0) and MakeHuman (CC0). The project adds derived surface-region maps under CC BY 4.0. Consult the [root README](../README.md#créditos-y-licencias) and the package attribution for full credits. [MuscleMap](https://github.com/Jsplice/MuscleMap) inspired the visual approach; its code and assets were not incorporated.
 - **[TO COMPLETE]** Audit and list all remaining third-party libraries, assets, publications, licenses, and any team-created or AI-assisted material before submission.
@@ -126,15 +126,15 @@ The following is a working draft, not a submitted form. The team's [challenge re
 
 ### Project name
 
-**Trama — Astronaut Health Monitoring** **[TO COMPLETE: confirm final title]**
+**GraviTal — Astronaut Health Monitoring** **[TO COMPLETE: confirm final title]**
 
 ### High-level project summary — draft
 
-Trama is a research-informed prototype that helps astronauts explore changes in their health during long missions. It combines simulated wearable trends and periodic strength and aerobic measurements with an interactive body view and a mission plan. NASA bed-rest research informs the simulated data and comparisons, while personal baselines and measurement uncertainty provide context. Trama highlights possible follow-up for human review; it is not a medical diagnosis or a validated clinical tool.
+GraviTal is a research-informed prototype that helps astronauts explore changes in their health during long missions. It combines simulated wearable trends and periodic strength and aerobic measurements with an interactive body view and a mission plan. NASA bed-rest research informs the simulated data and comparisons, while personal baselines and measurement uncertainty provide context. GraviTal highlights possible follow-up for human review; it is not a medical diagnosis or a validated clinical tool.
 
 ### Detailed project description — draft
 
-Long missions can make immediate medical support difficult. Trama brings information that would otherwise be spread across measurements and schedules into an interface designed for the crew. A synthetic mission generates watch readings, strength tests and aerobic assessments. The DataService cleans and stores these records; the HealthService compares them with the person's preflight or recent history and with research-derived references. Findings feed a Planner that displays routine studies and follow-up reviews. A React dashboard presents trends, an interactive 3D body and a mission plan.
+Long missions can make immediate medical support difficult. GraviTal brings information that would otherwise be spread across measurements and schedules into an interface designed for the crew. A synthetic mission generates watch readings, strength tests and aerobic assessments. The DataService cleans and stores these records; the HealthService compares them with the person's preflight or recent history and with research-derived references. Findings feed a Planner that displays routine studies and follow-up reviews. A React dashboard presents trends, an interactive 3D body and a mission plan.
 
 The prototype uses NASA Life Sciences Portal bed-rest datasets to fit simulation parameters and build comparison summaries, and selected NASA medical standards to inform the planner and experimental aerobic rule. Bed rest is an Earth-based analog, not a record of astronauts in flight. All displayed crew readings are synthetic; notifications are simulated, and clinical performance has not been validated. Python services, SQLite, React, Vite and Three.js support the demonstration.
 

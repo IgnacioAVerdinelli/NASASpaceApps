@@ -1,6 +1,6 @@
 # Contrato frontend–backend
 
-La página Trama consume un único estado completo del dashboard servido por [HealthService](../health/README.md), que a su vez lee el DataService. El frontend consulta la lista de tripulantes en `GET /api/v1/health` y solicita el dashboard elegido con `?crew=...`. Para trabajar sin backend se puede activar explícitamente el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json) con `VITE_DASHBOARD_MODE=example`.
+La página GraviTal consume un único estado completo del dashboard servido por [HealthService](../health/README.md), que a su vez lee el DataService. El frontend consulta la lista de tripulantes en `GET /api/v1/health` y solicita el dashboard elegido con `?crew=...`. Para trabajar sin backend se puede activar explícitamente el archivo [dashboard.example.json](../src/front/sketch/data/dashboard.example.json) con `VITE_DASHBOARD_MODE=example`.
 
 ## Transporte
 

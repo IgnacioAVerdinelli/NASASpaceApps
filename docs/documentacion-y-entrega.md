@@ -1,16 +1,16 @@
-# Trama: documentación y guía para completar la entrega
+# GraviTal: documentación y guía para completar la entrega
 
 Documento de trabajo del equipo · 15 de noviembre de 2026
 
 Este archivo explica el proyecto en español y reúne borradores en inglés para completar la página de NASA Space Apps. La documentación técnica completa en inglés está en [Project documentation](project-documentation.md). Los textos marcados **[COMPLETAR]** necesitan información del equipo; los marcados **[VERIFICAR]** deben contrastarse antes del envío.
 
-> **Estado del proyecto:** Trama es un prototipo con tripulación y mediciones sintéticas. Los estudios de reposo en cama que usamos se hicieron en la Tierra, no son datos de astronautas en vuelo. El sistema no es un dispositivo médico ni ha sido validado para diagnóstico o tratamiento.
+> **Estado del proyecto:** GraviTal es un prototipo con tripulación y mediciones sintéticas. Los estudios de reposo en cama que usamos se hicieron en la Tierra, no son datos de astronautas en vuelo. El sistema no es un dispositivo médico ni ha sido validado para diagnóstico o tratamiento.
 
 ## 1. Qué problema abordamos y qué hicimos
 
 En una misión prolongada, una persona de la tripulación necesita entender cómo cambia su salud y qué información requiere atención. Las comunicaciones demoradas y el acceso limitado a especialistas hacen valioso contar con información comprensible y organizada a bordo.
 
-Trama reúne en una interfaz las tendencias de un reloj simulado, pruebas periódicas de fuerza y capacidad aeróbica, un cuerpo 3D y un plan de tareas. Compara las mediciones con referencias personales y con datos de estudios de reposo en cama de NASA; muestra cambios, incertidumbre y posibles seguimientos. Busca apoyar la autonomía y la revisión humana, sin reemplazar al equipo médico.
+GraviTal reúne en una interfaz las tendencias de un reloj simulado, pruebas periódicas de fuerza y capacidad aeróbica, un cuerpo 3D y un plan de tareas. Compara las mediciones con referencias personales y con datos de estudios de reposo en cama de NASA; muestra cambios, incertidumbre y posibles seguimientos. Busca apoyar la autonomía y la revisión humana, sin reemplazar al equipo médico.
 
 El [desafío oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/) plantea una herramienta visual para que astronautas evalúen su salud y reciban orientación. Nuestra interpretación y las fuentes consultadas están en [contexto del desafío](contexto-challenge.md).
 
@@ -39,7 +39,7 @@ La comparación de fuerza y capacidad aeróbica considera la referencia previa a
 
 Los datos provienen del [NASA Life Sciences Portal](https://nlsp.nasa.gov/). El detalle de archivos y limitaciones está en el [inventario de datasets](../data/nlsp/README.md).
 
-| Fuente | Qué contiene | Uso en Trama |
+| Fuente | Qué contiene | Uso en GraviTal |
 |---|---|---|
 | [MR079G: función muscular](https://doi.org/10.83263/bk5h-r757) | Mediciones de fuerza isocinética en estudios de reposo en cama. | Ajuste de parámetros del simulador y resumen de referencia CFT70 para fuerza en el frontend. Se usan estudios adicionales para el ajuste. |
 | [MR035G: densitometría ósea](https://doi.org/10.83263/7myc-5j86) | DXA de densidad ósea y composición corporal. | Ajuste de parámetros simulados de hueso y masa magra. |
@@ -74,13 +74,13 @@ La [guía oficial de entrega](https://www.spaceappschallenge.org/resources/proje
 
 Nombre del proyecto. Confirmar el nombre definitivo.
 
-> Trama — Astronaut Health Monitoring
+> GraviTal — Astronaut Health Monitoring
 
 ### High-Level Project Summary
 
 Resumen de qué hicimos, para quién y por qué importa:
 
-> Trama is a research-informed prototype that helps astronauts explore changes in their health during long missions. It combines simulated wearable trends and periodic strength and aerobic measurements with an interactive body view and a mission plan. NASA bed-rest research informs the synthetic data and comparisons, while personal baselines and measurement uncertainty provide context. Trama highlights possible follow-up for human review; it is not a medical diagnosis or a validated clinical tool.
+> GraviTal is a research-informed prototype that helps astronauts explore changes in their health during long missions. It combines simulated wearable trends and periodic strength and aerobic measurements with an interactive body view and a mission plan. NASA bed-rest research informs the synthetic data and comparisons, while personal baselines and measurement uncertainty provide context. GraviTal highlights possible follow-up for human review; it is not a medical diagnosis or a validated clinical tool.
 
 ### Link to Project Demo
 
@@ -98,7 +98,7 @@ Abrir el enlace en una ventana privada para comprobar el acceso.
 
 Descripción de la solución, funcionamiento, beneficios y herramientas:
 
-> Long missions can make immediate medical support difficult. Trama brings information that would otherwise be spread across measurements and schedules into an interface designed for the crew. A synthetic mission generates watch readings, strength tests and aerobic assessments. The DataService cleans and stores these records; the HealthService compares them with the person's preflight or recent history and with research-derived references. Findings feed a Planner that displays routine studies and follow-up reviews. A React dashboard presents trends, an interactive 3D body and a mission plan.
+> Long missions can make immediate medical support difficult. GraviTal brings information that would otherwise be spread across measurements and schedules into an interface designed for the crew. A synthetic mission generates watch readings, strength tests and aerobic assessments. The DataService cleans and stores these records; the HealthService compares them with the person's preflight or recent history and with research-derived references. Findings feed a Planner that displays routine studies and follow-up reviews. A React dashboard presents trends, an interactive 3D body and a mission plan.
 >
 > The prototype uses NASA Life Sciences Portal bed-rest datasets to fit simulation parameters and build comparison summaries, and selected NASA medical standards to inform the planner and an experimental aerobic rule. Bed rest is an Earth-based analog, not a record of astronauts in flight. All displayed crew readings are synthetic; notifications are simulated, and clinical performance has not been validated. Python services, SQLite, React, Vite and Three.js support the demonstration.
 
@@ -113,7 +113,7 @@ Qué recursos de NASA usamos y para qué:
 Fuentes externas, recursos y créditos. **[COMPLETAR]** Revisar con todo el equipo y agregar cualquier recurso, código, imagen, publicación o licencia faltante.
 
 > - Canadian Space Agency, Why do we conduct science experiments in space? https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp — mission and research context.
-> - Open Anatomy 3D, https://github.com/MervinR07/open-anatomy-3d — anatomical models and catalog. Its credited sources include BodyParts3D (CC BY 4.0), HuBMAP Human Reference Atlas organs (CC BY 4.0), and MakeHuman (CC0). Trama adds derived surface-region maps; see the repository attribution for details.
+> - Open Anatomy 3D, https://github.com/MervinR07/open-anatomy-3d — anatomical models and catalog. Its credited sources include BodyParts3D (CC BY 4.0), HuBMAP Human Reference Atlas organs (CC BY 4.0), and MakeHuman (CC0). GraviTal adds derived surface-region maps; see the repository attribution for details.
 > - Tele-SUS research, https://pmc.ncbi.nlm.nih.gov/articles/PMC8047175/ — background on muscle monitoring; ultrasound acquisition is not implemented in the prototype.
 > - [COMPLETE: remaining sources, assets, libraries, licenses and attribution.]
 

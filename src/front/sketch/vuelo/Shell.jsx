@@ -88,7 +88,7 @@ export function Shell() {
     };
   }, []);
 
-  useEffect(() => { document.title = active.title + ' · Trama'; }, [active]);
+  useEffect(() => { document.title = active.title + ' · GraviTal'; }, [active]);
   useEffect(() => {
     if (!crewId || exampleMode) return;
     const url = new URL(window.location.href);
@@ -150,7 +150,7 @@ export function Shell() {
     <a className="flight-skip" href="#flight-content" onClick={event => { event.preventDefault(); document.getElementById('flight-content').focus(); }}>Skip to content</a>
     <header className="flight-bar glass-bar">
       <div className="flight-bar-inner">
-        <a className="flight-home" href="#summary" aria-label="Trama health overview"><Brand/></a>
+        <a className="flight-home" href="#summary" aria-label="GraviTal health overview"><Brand/></a>
         <nav className="flight-navigation" aria-label="Crew health">
           <div className="flight-tabs glass-tabs" role="tablist" aria-label="Health views" onKeyDown={navigateTabs}>
             {TABS.map(t => <button key={t.id} ref={el => { tabRefs.current[t.id] = el; }}

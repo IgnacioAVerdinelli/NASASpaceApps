@@ -23,9 +23,9 @@ npm run preview
 
 - `src/front/body-3d/`: visor 3D, catálogo anatómico, geometría y mapas de regiones.
 - `src/front/web/`: página, controles, estilos y estado de intensidades.
-- `src/front/sketch/`: página Trama con el visor 3D integrado. El original permanece en `sketch/`.
+- `src/front/sketch/`: página GraviTal con el visor 3D integrado. El original permanece en `sketch/`.
 
-Para levantar la página Trama con el modelo 3D, instalá primero las dependencias del proyecto y luego las de la página:
+Para levantar la página GraviTal con el modelo 3D, instalá primero las dependencias del proyecto y luego las de la página:
 
 ```bash
 npm install

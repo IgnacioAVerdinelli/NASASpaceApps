@@ -1,4 +1,4 @@
-# Design system · Trama "Frosted glass" (claro)
+# Design system · GraviTal "Frosted glass" (claro)
 
 Reglas del reestilizado del dashboard de tripulación (`src/front/sketch`). Todo lo que se toque en el front
 sigue este documento. La referencia visual es el canvas de Claude Design

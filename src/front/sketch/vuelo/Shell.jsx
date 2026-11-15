@@ -3,6 +3,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { StrengthView } from '../fuerza/App.jsx';
 import { dayDistance, recommendations, updateStatus } from './recommendations.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
+import { PlanView } from '../plan/PlanView.jsx';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
@@ -18,6 +19,7 @@ const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
 // Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
   { id: 'recommendations', label: 'Recommendations' },
+  { id: 'plan', label: 'Mission plan' },
   { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
   { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
 ];
@@ -132,6 +134,9 @@ export function Shell() {
       </div> : <div className="decision-empty"><h3>No alerts or upcoming assessments</h3><p>No alerts or scheduled assessments are available for this crew member.</p></div>}
       <p className="recommendations-note">Alerts and scheduled assessments come from HealthService. Local demo status changes are not saved or sent to the scheduler.</p>
     </section>
+    <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden={tab !== 'plan'}>{exampleMode
+      ? <div className="connection-notice" role="status">The mission plan needs the Planner service (port 3001); it is not available in example mode.</div>
+      : <PlanView crew={crewId}/>}</section>
     {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
     </>}
   </main>;

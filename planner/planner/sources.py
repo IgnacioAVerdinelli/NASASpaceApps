@@ -22,7 +22,7 @@ class DataServiceError(RuntimeError):
 
 
 class DataServiceSource:
-    def __init__(self, url: str = "http://localhost:8000", timeout: float = 10.0):
+    def __init__(self, url: str = "http://127.0.0.1:8000", timeout: float = 10.0):
         self.url = url.rstrip("/")
         self.timeout = timeout
         m = self._request("GET", "/api/v1/mission")

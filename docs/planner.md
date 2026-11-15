@@ -197,7 +197,7 @@ These are the architecture's rules, plus a cooldown so that a retest cannot loop
 
 | Finding `state` | The Planner |
 |---|---|
-| `suspected`, or no `state` (what the HealthService sends today) | If a retest for that crew member and measure is already open, nothing. If one was done in the last **14 days**, it books a `review` instead. Otherwise it books a `retest` in the first window of 7 days that starts tomorrow, has no spacewalk on its first day and ends by landing. |
+| `suspected`, or no `state` (older HealthService versions) | If a retest for that crew member and measure is already open, nothing. If one was done in the last **14 days**, it books a `review` instead. Otherwise it books a `retest` in the first window of 7 days that starts tomorrow, has no spacewalk on its first day and ends by landing. |
 | `confirmed` | Books a `review` (flight surgeon or crew medical officer) for the next 7 days, unless one is already open for that measure. The architecture's exercise sessions wait for an adherence signal (section 9). |
 | `cleared` | Cancels the open retest or review for that measure. |
 
@@ -255,7 +255,7 @@ These are agreed in the decision of 15/11. Each one keeps working the same way f
 | 4 | HTTP API and the Vite proxy | Tomás | 3 |
 | 5 | Migration of the readers (section 8) | Tomás | 2 |
 | 6 | **Plan view in the frontend**: "Mission plan" tab of `vuelo.html` (`src/front/sketch/plan/`, `data/plan.js`): counts, studies across the flight, next 7 days, whole mission by routine, missed, routine guide and mark as done or missed | Tomás (built on `feat/plan-view`) | contract only |
-| 7 | **`suspected` and `cleared` findings** in the HealthService, with the shape in [architecture.md](architecture.md#messages-the-planner-depends-on) | Valen | — |
+| 7 | **`suspected` and `cleared` findings** in the HealthService, with the shape in [architecture.md](architecture.md#messages-the-planner-depends-on). Built: `health/healthservice/findings.py` ([health-service.md](health-service.md#hallazgo-y-aviso)) | Valen | — |
 | 8 | **Notification kind** for `plan.reminder` and `plan.missed` in the Notification Center | Nacho | contract only |
 | 9 | **Exercise sessions** after a confirmed finding (architecture table). Needs the HealthService to publish logged exercise for the last 14 days | later | 7 and an adherence signal |
 

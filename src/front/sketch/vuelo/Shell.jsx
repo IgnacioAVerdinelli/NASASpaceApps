@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { StrengthView } from '../fuerza/App.jsx';
-import { dayDistance, recommendations, updateStatus } from './recommendations.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
+import { SummaryView } from '../summary/SummaryView.jsx';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
@@ -18,7 +17,7 @@ const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
 
 // Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
-  { id: 'recommendations', label: 'Recommendations' },
+  { id: 'summary', label: 'Health summary' },
   { id: 'plan', label: 'Mission plan' },
   { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
   { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
@@ -26,35 +25,11 @@ const TABS = [
 const fromHash = () => TABS.some(t => `#${t.id}` === window.location.hash) ? window.location.hash.slice(1) : TABS[0].id;
 const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew') || '';
 
-function MeasurementTrend({ measurement }) {
-  const points = measurement.series || [];
-  const valid = points.filter(point => point.value !== null);
-  if (valid.length < 2) return null;
-  const latest = valid.at(-1);
-  return <figure className="measurement-trend">
-    <figcaption><span>Measurement trend</span><strong>{latest.value} <small>{measurement.unit}</small></strong><span>{latest.label}</span></figcaption>
-    <div className="measurement-chart" role="img" aria-label={`Trend for ${measurement.title}. Latest value ${latest.value} ${measurement.unit}, ${latest.label}.`}>
-      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 260, height: 125 }}>
-        <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-          <CartesianGrid vertical={false} stroke="#dedfec" strokeDasharray="3 4"/>
-          <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#505a77' }} tickLine={false} axisLine={false} minTickGap={20}/>
-          <YAxis width={38} domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#505a77' }} tickLine={false} axisLine={false}/>
-          <Tooltip formatter={value => [`${value} ${measurement.unit}`, measurement.title]}/>
-          <Line type="linear" dataKey="value" stroke="#6258a0" strokeWidth={2} dot={{ r: 3, fill: '#6258a0' }} connectNulls={false} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  </figure>;
-}
-
 export function Shell() {
   const [tab, setTab] = useState(fromHash);
-  const [items, setItems] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
   const [focusRequest, setFocusRequest] = useState(null);
   const [selectedCrew, setSelectedCrew] = useState(crewFromUrl);
   const tabRefs = useRef({});
-  const previousCrew = useRef(null);
   useEffect(() => {
     const onHash = () => setTab(fromHash());
     window.addEventListener('hashchange', onHash);
@@ -67,15 +42,6 @@ export function Shell() {
   const { data, error } = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
   const crewId = data?.crew.id ?? selected;
   const today = data?.mission.today ?? null;
-  useEffect(() => {
-    if (!data) return;
-    const current = recommendations(data);
-    const sameCrew = previousCrew.current === data.crew.id;
-    setItems(previous => current.map(item => item.type === 'Alert' ? item : ({ ...item, status: sameCrew ? previous.find(old => old.id === item.id)?.status ?? item.status : item.status })));
-    if (!sameCrew) setSelectedId(current[0]?.id);
-    previousCrew.current = data.crew.id;
-  }, [data]);
-  const selectedItem = items.find(item => item.id === selectedId) || items[0];
   useEffect(() => {
     if (!crewId || exampleMode) return;
     const url = new URL(window.location.href);
@@ -115,24 +81,9 @@ export function Shell() {
     </header>
     {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
     {!data ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div> : <>
-    <section id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations" hidden={tab !== 'recommendations'} className="recommendations">
-      <div className="recommendations-header"><div><h2>Recommendations</h2><p>Alerts and upcoming assessments from HealthService.</p></div>{data.simulated && <span className="demo-label">SIMULATED DATA</span>}</div>
-      <p className="recommendations-intro">Explore the measurement, observation and suggested next step.</p>
-      {selectedItem ? <div className="decision-layout">
-        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{item.type === 'Alert' ? 'Current alert' : dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.severity || item.status}>{item.severity ? `${item.severity} alert` : item.status}</span></button>)}</div></aside>
-        <article className="decision-main" aria-labelledby="recommendation-detail-title">
-          <div className="decision-heading"><div><span className="decision-kind">{selectedItem.type} · {selectedItem.dayLabel}</span><h3 id="recommendation-detail-title">{selectedItem.title}</h3><p>{selectedItem.type === 'Alert' ? 'Current alert' : dayDistance(selectedItem.day, today)} · Crew member {selectedItem.crew}</p></div><span className="decision-status" data-status={selectedItem.severity || selectedItem.status}>{selectedItem.severity ? `${selectedItem.severity} alert` : selectedItem.status}</span></div>
-          <h4 className="pathway-title">Assessment pathway</h4>
-          <div className="decision-steps" aria-label="Assessment details">
-            {[['Measurement', selectedItem.measurement], ['Observation', selectedItem.finding], ['Suggested action', selectedItem.action]].map(([label, step]) => <div className="decision-step" key={label}>
-              <span className="step-label">{label}</span><strong>{step.title}</strong><p>{step.detail}</p>{label === 'Measurement' && <MeasurementTrend measurement={step}/>}
-            </div>)}
-          </div>
-          <div className="recommendation-actions"><button type="button" onClick={() => { setFocusRequest(selectedItem.muscle ? { key: selectedItem.muscle, request: Date.now() } : null); select(selectedItem.view, true); }}>View related measurement <span aria-hidden="true">→</span></button>{selectedItem.type !== 'Alert' && <label>Local demo status <select value={selectedItem.status} onChange={event => setItems(current => updateStatus(current, selectedItem.id, event.target.value))}><option>Scheduled</option><option>Pending</option><option>Completed</option></select></label>}</div>
-        </article>
-
-      </div> : <div className="decision-empty"><h3>No alerts or upcoming assessments</h3><p>No alerts or scheduled assessments are available for this crew member.</p></div>}
-      <p className="recommendations-note">Alerts and scheduled assessments come from HealthService. Local demo status changes are not saved or sent to the scheduler.</p>
+    <section id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" hidden={tab !== 'summary'}>
+      <SummaryView data={data} crewId={crewId} apiUrl={apiUrl} exampleMode={exampleMode}
+        onOpen={(id, focusKey) => { if (focusKey) setFocusRequest({ key: focusKey, request: Date.now() }); select(id, true); }}/>
     </section>
     <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden={tab !== 'plan'}>{exampleMode
       ? <div className="connection-notice" role="status">The mission plan needs the Planner service (port 3001); it is not available in example mode.</div>

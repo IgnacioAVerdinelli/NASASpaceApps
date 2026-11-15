@@ -1,0 +1,143 @@
+{
+  "source": "NASA Life Sciences Portal, MR080G Aerobic Capacity, estudio CFT70 (UTMB, 70 días de reposo en cama a −6°). DOI 10.83263/w056-8t76",
+  "metric": "REL VO2PK",
+  "unit": "ml/kg/min",
+  "bedRestDays": 70,
+  "post1": "R+0 a R+1",
+  "post2": "R+9 a R+11",
+  "nasaFloor": 32.9,
+  "groups": {
+    "CONTROL": "Sin contramedida",
+    "EXERCISE": "Con ejercicio",
+    "FLY": "FLY"
+  },
+  "dataFixes": "4 sujetos con columnas corridas desde HRPK; se usó MAX WKLD como FC pico y no se usó su RER.",
+  "byGroup": {
+    "CONTROL": {
+      "pre_ml_kg_min": {
+        "mean": 36.8,
+        "sd": 5.5,
+        "n": 10
+      },
+      "post1_ml_kg_min": {
+        "mean": 28.2,
+        "sd": 3.7,
+        "n": 10
+      },
+      "post1_pct": {
+        "mean": -22.4,
+        "sd": 11.2,
+        "n": 10
+      },
+      "post2_pct": {
+        "mean": -7.7,
+        "sd": 9.4,
+        "n": 10
+      },
+      "below_floor": {
+        "pre": 3,
+        "post1": 9,
+        "n": 10
+      },
+      "drop_20pct_or_more": 6,
+      "hr_peak_change_bpm": {
+        "mean": 0.4,
+        "sd": 7.6,
+        "n": 10
+      },
+      "workload_change_pct": {
+        "mean": -24.3,
+        "sd": 11.6,
+        "n": 10
+      },
+      "valid_max_tests_post1": {
+        "rer_ge_1_1": 7,
+        "with_rer": 8
+      }
+    },
+    "EXERCISE": {
+      "pre_ml_kg_min": {
+        "mean": 42.2,
+        "sd": 6.2,
+        "n": 20
+      },
+      "post1_ml_kg_min": {
+        "mean": 40.6,
+        "sd": 6.9,
+        "n": 19
+      },
+      "post1_pct": {
+        "mean": -3.7,
+        "sd": 8.2,
+        "n": 19
+      },
+      "post2_pct": {
+        "mean": 2.0,
+        "sd": 7.2,
+        "n": 18
+      },
+      "below_floor": {
+        "pre": 1,
+        "post1": 3,
+        "n": 19
+      },
+      "drop_20pct_or_more": 0,
+      "hr_peak_change_bpm": {
+        "mean": -0.5,
+        "sd": 6.7,
+        "n": 19
+      },
+      "workload_change_pct": {
+        "mean": -1.1,
+        "sd": 10.0,
+        "n": 18
+      },
+      "valid_max_tests_post1": {
+        "rer_ge_1_1": 17,
+        "with_rer": 18
+      }
+    },
+    "FLY": {
+      "pre_ml_kg_min": {
+        "mean": 41.5,
+        "sd": 5.7,
+        "n": 8
+      },
+      "post1_ml_kg_min": {
+        "mean": 40.1,
+        "sd": 4.6,
+        "n": 8
+      },
+      "post1_pct": {
+        "mean": -3.1,
+        "sd": 5.7,
+        "n": 8
+      },
+      "post2_pct": {
+        "mean": -0.6,
+        "sd": 3.1,
+        "n": 8
+      },
+      "below_floor": {
+        "pre": 0,
+        "post1": 0,
+        "n": 8
+      },
+      "drop_20pct_or_more": 0,
+      "hr_peak_change_bpm": {
+        "mean": 2.5,
+        "sd": 6.8,
+        "n": 8
+      },
+      "workload_change_pct": {
+        "mean": -1.4,
+        "sd": 9.7,
+        "n": 8
+      },
+      "valid_max_tests_post1": {
+        "rer_ge_1_1": 8,
+        "with_rer": 8
+      }
+    }
+  }
+}

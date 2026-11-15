@@ -243,10 +243,15 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       }
       ranked.sort((a, b) => a.rank - b.rank);
       let visiblePoint = null, chosenSample = null, rect = null;
-      const shortName = shortMuscleName(item.key);
+      // Optional caller-defined text (e.g. localized name and real measurement).
+      const custom = currentValues?.indicatorText?.(item.key, item.value);
+      const shortName = custom?.name ?? shortMuscleName(item.key);
+      const valueText = custom?.value ?? `${Math.round(item.value)}%`;
       const variation = [...item.key].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0);
-      if (measure) measure.font = `600 ${width <= 500 ? 10 : 11}px system-ui, sans-serif`;
-      const labelWidth = Math.max(112, Math.ceil((measure?.measureText(shortName).width ?? shortName.length * 6.2) + 50));
+      // Measure with the overlay's real font size so pages can enlarge the labels via CSS.
+      const fontSize = (typeof getComputedStyle === 'function' && parseFloat(getComputedStyle(overlay).fontSize)) || (width <= 500 ? 10 : 11);
+      if (measure) measure.font = `600 ${fontSize}px system-ui, sans-serif`;
+      const labelWidth = Math.max(112, Math.ceil((measure?.measureText(`${shortName} ${valueText}`).width ?? (shortName.length + valueText.length) * 6.2) + 40));
       for (const { sample } of ranked.slice(0, 3)) {
         point.copy(sample.point).applyMatrix4(sample.mesh.matrixWorld);
         projected.copy(point).project(camera);
@@ -301,7 +306,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
         entry.append(dot, line, text); overlay.appendChild(entry); entries.set(item.key, entry);
       }
       entry.children[2].children[0].textContent = shortName;
-      entry.children[2].children[1].textContent = `${Math.round(item.value)}%`;
+      entry.children[2].children[1].textContent = valueText;
       const current = display.get(item.key)?.current ?? { ...rect };
       display.set(item.key, { sample: chosenSample, rect, current, labelWidth, variation });
       previousPlacements.set(item.key, rect);

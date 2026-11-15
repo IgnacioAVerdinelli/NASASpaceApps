@@ -43,6 +43,21 @@ UNITS = {
     "min": ("h", 1 / 60),
     # self-rated scores (sleep quality 1-7)
     "score": ("score", 1.0),
+    # the eye exam (gravsim.ocular): OCT thickness, lengths, refraction, near vision, grades and yes/no signs
+    "µm": ("µm", 1.0),
+    "um": ("µm", 1.0),
+    "mm": ("mm", 1.0),
+    "D": ("D", 1.0),
+    "logMAR": ("logMAR", 1.0),
+    "grade": ("grade", 1.0),
+    "flag": ("flag", 1.0),
+    # the jugular vein ultrasound (gravsim.vascular): vein area and blood speed
+    "mm²": ("mm²", 1.0),
+    "mm2": ("mm²", 1.0),
+    "cm²": ("mm²", 100.0),
+    "cm2": ("mm²", 100.0),
+    "cm/s": ("cm/s", 1.0),
+    "m/s": ("cm/s", 100.0),
 }
 
 

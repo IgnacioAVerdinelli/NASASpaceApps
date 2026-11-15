@@ -13,6 +13,11 @@ Missions", based on a 180-day ISS mission (L = launch, R = return, FD = flight d
   [6024] Functional Fitness Assessment (p. 36): pre-flight L-90/30 d; post-flight R+5/7 d, R+30 d
   [6025] On-Orbit Strength & Conditioning
          Monitoring (p. 36):                    in flight L+14 days (NET 3rd session), then at least every 30 days
+  [6012] Specialized ocular assessment:        pre-flight; in flight L+30, L+90, L+180, L+270, R-30 d; post-flight
+                                               (docs/investigacion-ojos.md); the post-flight days R+3, R+30, R+180 are ours
+  [6041] Screening for deep vein thrombosis
+         and venous flow anomalies (p. 50):    pre-flight L-12/3 m; in flight L+30, L+60 (then every 60 days, ours),
+                                               R-42 d; post-flight R+0/45 d (docs/investigacion-yugular.md)
   [6028] Test for Aerobic Functional
          Capacity (p. 36):                      pre-flight L-90/30 d; in flight FD14, FD75, FD165, FD255, R-14 d;
                                                post-flight R+5 d, R+30 d
@@ -23,6 +28,8 @@ from __future__ import annotations
 from typing import Iterable
 
 from .instruments import INSTRUMENTS, CycleErgometer, DxaScanner, Dynamometer, Instrument, Spacesuit, Watch, Wearable
+from .ocular import OcularExam
+from .vascular import JugularUltrasound
 from .reading import Reading
 
 
@@ -31,7 +38,7 @@ def default_instruments(seed: int | None = None, faults: dict | None = None, noi
     faults = faults or {}
     # seed + 1, + 2, ...: each instrument gets its own random stream
     return {cls.name: cls(seed=None if seed is None else seed + k, faults=faults.get(cls.name, ()), noise=noise)
-            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit, Watch), start=1)}
+            for k, cls in enumerate((Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit, Watch, OcularExam, JugularUltrasound), start=1)}
 
 
 def nasa_days(mission, instrument: str) -> list[float]:
@@ -47,6 +54,12 @@ def nasa_days(mission, instrument: str) -> list[float]:
         days = pre + sorted({d for d in flight if 0 <= d < land - 14} | {land - 14.0}) + [land + 5, land + 30]
     elif instrument in ("wearable", "watch"):     # every day: the watch all day long, the wearable's daily values
         days = [float(d) for d in range(-14, int(land + 30))]
+    elif instrument == "ocular":  # [6012]: pre-flight; FD30, FD90, then every 90 days, R-30; R+3, R+30, R+180
+        flight = [fd - 1.0 for fd in [30, 90] + list(range(180, int(land), 90))]
+        days = pre[1:] + sorted({d for d in flight if 0 <= d < land - 30} | {land - 30.0}) + [land + 3, land + 30, land + 180]
+    elif instrument == "vascular":  # [6041]: L-12/3 m; FD30, FD60, R-42 (longer missions: every 60 days, ours); R+1, R+45
+        flight = [fd - 1.0 for fd in [30, 60] + [d for d in range(120, int(land), 60) if d < land - 72]]
+        days = [-90.0] + sorted({d for d in flight if 0 <= d < land - 42} | {land - 42.0}) + [land + 1, land + 45]
     elif instrument == "suit":    # the days of the crew's spacewalks; it reads whoever is outside
         days = sorted({ev.day for cm in mission.crew for ev in cm.evas})
     else:
@@ -84,6 +97,6 @@ def timeline(mission, schedule: str | int = "nasa", instruments: dict[str, Instr
                 out += inst.measure_all(cm, d)
     if until is not None:          # a spacewalk that started by `until` may run past it
         out = [r for r in out if r.mission_day <= until]
-    out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure))
+    out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure, r.side or ""))   # side, as pipeline.order
     return out
 

@@ -118,6 +118,12 @@ def mission_parser(description: str, port: int) -> argparse.ArgumentParser:
     ap.add_argument("--origin", default="*", help="value for Access-Control-Allow-Origin")
     ap.add_argument("--fatigue", action="append", default=[], metavar="CREW:DAY[:DAYS]",
                     help="a fatigue spell the watch should catch, e.g. CM-3:132:6 (repeatable; CrewMember.add_fatigue)")
+    ap.add_argument("--sans", action="append", default=[], metavar="CREW:Z",
+                    help="a crew member's SANS susceptibility in SD, e.g. CM-1:1.5, or CM-1:1.8:R for mostly the right eye (repeatable; gravsim.ocular.set_sans)")
+    ap.add_argument("--stasis", action="append", default=[], metavar="CREW:Z",
+                    help="a crew member's jugular stasis susceptibility in SD, e.g. CM-2:1.5 (repeatable; gravsim.vascular.set_stasis)")
+    ap.add_argument("--thrombus", action="append", default=[], metavar="CREW:DAY[:L|R]",
+                    help="a jugular vein thrombus from that mission day, left vein by default, e.g. CM-2:55 (repeatable; gravsim.vascular.add_thrombus)")
     return ap
 
 
@@ -129,6 +135,35 @@ def apply_fatigue(mission: Mission, specs: list[str]) -> None:
         if len(parts) not in (2, 3) or parts[0] not in crew:
             raise SystemExit(f"--fatigue {spec!r}: expected CREW:DAY[:DAYS] with CREW one of {sorted(crew)}")
         crew[parts[0]].add_fatigue(float(parts[1]), float(parts[2]) if len(parts) == 3 else 6.0)
+
+
+def apply_sans(mission: Mission, specs: list[str]) -> None:
+    """--sans CREW:Z[:EYE] options onto the mission's crew (the eye exam, gravsim.ocular). EYE R or L: mostly that eye."""
+    from .ocular import set_sans
+    crew = {c.id: c for c in mission.crew}
+    eyes = {"R": "right", "L": "left"}
+    for spec in specs:
+        parts = spec.split(":")
+        if len(parts) not in (2, 3) or parts[0] not in crew or (len(parts) == 3 and parts[2].upper() not in eyes):
+            raise SystemExit(f"--sans {spec!r}: expected CREW:Z[:R|L] with CREW one of {sorted(crew)}")
+        set_sans(crew[parts[0]], float(parts[1]), eyes[parts[2].upper()] if len(parts) == 3 else None)
+
+
+def apply_veins(mission: Mission, stasis: list[str], thrombus: list[str]) -> None:
+    """--stasis CREW:Z and --thrombus CREW:DAY[:L|R] onto the mission's crew (the jugular ultrasound, gravsim.vascular)."""
+    from .vascular import add_thrombus, set_stasis
+    crew = {c.id: c for c in mission.crew}
+    for spec in stasis:
+        parts = spec.split(":")
+        if len(parts) != 2 or parts[0] not in crew:
+            raise SystemExit(f"--stasis {spec!r}: expected CREW:Z with CREW one of {sorted(crew)}")
+        set_stasis(crew[parts[0]], float(parts[1]))
+    sides = {"L": "left", "R": "right"}
+    for spec in thrombus:
+        parts = spec.split(":")
+        if len(parts) not in (2, 3) or parts[0] not in crew or (len(parts) == 3 and parts[2].upper() not in sides):
+            raise SystemExit(f"--thrombus {spec!r}: expected CREW:DAY[:L|R] with CREW one of {sorted(crew)}")
+        add_thrombus(crew[parts[0]], float(parts[1]), sides[parts[2].upper()] if len(parts) == 3 else "left")
 
 
 def mission_clock(mission: Mission, day: float, speed: float) -> Callable[[], float]:
@@ -252,6 +287,8 @@ def main(argv=None):
     else:
         mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     apply_fatigue(mission, args.fatigue)
+    apply_sans(mission, args.sans)
+    apply_veins(mission, args.stasis, args.thrombus)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
     clock = mission_clock(mission, args.day, args.speed)
     pending = iter(mission.timeline(seed=args.seed))

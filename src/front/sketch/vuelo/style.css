@@ -106,11 +106,11 @@
   .flight-bar-inner { flex-wrap: wrap; padding-block: 10px 8px; }
   .flight-navigation { order: 3; width: 100%; }
   .flight-tabs { width: 100%; }
-  .flight-tabs > button { flex: 1; min-height: 44px; }
+  .flight-tabs > button { flex: 1; min-height: 44px; padding-inline: 6px; gap: 5px; }
 }
 @media (max-width: 740px) {
   .flight-bar-inner { gap: 8px; }
-  .flight-tabs { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); border-radius: 14px; }
+  .flight-tabs { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); border-radius: 14px; }   /* 7 tabs: 4 + 3 */
   .flight-tabs > button { flex-direction: column; gap: 3px; border-radius: 10px; padding-inline: 2px; font-size: 10px; min-height: 52px; }
   .flight-tabs svg { width: 18px; height: 18px; }
   .flight-heading { flex-direction: column; gap: 6px; padding-block: 16px 14px; }

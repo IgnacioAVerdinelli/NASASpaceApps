@@ -11,12 +11,15 @@ import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, intensityColor, visibleSyst
 import { buildSurfaceWeights, pickSurfaceRegion } from './surfaceWeights.js';
 import { softenMaleFace, softenMaleGroin } from './surfaceShape.js';
 import { addSurfaceEyes } from './surfaceEyes.js';
+import { addJugularVeins } from './jugularVeins.js';
 import { createIndicatorLayer, orderedIndicators } from './indicators.js';
+import { cameraOffset, muscleView } from './camera.js';
 import './indicators.css';
 
 export { SURFACE_MUSCLE_KEYS };
 const muscleKeys = new Set(muscles.map(item => item.key));
 const neutral = new THREE.Color('#d6d9dc');
+const weightsCache = new Map();
 
 function ancestorKey(mesh, group) {
   for (let node = mesh; node && node !== group; node = node.parent) {
@@ -63,24 +66,29 @@ function updateView(view, values) {
     item.mesh.visible = organsMode && Boolean(color);
     if (color) item.material.color.set(color);
   }
-  const colors = view.skin.geometry.attributes.color;
-  const paint = view.skin.geometry.attributes.paintStrength;
-  const active = [false, ...SURFACE_KEYS.map(key => scores[key] > 0)];
-  const palette = [neutral, ...SURFACE_KEYS.map(key => scores[key] > 0 ? colorOf(scores[key]) : neutral)];
-  const { weights, stride, vertexCount } = view.surfaceWeights;
-  for (let vertex = 0; vertex < vertexCount; vertex++) {
-    let r = 0, g = 0, b = 0, strength = 0;
-    for (let id = 0; id < stride; id++) {
-      const weight = weights[vertex * stride + id];
-      if (!weight) continue;
-      r += palette[id].r * weight; g += palette[id].g * weight; b += palette[id].b * weight;
-      if (active[id]) strength += weight;
+  const surfaceScores = SURFACE_KEYS.map(key => scores[key] > 0 ? scores[key] : 0);
+  if (view.surfaceColorScale !== colorOf || !view.surfaceScores || surfaceScores.some((score, i) => score !== view.surfaceScores[i])) {
+    const colors = view.skin.geometry.attributes.color;
+    const paint = view.skin.geometry.attributes.paintStrength;
+    const active = [false, ...surfaceScores.map(score => score > 0)];
+    const palette = [neutral, ...surfaceScores.map(score => score > 0 ? colorOf(score) : neutral)];
+    const { weights, stride, vertexCount } = view.surfaceWeights;
+    for (let vertex = 0; vertex < vertexCount; vertex++) {
+      let r = 0, g = 0, b = 0, strength = 0;
+      for (let id = 0; id < stride; id++) {
+        const weight = weights[vertex * stride + id];
+        if (!weight) continue;
+        r += palette[id].r * weight; g += palette[id].g * weight; b += palette[id].b * weight;
+        if (active[id]) strength += weight;
+      }
+      colors.setXYZ(vertex, r, g, b);
+      paint.setX(vertex, strength);
     }
-    colors.setXYZ(vertex, r, g, b);
-    paint.setX(vertex, strength);
+    colors.needsUpdate = true;
+    paint.needsUpdate = true;
+    view.surfaceScores = surfaceScores;
+    view.surfaceColorScale = colorOf;
   }
-  colors.needsUpdate = true;
-  paint.needsUpdate = true;
   for (const item of view.muscleMeshes) {
     if (organsMode) {
       const color = structureColors[item.key];
@@ -119,6 +127,8 @@ function focusSelection(view, selected, layer, animate = false) {
   const target = box.getCenter(new THREE.Vector3());
   const offset = view.camera.position.clone().sub(view.controls.target);
   const size = box.getSize(new THREE.Vector3()).length();
+  const direction = muscleView(selected);
+  if (direction) offset.set(0, 0, direction === 'front' ? 1 : -1);
   offset.setLength(THREE.MathUtils.clamp(size * 3, 0.45, 2));
   if (animate) view.moveCamera(target, target.clone().add(offset));
   else {
@@ -171,7 +181,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     let renderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
     catch { setStatus('webgl-error'); return undefined; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none';
@@ -187,13 +197,11 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     controls.maxDistance = 6;
     controls.update();
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let inView = true, focused = false, interacting = false, transition = null, lastFrame = null;
+    let inView = true, transition = null, lastFrame = null, muscleFocused = false;
     const visibility = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(entries => { inView = entries[0].isIntersecting; });
     visibility?.observe(container);
-    const cancelTransition = () => { transition = null; interacting = true; };
-    const endInteraction = () => { interacting = false; };
+    const cancelTransition = () => { transition = null; };
     if (explorationRequest) controls.addEventListener('start', cancelTransition);
-    if (explorationRequest) controls.addEventListener('end', endInteraction);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8b9baa, 2.1));
     const keyLight = new THREE.DirectionalLight(0xffffff, 2);
     keyLight.position.set(3, 4, 5); scene.add(keyLight);
@@ -246,10 +254,15 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
           softenMaleGroin(geometry, skin.matrixWorld);
           softenMaleFace(geometry, skin.matrixWorld);
         }
-        const surfaceWeights = buildSurfaceWeights(geometry, data.regions, SURFACE_KEYS.length, {
-          leftIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_l') ? [i + 1] : []),
-          rightIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_r') ? [i + 1] : []),
-        });
+        const cacheKey = `${body}:${data.sourceSha256}`;
+        let surfaceWeights = weightsCache.get(cacheKey);
+        if (!surfaceWeights) {
+          surfaceWeights = buildSurfaceWeights(geometry, data.regions, SURFACE_KEYS.length, {
+            leftIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_l') ? [i + 1] : []),
+            rightIds: SURFACE_KEYS.flatMap((key, i) => key.endsWith('_r') ? [i + 1] : []),
+          });
+          weightsCache.set(cacheKey, surfaceWeights);
+        }
         geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 3), 3));
         geometry.setAttribute('paintStrength', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count), 1));
         (Array.isArray(skin.material) ? skin.material : [skin.material]).forEach(material => originalMaterials.add(material));
@@ -294,6 +307,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         for (const system of ['organs', 'vessels', 'nerves']) {
           const group = root.getObjectByName(system); if (group) group.visible = false;
         }
+        addJugularVeins(root);      // the model has no jugular veins: ijv_l and ijv_r, along the carotids
         // Organs and vessels, keyed by their node name (heart, lung_l, aorta...), for the organs layer.
         const structureGroups = [], structureMeshes = [];
         for (const system of ['organs', 'vessels']) {
@@ -329,14 +343,14 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         const bounds = new THREE.Box3().setFromObject(skin);
         view.explore = (key, currentLayer) => {
           if (key) {
-            focused = Boolean(focusSelection(view, key, currentLayer, true));
+            muscleFocused = Boolean(focusSelection(view, key, currentLayer, true) && muscleView(key));
           } else if (!bounds.isEmpty()) {
-            focused = false;
             const center = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3());
             const verticalFov = THREE.MathUtils.degToRad(camera.fov);
             const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
             const distance = Math.max(size.y / (2 * Math.tan(verticalFov / 2)), size.x / (2 * Math.tan(horizontalFov / 2))) * framing + size.z / 2;
-            const direction = camera.position.clone().sub(controls.target).normalize();
+            const direction = muscleFocused ? new THREE.Vector3(0, 0, 1) : camera.position.clone().sub(controls.target).normalize();
+            muscleFocused = false;
             view.moveCamera(center, center.clone().addScaledVector(direction, distance));
           }
         };
@@ -400,14 +414,14 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
       const visible = inView && !document.hidden;
       const delta = visible && lastFrame !== null ? Math.min((now - lastFrame) / 1000, 0.05) : 0;
       lastFrame = visible ? now : null;
-      controls.autoRotate = Boolean(explorationRequest) && visible && !focused && !interacting && !transition && !motion.matches;
-      controls.autoRotateSpeed = 0.3;
       if (transition && visible) {
         transition.elapsed += delta;
         const progress = motion.matches ? 1 : Math.min(1, transition.elapsed / 0.5);
         const eased = progress * progress * (3 - 2 * progress);
         controls.target.lerpVectors(transition.fromTarget, transition.target, eased);
-        camera.position.lerpVectors(transition.fromPosition, transition.position, eased);
+        const from = transition.fromPosition.clone().sub(transition.fromTarget);
+        const to = transition.position.clone().sub(transition.target);
+        camera.position.copy(controls.target).add(cameraOffset(from, to, eased));
         if (progress === 1) transition = null;
       }
       if (visible) {
@@ -429,7 +443,6 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
       renderer.domElement.removeEventListener('webglcontextrestored', invalidate);
       controls.removeEventListener('start', stopAutoFit);
       controls.removeEventListener('start', cancelTransition);
-      controls.removeEventListener('end', endInteraction);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
       controls.dispose();

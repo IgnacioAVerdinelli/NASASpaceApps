@@ -12,6 +12,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEMO_DIR="${DEMO_DIR:-$ROOT/.demo}"
 DAY="${DAY:-130}"
 SPEED="${SPEED:-0}"
+# Imaging studies, off by default so the five cases stay as prepared (docs/guia-demo.md):
+SANS="${SANS:-}"           # e.g. CM-4:1.8:R, SANS mostly in the right eye (docs/investigacion-ojos.md)
+THROMBUS="${THROMBUS:-}"   # e.g. CM-5:45, a left jugular clot from flight day 45 (docs/investigacion-yugular.md)
+IMAGING=()
+[ -n "$SANS" ] && IMAGING+=(--sans "$SANS")
+[ -n "$THROMBUS" ] && IMAGING+=(--thrombus "$THROMBUS")
 PORT="${PORT:-5190}"
 DATA_PORT="${DATA_PORT:-8000}"
 HEALTH_PORT="${HEALTH_PORT:-3000}"
@@ -55,7 +61,7 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 cd "$DEMO_DIR"
-"$PY" -m gravsim.serve --demo-cases --day "$DAY" --speed "$SPEED" --port "$DATA_PORT" --db "$DEMO_DIR/data.sqlite" --queue "$Q" --run-booked > data.log 2>&1 &
+"$PY" -m gravsim.serve --demo-cases --day "$DAY" --speed "$SPEED" ${IMAGING[@]+"${IMAGING[@]}"} --port "$DATA_PORT" --db "$DEMO_DIR/data.sqlite" --queue "$Q" --run-booked > data.log 2>&1 &
 DATA_PID=$!
 echo "Generando la misión (unos 40 s)..."
 for ((i=0; i<180; i++)); do

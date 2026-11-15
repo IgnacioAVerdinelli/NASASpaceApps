@@ -4,6 +4,8 @@ import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
 import { SummaryView } from '../summary/SummaryView.jsx';
 import { VitalsView } from '../vitals/VitalsView.jsx';
+import { EyesView } from '../ojos/EyesView.jsx';
+import { VeinsView } from '../venas/VeinsView.jsx';
 import { loadVitals, vitalsUrl } from '../data/vitals.js';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
@@ -22,6 +24,8 @@ const TABS = [
   { id: 'fuerza', label: 'Muscles', title: 'Muscle strength' },
   { id: 'aerobica', label: 'Aerobic', title: 'Aerobic capacity' },
   { id: 'vitales', label: 'Wearable', title: 'Vital signs' },
+  { id: 'ojos', label: 'Eyes', title: 'Eye exam' },
+  { id: 'venas', label: 'Neck veins', title: 'Neck vein ultrasound' },
   { id: 'plan', label: 'Mission plan', title: 'Mission plan' },
 ];
 
@@ -124,6 +128,12 @@ export function Shell() {
 
   function renderView(id) {
     if (!visited.has(id)) return null;
+    if (id === 'ojos' || id === 'venas') {   // the imaging studies read their own JSON from the HealthService
+      if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'ojos' ? 'Eye exams' : 'Jugular scans'} unavailable in this example</strong><p>{id === 'ojos' ? 'The eye exam view' : 'The neck vein view'} uses studies from the HealthService. Start the full mission demo to explore this view.</p></div></div>;
+      if (!crewId) return <DataNotice error={crewState.error}/>;
+      const View = id === 'ojos' ? EyesView : VeinsView;
+      return <View key={crewId} apiUrl={apiUrl} crewId={crewId} body={data?.crew.body}/>;
+    }
     if (id === 'vitales' || id === 'plan') {
       if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
       if (!crewId) return <DataNotice error={crewState.error}/>;

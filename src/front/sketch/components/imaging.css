@@ -1,0 +1,114 @@
+/* Imaging studies (Eyes, Neck veins) · Frosted glass (docs/design-system.md, tokens in theme/glass.css).
+   Shared layout of the two study tabs: a status card, the study figure with its pickers, the 3D body on the
+   backdrop, the chart and the measurement table. Each tab adds only what is its own (ojos/style.css,
+   venas/style.css). The ultrasound screens stay dark: they are images, i.e. data (design-system.md §8 note). */
+
+.imaging { display: grid; gap: 16px; min-width: 0; color: var(--ink); font-family: var(--font); }
+.imaging h2, .imaging h3, .imaging p, .imaging figure, .imaging dl, .imaging dd { margin: 0; }
+.imaging :focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+.imaging button { font-family: var(--font); }
+
+/* ---- Top: the figure (left) and status + body (right) ---- */
+.img-main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(340px, .9fr); gap: 24px; align-items: start; }
+.img-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+
+/* Status card: the same pattern as "Mission status" on the overview. */
+.img-status { padding: 20px; }
+.img-status-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.img-status-top .chip { padding: 4px 10px; font-size: 12px; }
+.img-status-lead { margin-top: 10px !important; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.img-status-detail { margin-top: 6px !important; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.img-sides { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.img-sides span { display: inline-flex; align-items: center; gap: 7px; }
+.img-alert {
+  margin-top: 14px; padding: 12px 14px; border-radius: var(--r-sm);
+  background: var(--warn-wash); border: 1px solid var(--warn-wash-border);
+}
+.img-alert[data-tone=crit] { background: rgba(251,225,227,.7); border-color: var(--crit-border); }
+.img-alert strong { display: block; font-size: 13px; font-weight: 600; }
+.img-alert ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; line-height: 1.45; }
+.img-meta { margin-top: 12px !important; font-size: 11px; color: var(--muted); }
+
+/* Figure card */
+.img-figure { padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.img-figure-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
+.img-figure-head h2 { font-size: 17px; font-weight: 600; color: var(--ink-strong); }
+.img-figure-head h2 small { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.img-figure-head p { margin-top: 3px !important; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 62ch; }
+.img-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+
+/* Pickers: the .seg control, with a status dot per option. */
+.img-seg { flex-wrap: wrap; max-width: 100%; }
+.img-seg > button { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; }
+.img-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--ok-dot); }
+.img-dot[data-tone=warn] { background: var(--warn-dot); }
+.img-dot[data-tone=crit] { background: var(--crit-dot); }
+.img-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
+/* Readings (as on the VO2 card) */
+.img-readings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.img-readings dt { font-size: 11px; line-height: 1.35; color: var(--muted); }
+.img-readings dd { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.img-readings dd .num { font-size: 20px; line-height: 1.1; color: var(--ink); }
+.img-readings dd small { font-size: 11px; line-height: 1.35; color: var(--muted); }
+
+/* The 3D body on the backdrop (no card), as on the aerobic tab. */
+.img-where { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.img-where-title { align-self: flex-start; position: relative; z-index: 2; padding: 10px 14px 11px; }
+.img-where-title h2 { font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--ink-strong); }
+.img-where-title p { margin-top: 2px !important; font-size: 12px; color: var(--muted); max-width: 44ch; }
+.img-stage { position: relative; height: 300px; margin-top: -40px; }
+.img-halo {
+  position: absolute; left: 50%; top: 50%; width: min(90%, 300px); aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.62) 0%, rgba(255,255,255,0) 70%); pointer-events: none;
+}
+.img-stage .img-model { position: absolute; inset: 0; z-index: 1; }
+
+/* Chart card */
+.img-chart { padding: 18px 22px; display: grid; gap: 10px; min-width: 0; }
+.img-chart-head h2 { font-size: 17px; font-weight: 600; color: var(--ink-strong); }
+.img-chart-head p { margin-top: 3px !important; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.img-plot { height: 300px; padding: 6px 0 0; border-radius: var(--r-sm); background: var(--chart-plot-bg); }
+.img-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.img-legend li { display: flex; align-items: center; gap: 7px; }
+.img-legend i { width: 18px; height: 3px; border-radius: 2px; }
+.img-legend i.dashed { height: 0; border-top: 2px dashed currentColor; background: none; color: var(--muted); }
+
+/* Recharts tooltip as .glass-sm */
+.imaging .recharts-default-tooltip {
+  border: 0 !important; border-radius: var(--r-sm); background: var(--glass-sm-bg) !important;
+  -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); box-shadow: var(--glass-sm-shadow);
+  font: 500 12px var(--font); color: var(--ink);
+}
+
+/* Measurement cards and tables */
+.img-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+.img-card { padding: 18px 20px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.img-card header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+.img-card h3 { font-size: 15px; font-weight: 600; color: var(--ink-strong); }
+.img-card header span { font-size: 11px; font-weight: 600; color: var(--muted); }
+.img-card > p { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.img-table-scroll { overflow-x: auto; }
+.img-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.img-table th, .img-table td { text-align: left; padding: 9px 6px; border-top: 1px solid var(--line-soft); vertical-align: top; }
+.img-table thead th { border-top: 0; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.img-table tbody th { font-weight: 600; }
+.img-table small { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; line-height: 1.4; color: var(--muted); }
+.img-table td b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.img-table .img-change { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+
+.img-note { padding: 14px 18px; font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.img-note a { color: var(--link); font-weight: 600; }
+.img-note a:hover { color: var(--link-hover); }
+
+@media (max-width: 1180px) {
+  .img-main { grid-template-columns: 1fr; }
+  .img-readings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .img-readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .img-cards { grid-template-columns: 1fr; }
+  .img-figure, .img-status { padding: 16px; }
+  .img-status-lead { font-size: 18px; }
+  .img-plot { height: 260px; }
+}

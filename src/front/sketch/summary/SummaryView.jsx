@@ -3,6 +3,7 @@ import { ATTRIBUTION } from 'open-anatomy-3d';
 import { components } from '../aerobica/data.js';
 import { Icon } from '../vuelo/Icons.jsx';
 import BodyViewer from '../../body-3d/BodyViewer.jsx';
+import { muscleView } from '../../body-3d/camera.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { TYPE_LABEL, displayStatus, loadPlan, plainTitle, timing } from '../data/plan.js';
 import { AlertIcon } from '../fuerza/App.jsx';
@@ -66,18 +67,20 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
   const [selectedKey, setSelectedKey] = useState(null);
   const [layer, setLayer] = useState('surface');
   const [viewRequest, setViewRequest] = useState({ direction: 'front', request: 0 });
+  const [viewDirection, setViewDirection] = useState('front');
   const [exploration, setExploration] = useState({ key: null, request: 0 });
 
   function selectMuscle(key) {
     if (!rows.some(row => row.group.muscleKeys.includes(key))) return;
     setSelectedKey(key);
+    setViewDirection(exploration.key === key ? 'front' : muscleView(key) ?? 'front');
     setExploration(previous => ({ key: previous.key === key ? null : key, request: previous.request + 1 }));
   }
 
   const levelKey = rows.map(r => `${r.group.key}:${r.point?.level}`).join();
   const scores = useMemo(() => Object.fromEntries(rows.flatMap(r => r.group.muscleKeys.map(k => [k, r.point?.level ?? 0]))), [levelKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const demoScores = demoSurfaceScores(data.mission, crewId);
-  const surfaceScores = layer === 'surface' && demoScores ? { ...demoScores, ...scores } : scores;
+  const surfaceScores = useMemo(() => layer === 'surface' && demoScores ? { ...demoScores, ...scores } : scores, [layer, demoScores, scores]);
   const structureColors = useMemo(() => {
     const anatomical = components.filter(c => c.id !== 'muscle')
       .flatMap(c => c.keys.map(key => [key, c.color]));
@@ -150,8 +153,8 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
           <div className="glass-sm ov-rotate">
             <span><Icon name="rotate" size={14}/>Drag to rotate</span>
             <div className="seg" role="group" aria-label="Model orientation">{['front', 'back'].map(direction =>
-              <button type="button" key={direction} aria-pressed={viewRequest.direction === direction}
-                onClick={() => setViewRequest(previous => ({ direction, request: previous.request + 1 }))}>
+              <button type="button" key={direction} aria-pressed={viewDirection === direction}
+                onClick={() => { setViewDirection(direction); setViewRequest(previous => ({ direction, request: previous.request + 1 })); }}>
                 {direction === 'front' ? 'Front' : 'Back'}
               </button>)}</div>
           </div>

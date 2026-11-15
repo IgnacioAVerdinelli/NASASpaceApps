@@ -119,6 +119,13 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 
 La página principal muestra las alertas de ambos análisis y los estudios próximos del planificador desde `/api/v1/analyses`. Los retests se distinguen de las evaluaciones de rutina; el contrato agrupa los estudios por análisis y no identifica el músculo concreto de cada retest. Los cambios de estado son locales a la demo y no se envían al planificador.
 
+## Estudios por imagen: `GET /api/v1/eyes` y `GET /api/v1/veins`
+
+Las pestañas "Eyes" y "Neck veins" leen un JSON cada una. Mismo transporte que `/analyses` (sondeo, sin caché, `?crew=` y `?day=`, `404` para un tripulante desconocido). El frontend no calcula nada clínico: clases, niveles, signos y textos vienen del HealthService; `data/eyes.js` y `data/veins.js` solo los convierten en formas.
+
+- **`/eyes` (versión 2, [investigacion-ojos.md](investigacion-ojos.md)):** `status` `{class, text, eyes: {right, left}, signs[], examLabel, worstClass, worstLabel}` con clases `none`, `A`, `B`; `exams[]` `{day, label, at, values, changes, eyes, class, signs}` con `values` y `changes` por ojo; `measures[]` con `eyes.{right,left}.{baseline, latest, series}`; `thresholds`, `notice`.
+- **`/veins` (versión 1, [investigacion-yugular.md](investigacion-yugular.md)):** `status` `{level, text, sides: {right, left}, signs[], scanLabel, worstLevel, worstLabel}` con niveles `normal`, `check`, `alarm`; `scans[]` `{day, label, at, values, changes, sides, level, signs}` por vena; `measures[]` (`ijv_flow_grade`, `ijv_compressible`, `ijv_echogenicity`, `ijv_csa`, `ijv_peak_velocity`) con `sides.{right,left}.{baseline, latest, series}`; `grades` y `echo` (textos de cada grado), `reference` (áreas publicadas de Marshall-Goebel 2019: sentado, acostado, cabeza abajo, días 50 y 150), `notice`.
+
 ## Signos vitales del reloj: `GET /api/v1/vitals`
 
 La capa "Ahora" del Health summary y la pestaña "Vital signs" leen un tercer JSON del HealthService. Diseño, reglas y ejemplo completo en [wearable.md](wearable.md), sección 3.

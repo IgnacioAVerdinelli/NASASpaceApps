@@ -87,6 +87,21 @@ def beyond_standard(reference: Reference, res: MeasureResult) -> str | None:
     return None
 
 
+def beyond_standard_one(reference: Reference, res: MeasureResult) -> str | None:
+    """Why the last test alone crosses NASA's in-mission standard (None if it doesn't). Not an alert: one VO2peak
+    test carries its own noise. It makes the finding the Planner gets "suspected" (findings.py)."""
+    if res.measure not in STANDARD_MEASURES or res.change_pct is None:
+        return None
+    floor = reference.minimum(res.measure)
+    unit = reference.measure(res.measure).get("unit", "")
+    if floor is not None and res.last_value is not None and res.last_value < floor:
+        return f"the last test is {res.last_value:.1f} {unit}, below NASA's in-mission minimum of {floor:g} {unit}"
+    worse = reference.worse_by(res.measure, res.change_pct)
+    if worse >= STANDARD_LOSS_PCT:
+        return f"the last test is {worse:.1f}% below pre-flight, past the {STANDARD_LOSS_PCT:g}% loss NASA counts"
+    return None
+
+
 RULES = ("nasa_standard", "beyond_typical")
 
 

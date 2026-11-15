@@ -90,6 +90,7 @@ version: one record per measure at the same time would overwrite each other. The
 | `dashboard.py` | Builds the JSON for the 3D page from those results. |
 | `contract.py` | Python copy of the page's checks (`src/front/sketch/data/contract.js`), for the tests. |
 | `alerts.py` | Alert rule (below) and an in-memory queue. |
+| `findings.py` | Findings for the Planner, with their state: `suspected` after one test past the noise, `confirmed` with the alert, `cleared` when neither holds. The last one per measure is kept in the DataService (kind `finding`). See [docs/health-service.md](../docs/health-service.md#hallazgo-y-aviso). |
 | `notices.py` | Health notices for the Notification Center (contract v1, issue #11): routing by priority and context, revisions, mission location, and a command line to publish fixtures and consume the queue. See [docs/health-notices.md](../docs/health-notices.md). |
 | `demo.py` | Queue worker: processes `data.readings_stored`, publishes findings and notices, schedules studies, and stands in for the Notification Center's deliveries. |
 | `sources.py` | What the HealthService needs from the DataService: `DataServiceSource` (HTTP) and `GravsimSource` (gravsim's DataService in the same process, for tests and the evaluation). |
@@ -195,7 +196,18 @@ Results per person during flight, in the designed cases:
 - Upcoming tests come from the studies the demo scheduler records, read over HTTP; a retest goes to the tab of its
   measure.
 
-`tests/test_demo.py` (3 checks) covers the demo worker.
+`tests/test_demo.py` (4 checks) covers the demo worker.
+
+`tests/test_findings.py` (6 checks), for the findings the Planner reads:
+
+- One strength test far past the no-exercise curve is `suspected` (level, `beyond_noise` above 1), not an alert. A
+  test inside the noise gives no finding.
+- The same measure goes `suspected` → `confirmed` → `cleared` as tests come in, and `cleared` is published once.
+- One VO2peak test below NASA's minimum is `suspected` by `nasa_standard` and raises no alert.
+- Over a whole flight, a crew member who skips exercise gets a `suspected` finding before the first `confirmed` one.
+  The one who follows the routine gets no `confirmed` strength finding.
+- The worker publishes each finding once, however many times it processes the same readings, and keeps the last one
+  per measure in the DataService.
 
 ## Known limits
 
@@ -206,8 +218,7 @@ Results per person during flight, in the designed cases:
   people. That has three effects:
   - Most readings that are only a few points beyond the line go unflagged.
   - An alert needs two tests, and the dynamometer is monthly, so the first one comes on day 44 at the earliest.
-    Publishing a finding after one test, so the analysis scheduler can order an earlier retest, would shorten that
-    (docs/health-service.md, question 9).
+    A `suspected` finding after one test lets the Planner book an earlier retest (`findings.py`).
   - An injury in someone who exercises rarely goes beyond the no-exercise line, and it heals between monthly tests:
     of the 19 with a clear loss, 1 was alerted. Catching that needs comparing with the person's own trend, not with
     the bed-rest groups.

@@ -87,3 +87,9 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 - `trapezius_r`: Trapezius (R)
 - `upper_arm_muscles_l`: Upper Arm Muscles (L)
 - `upper_arm_muscles_r`: Upper Arm Muscles (R)
+
+## Prototipo de recomendaciones
+
+La página `vuelo.html` incluye recomendaciones **simuladas** en `vuelo/recommendations.js`, independientes del scheduler. El ejemplo usa la última medición simulada de pantorrilla de la vista de fuerza. El estado se mantiene solo mientras la página está abierta; no se envía al servidor.
+
+Para integrar el scheduler, acordar con su responsable un contrato que proporcione identificador, tripulante, estudio, fecha o día de misión, estado, motivo y referencia a la medición relacionada. El formato y las transiciones definitivas aún no están acordados; los ejemplos no representan resultados del servicio.

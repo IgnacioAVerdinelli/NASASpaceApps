@@ -51,15 +51,15 @@ function Tip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return <div className="chart-tooltip">{row.kind === 'ref'
-    ? <><strong>{row.name} · {reference.bedRestDays} días</strong><div>Cambio medio: <b>{fmtPct(row.mean)} ± {row.sd.toFixed(1).replace('.', ',')}</b></div><div>n = {row.n} · {reference.post1}</div>{row.post2 && <div>Recuperación ({reference.post2}): <b>{fmtPct(row.post2)}</b></div>}</>
-    : <><strong>{row.label} · día {row.day}</strong><div>Cambio: <b>{fmtPct(row.pct)}</b></div><div>Torque máximo: <b>{row.nm} N·m</b></div></>}</div>;
+    ? <><strong>{row.name} · {reference.bedRestDays} days</strong><div>Mean change: <b>{fmtPct(row.mean)} ± {row.sd.toFixed(1)}</b></div><div>n = {row.n} · {reference.post1.replace(' a ', ' to ')}</div>{row.post2 && <div>Recovery ({reference.post2.replace(' a ', ' to ')}): <b>{fmtPct(row.post2)}</b></div>}</>
+    : <><strong>{row.label} · day {row.day}</strong><div>Change: <b>{fmtPct(row.pct)}</b></div><div>Peak torque: <b>{row.nm} N·m</b></div></>}</div>;
 }
 
 function MuscleDetail({ group, evalIndex }) {
   const shown = group.points.slice(0, evalIndex + 1);
   const latest = shown.at(-1);
   const refs = Object.entries(group.test.groups).map(([key, g]) => ({
-    kind: 'ref', key, name: { CONTROL: 'Sin contramedida', EXERCISE: 'Con ejercicio', FLY: 'FLY' }[key], mean: g.post1_pct.mean, sd: g.post1_pct.sd, n: g.post1_pct.n,
+    kind: 'ref', key, name: { CONTROL: 'No countermeasure', EXERCISE: 'Exercise', FLY: 'FLY' }[key], mean: g.post1_pct.mean, sd: g.post1_pct.sd, n: g.post1_pct.n,
     post2: g.post2_pct?.mean ?? null, err: g.post1_pct.sd,
   }));
   const trajectory = shown.map(point => ({ ...point, kind: 'me' }));
@@ -75,27 +75,27 @@ function MuscleDetail({ group, evalIndex }) {
     </header>
     <div className="detail-charts">
       <figure className="panel">
-        <figcaption><h3>Evolución a bordo</h3><p>Cambio del torque máximo respecto de la línea base previa al vuelo ({group.baseline} N·m). Datos del tripulante simulados.</p></figcaption>
+        <figcaption><h3>In-flight trend</h3><p>Change in peak torque from the pre-flight baseline ({group.baseline} N·m). Simulated crew data.</p></figcaption>
         <ChartContainer config={{}} className="detail-chart"><ComposedChart data={trajectory} margin={{ top: 12, right: 16, left: 0, bottom: 4 }}>
           <CartesianGrid vertical={false} stroke="#e2e2ef" strokeDasharray="3 5"/>
           <ReferenceArea y1={-5} y2={5} fill="#e4e6ee" fillOpacity={0.9} ifOverflow="hidden"/>
-          <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4" label={{ value: 'Umbral −20 %', position: 'insideBottomLeft', fill: THRESHOLD, fontSize: 13 }}/>
-          <ReferenceLine x={crew.today} stroke="#a7a3c4" strokeDasharray="2 4" label={{ value: `Hoy FD ${crew.today}`, position: 'insideTopRight', fill: '#4f5874', fontSize: 12 }}/>
+          <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4" label={{ value: '−20% threshold', position: 'insideBottomLeft', fill: THRESHOLD, fontSize: 13 }}/>
+          <ReferenceLine x={crew.today} stroke="#a7a3c4" strokeDasharray="2 4" label={{ value: `Today FD ${crew.today}`, position: 'insideTopRight', fill: '#4f5874', fontSize: 12 }}/>
           {next.map(day => <ReferenceLine key={day} x={day} stroke="#d4d0ea" strokeDasharray="1 5"/>)}
           <XAxis dataKey="day" type="number" domain={[0, crew.missionDays]} ticks={[0, 30, 60, 90, 120, 150, 180]} tickFormatter={d => d === 0 ? 'Pre' : `FD ${d}`} tick={tick} axisLine={false} tickLine={false}/>
           <YAxis domain={domain} ticks={ticks} tickFormatter={v => `${v} %`} tick={tick} axisLine={false} tickLine={false} width={48}/>
           <Tooltip content={<Tip/>} cursor={{ stroke: '#a49acb', strokeDasharray: '3 4' }}/>
           <Line dataKey="pct" stroke={CREW} strokeWidth={2.5} dot={{ r: 7, fill: CREW, stroke: '#fff', strokeWidth: 2.5 }} activeDot={{ r: 9, stroke: '#fff', strokeWidth: 2.5 }} isAnimationActive={false}/>
         </ComposedChart></ChartContainer>
-        <p className="chart-note">Franja gris: cambio dentro de ±5 % (no distinguible del error de la prueba, supuesto). Líneas punteadas verticales: próximas evaluaciones.</p>
+        <p className="chart-note">Gray band: change within ±5% (assumed indistinguishable from test error). Vertical dotted lines: upcoming assessments.</p>
       </figure>
       <figure className="panel">
-        <figcaption><h3>Referencia: CFT70</h3><p>Cambio al terminar {reference.bedRestDays} días de reposo en cama ({reference.post1}), media ± DE. Misma prueba y unidad.</p></figcaption>
+        <figcaption><h3>Reference: CFT70</h3><p>Change after {reference.bedRestDays} days of bed rest ({reference.post1.replace(' a ', ' to ')}), mean ± SD. Same test and unit.</p></figcaption>
         <ChartContainer config={{}} className="detail-chart"><ComposedChart data={refs} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
           <CartesianGrid vertical={false} stroke="#e2e2ef" strokeDasharray="3 5"/>
           <ReferenceArea y1={-5} y2={5} fill="#e4e6ee" fillOpacity={0.9}/>
           <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4"/>
-          <ReferenceLine y={latest.pct} stroke={CREW} strokeDasharray="4 4" label={{ value: `Tripulante ${fmtPct(latest.pct)}`, position: 'insideTopLeft', fill: CREW, fontSize: 12 }}/>
+          <ReferenceLine y={latest.pct} stroke={CREW} strokeDasharray="4 4" label={{ value: `Crew member ${fmtPct(latest.pct)}`, position: 'insideTopLeft', fill: CREW, fontSize: 12 }}/>
           <XAxis dataKey="name" type="category" tick={{ ...tick, fontSize: 12 }} axisLine={false} tickLine={false} interval={0} padding={{ left: 36, right: 36 }}/>
           <YAxis domain={domain} ticks={ticks} tickFormatter={v => `${v} %`} tick={tick} axisLine={false} tickLine={false} width={48}/>
           <Tooltip content={<Tip/>} cursor={false}/>
@@ -103,18 +103,25 @@ function MuscleDetail({ group, evalIndex }) {
             <ErrorBar dataKey="err" direction="y" width={8} strokeWidth={2} stroke="#7c8299"/>
           </Scatter>
         </ComposedChart></ChartContainer>
-        <p className="chart-note">Voluntarios en Tierra, no astronautas. Grupo FLY: equipo compacto de volante de inercia (por confirmar).</p>
+        <p className="chart-note">Volunteers on Earth, not astronauts. FLY group: compact flywheel equipment (to be confirmed).</p>
       </figure>
     </div>
   </section>;
 }
 
 // Vista de fuerza muscular. El header y las pestañas los pone vuelo/Shell.jsx.
-export function StrengthView() {
+export function StrengthView({ focusRequest = null }) {
   const [evalIndex, setEvalIndex] = useState(evaluations.length - 1);
   const [selectedKey, setSelectedKey] = useState('quadriceps_l');
   const [exploration, setExploration] = useState({ key: null, request: 0 });
   const current = evaluations[evalIndex];
+  useEffect(() => {
+    if (focusRequest && keyToGroup.has(focusRequest.key)) {
+      setSelectedKey(focusRequest.key);
+      setEvalIndex(evaluations.length - 1);
+      setExploration(previous => ({ key: focusRequest.key, request: previous.request + 1 }));
+    }
+  }, [focusRequest]);
 
   const rows = useMemo(() => groups.map(group => ({ group, point: group.points[evalIndex] })).sort((a, b) => a.point.pct - b.point.pct), [evalIndex]);
   const scores = useMemo(() => Object.fromEntries(groups.flatMap(group => {
@@ -127,7 +134,7 @@ export function StrengthView() {
   const indicatorText = useMemo(() => key => {
     const g = groups.find(item => item.keys.includes(key));
     if (!g) return null;
-    const side = key.endsWith('_l') ? ' · izq.' : key.endsWith('_r') ? ' · der.' : '';
+    const side = key.endsWith('_l') ? ' · left' : key.endsWith('_r') ? ' · right' : '';
     return { name: g.name + side, value: fmtPct(g.points[evalIndex].pct) };
   }, [evalIndex]);
 
@@ -149,26 +156,26 @@ export function StrengthView() {
 
   return <div className="fuerza">
 
-    <section className="overview fuerza-overview" aria-label="Mapa corporal">
+    <section className="overview fuerza-overview" aria-label="Body map">
       <div className="body-panel">
-        <div className="body-panel-heading"><span>MAPA CORPORAL · {current.label.toUpperCase()}</span><span>6 grupos evaluados · ambos lados con el mismo valor</span></div>
+        <div className="body-panel-heading"><span>BODY MAP · {current.label.toUpperCase()}</span><span>6 groups assessed · both sides show the same value</span></div>
         <div className="body-stage"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="model-canvas">
           <BodyViewer body="male" layer="surface" scores={shownScores} selected={selectedKey} onSelect={choose} framing={1.1} showIndicators checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={colorScale} indicatorText={indicatorText}/>
         </div></div>
-        <ul className="legend-levels" aria-label="Escala de color">
+        <ul className="legend-levels" aria-label="Color scale">
           {levels.map(level => <li key={level.id}><i style={{ background: level.color }}/>{level.alert && <AlertIcon/>}<span>{level.label}<small>{level.range}</small></span></li>)}
-          <li><i className="not-assessed"/><span>No evaluado<small>sin medición en el protocolo</small></span></li>
+          <li><i className="not-assessed"/><span>Not assessed<small>not measured in this protocol</small></span></li>
         </ul>
-        <div className="timeline" role="group" aria-label="Evaluación a mostrar">
-          <span className="timeline-label">Evaluación a bordo</span>
-          <ol style={{ '--progress': `${evalIndex / (evaluations.length + upcoming.length - 1) * 100}%` }}>{evaluations.map((e, i) => <li key={e.id} className={(i === evalIndex ? 'on ' : '') + (i < evalIndex ? 'done' : '')}><button type="button" aria-pressed={i === evalIndex} onClick={() => setEvalIndex(i)}>{e.label}</button></li>)}{upcoming.map(d => <li key={d} className="next">FD {d}<small>próxima</small></li>)}</ol>
+        <div className="timeline" role="group" aria-label="Evaluation to display">
+          <span className="timeline-label">In-flight assessment</span>
+          <ol style={{ '--progress': `${evalIndex / (evaluations.length + upcoming.length - 1) * 100}%` }}>{evaluations.map((e, i) => <li key={e.id} className={(i === evalIndex ? 'on ' : '') + (i < evalIndex ? 'done' : '')}><button type="button" aria-pressed={i === evalIndex} onClick={() => setEvalIndex(i)}>{e.label}</button></li>)}{upcoming.map(d => <li key={d} className="next">FD {d}<small>upcoming</small></li>)}</ol>
         </div>
       </div>
 
       <div className="summary">
         <div className="summary-content">
-          <p className="summary-intro">Ordenado de mayor a menor pérdida en la evaluación {current.label}. Seleccioná un grupo para ver su evolución y la referencia.</p>
-          <div className="insight-list" role="group" aria-label="Grupos musculares evaluados">
+          <p className="summary-intro">Ordered by loss at {current.label}. Select a group to explore its trend and reference.</p>
+          <div className="insight-list" role="group" aria-label="Assessed muscle groups">
             {rows.map(({ group: g, point }) => {
               const active = g.key === selectedGroup;
               return <button type="button" key={g.key} className={'insight-row' + (active ? ' is-selected' : '')} aria-pressed={active} onClick={() => choose(active ? selectedKey : g.keys[0])}>
@@ -178,7 +185,7 @@ export function StrengthView() {
               </button>;
             })}
           </div>
-          <p className="note">Datos del tripulante simulados. Las referencias son datos reales de reposo en cama (voluntarios en Tierra). Esta vista informa cambios; no constituye un diagnóstico.</p>
+          <p className="note">Simulated crew data. References are real bed-rest data from volunteers on Earth. This view shows changes and is not a diagnosis.</p>
         </div>
       </div>
     </section>
@@ -186,15 +193,15 @@ export function StrengthView() {
     {group && <MuscleDetail group={group} evalIndex={evalIndex}/>}
 
     <section className="method" aria-labelledby="method-title">
-      <h2 id="method-title">Cómo se obtiene la medición</h2>
-      <p className="lede">Cambio porcentual del torque máximo respecto de la línea base previa al vuelo, por grupo muscular. Método propuesto: dinamómetro isocinético a bordo (tipo MARES, ESA), con el protocolo de NASA <i>Medical Volume B 5.3</i>. Referencia: estudio de reposo en cama CFT70 (NLSP MR079G).</p>
+      <h2 id="method-title">How the measurement is obtained</h2>
+      <p className="lede">Percentage change in peak torque from pre-flight baseline by muscle group. Proposed method: an onboard isokinetic dynamometer (ESA MARES type), using NASA <i>Medical Volume B 5.3</i>. Reference: CFT70 bed-rest study (NLSP MR079G).</p>
       <div className="method-grid">
-        <div><h3>Equipo</h3><p>Dinamómetro isocinético a bordo. El antecedente es MARES (ESA, módulo Columbus), usado en vuelo en Sarcolab-3 (FD 9, 49 y 131). Hoy NASA no mide la fuerza en vuelo de forma rutinaria: monitorea el entrenamiento en ARED. Por eso esta medición se presenta como <b>método propuesto</b>.</p></div>
-        <div><h3>Protocolo</h3><p>Mismo set de pruebas que NASA aplica antes y después del vuelo: rodilla a 60°/s, tobillo a 30°/s y tronco a 60°/s, con 3 a 5 repeticiones máximas por prueba. Se registra el torque máximo en N·m, siempre en la misma posición y con el mismo ajuste del equipo.</p></div>
-        <div><h3>Calendario</h3><p>Línea base antes del vuelo; en vuelo FD 15 y luego cada 30 días (esquema de ESA, Petersen y col. 2016). Cambio % = (torque actual ÷ torque pre-vuelo − 1) × 100.</p></div>
-        <div><h3>Referencia y límites</h3><p>CFT70: 42 voluntarios, 70 días de reposo en cama, grupos sin contramedida, con ejercicio y FLY. 41 de 42 son hombres; no hay mediciones durante el reposo. La referencia mide una sola pierna; el mapa muestra ambos lados con el mismo valor. Umbral de −20 %: pérdida asociada a menor desempeño en tareas críticas (Scott y col. 2023).</p></div>
+        <div><h3>Equipment</h3><p>An onboard isokinetic dynamometer, based on ESA’s MARES, used in Sarcolab-3 (FD 9, 49 and 131). NASA monitors ARED training but does not routinely measure in-flight strength, so this is a <b>proposed method</b>.</p></div>
+        <div><h3>Protocol</h3><p>NASA pre- and post-flight tests: knee at 60°/s, ankle at 30°/s and trunk at 60°/s, with 3–5 maximal repetitions. Peak torque is recorded in N·m with consistent positioning and settings.</p></div>
+        <div><h3>Schedule</h3><p>Pre-flight baseline; FD 15 and every 30 days thereafter (ESA schedule, Petersen et al. 2016). Change % = (current torque ÷ pre-flight torque − 1) × 100.</p></div>
+        <div><h3>Reference and limitations</h3><p>CFT70: 42 volunteers, 70 days of bed rest, with control, exercise and FLY groups. 41 of 42 were men; no measurements were taken during bed rest. The reference measured one leg; both sides show the same value. A −20% loss is associated with reduced performance in critical tasks (Scott et al. 2023).</p></div>
       </div>
-      <p className="source">Fuente de referencia: {reference.source}.</p>
+      <p className="source">Reference source: NASA Life Sciences Portal, MR079G Muscle Strength, CFT70.</p>
     </section>
   </div>;
 }

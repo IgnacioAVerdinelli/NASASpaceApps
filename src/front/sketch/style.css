@@ -18,3 +18,5 @@
 @media(max-width:750px){.trends{padding:75px 6% 85px}.trends-heading{align-items:start;flex-direction:column;gap:16px;margin-bottom:28px}.comparisons{grid-template-columns:1fr}.history-chart{height:230px}.trend-card-header{gap:12px}.trend-card-header h3{font-size:18px}.trend-latest strong{font-size:25px}.trend-legend{margin-left:0}}
 
 .comparison-scroll{max-height:400px;overflow:auto;scrollbar-color:#9994c0 #f1f1fa}
+
+.flight-link{padding:14px 24px;background:#eeedf8;text-align:right}.flight-link a{color:#51458b;font-weight:700;text-underline-offset:3px}.flight-link a:focus-visible{outline:3px solid #6055a5;outline-offset:3px}

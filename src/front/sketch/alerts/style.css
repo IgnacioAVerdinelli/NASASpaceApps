@@ -1,6 +1,7 @@
 /* Wearable alert simulator (dev/demo page) · Frosted glass (docs/design-system.md, tokens in theme/glass.css).
    The page chrome follows the dashboard; the watch is a device mock-up and keeps its own dark face. */
 
+
 :root { font-family: var(--font); color: var(--ink); background: var(--page-bg); font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -142,3 +143,20 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--link); outline-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* Queue controls and acknowledgement are specific to the live notification demo. */
+.demo-controls { margin-top: 24px; font-size: 13px; line-height: 1.5; }
+.demo-controls label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.demo-controls select { font: inherit; padding: 7px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--glass-sm-bg); }
+.demo-controls p { margin: 8px 0; color: var(--muted); }
+.scenario-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.scenario-buttons button, .watch-action { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--glass-sm-bg); color: var(--ink); }
+.scenario-buttons button:hover { background: var(--glass-hover); }
+button:disabled { cursor: default; opacity: .6; }
+.demo-controls .api-error { color: var(--crit-ink); }
+.empty-inbox { padding: 18px 0; color: var(--muted); font-size: 13px; }
+.alert-list { max-height: 340px; overflow: auto; }
+.watch-action { flex: none; margin-top: 8px; background: var(--action); color: white; }
+.watch-body { overflow: auto; }
+.watch-screen { min-height: 0; }

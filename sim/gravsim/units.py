@@ -38,6 +38,11 @@ UNITS = {
     # heart-rate variability
     "ms": ("ms", 1.0),
     "s": ("ms", 1000.0),
+    # sleep duration (watch, actigraphy)
+    "h": ("h", 1.0),
+    "min": ("h", 1 / 60),
+    # self-rated scores (sleep quality 1-7)
+    "score": ("score", 1.0),
 }
 
 

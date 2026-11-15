@@ -68,6 +68,8 @@
 /* ---- Mission status ---- */
 .ov-status { display: flex; flex-direction: column; padding: 20px 0 0; }
 .ov-status-top { padding-inline: 20px; }
+.ov-status-mission { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; padding-inline: 20px; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-2); }
+.ov-status-mission i { width: 6px; height: 6px; border-radius: 50%; background: #3E4A63; }
 .ov-status-scroll { padding: 0 20px 20px; }
 .ov-status-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ov-status-top .chip { padding: 4px 10px; font-size: 12px; }

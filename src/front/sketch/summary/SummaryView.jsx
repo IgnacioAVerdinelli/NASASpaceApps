@@ -51,7 +51,7 @@ function useMedia(query) {
   return matches;
 }
 
-export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, vitalsError }) {
+export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, vitalsError, sourceLabel, missionLabel }) {
   const { data: today, error: planError } = useDashboard(exampleMode || !crewId ? null : planTodayUrl(crewId), loadPlan);
   const testAlerts = useMemo(() => alertsOf(data), [data]);
   const notices = useMemo(() => watchNotices(vitals), [vitals]);
@@ -167,6 +167,7 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
             <h2 id="status-title" className="eyebrow">Mission status</h2>
             <span className="chip" data-tone={status.chip}>{chipText}</span>
           </div>
+          {(sourceLabel || missionLabel) && <p className="ov-status-mission"><i aria-hidden="true"/>{[sourceLabel, missionLabel].filter(Boolean).join(' · ')}</p>}
           {/* Fixed height on wide screens so the watch panel fits in the first view; the details scroll inside. */}
           <div className="ov-status-scroll">
           <p className="ov-status-lead">{statusLead(status, alerts, data.crew?.id, Boolean(vitals))}</p>

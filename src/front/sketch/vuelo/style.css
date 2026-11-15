@@ -56,8 +56,8 @@
 .flight-crew select { border: 0; background-color: transparent; color: var(--ink); cursor: pointer; margin-left: -4px; }
 .flight-content { position: relative; z-index: 1; padding-bottom: 40px; }
 /* Mission line (source chip + mission + day) in the header, next to the crew selector. */
-.flight-mission { display: flex; align-items: center; gap: 12px; margin-left: auto; min-width: 0; }
-.flight-mission .flight-source { padding: 4px 9px; }
+/* Header: only the flight day (seven tabs leave no room for more). */
+.flight-mission { display: flex; align-items: center; margin-left: auto; min-width: 0; }
 .flight-mission .flight-context { white-space: nowrap; }
 .flight-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .flight-content:focus { outline: none; }
@@ -93,14 +93,8 @@
 .flight-notice a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
 .flight-skip { position: absolute; z-index: 20; top: 8px; left: 12px; padding: 12px; background: white; transform: translateY(-150%); }
 .flight-skip:focus { transform: translateY(0); }
-@media (max-width: 1320px) {
-  .flight-mission .flight-source { display: none; }
-}
 @media (max-width: 1100px) {
   .flight-tabs > button { padding-inline: 11px; }
-}
-@media (max-width: 1100px) and (min-width: 941px) {
-  .flight-mission .flight-context > svg:first-child, .flight-mission .flight-context > span:first-of-type, .flight-mission .flight-context > i { display: none; }
 }
 @media (max-width: 940px) {
   .flight-bar-inner { flex-wrap: wrap; padding-block: 10px 8px; }

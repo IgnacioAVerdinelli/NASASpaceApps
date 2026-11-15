@@ -71,6 +71,9 @@ export function Shell() {
   const bodyUrl = exampleMode ? '' : crewId ? dashboardUrl(apiUrl, crewId) : null;
   const bodyState = useDashboard(needsBodyData ? bodyUrl : null, loadDashboard);
   const active = TABS.find(item => item.id === tab);
+  // Source and mission name: in the heading of every tab but the Overview, which shows them in Mission status.
+  const sourceLabel = data ? (exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data') : null;
+  const missionLabel = data ? data.mission.name.replaceAll('_', ' ').toUpperCase() : null;
   const error = analyses.error || crewState.error;
 
   function activate(id) {
@@ -140,7 +143,7 @@ export function Shell() {
       return id === 'plan' ? <PlanView crew={crewId}/> : <VitalsView vitals={vitals} error={vitalsState.error}/>;
     }
     if (!data) return <DataNotice error={error}/>;
-    if (id === 'summary') return <SummaryView key={crewId} data={data} crewId={crewId} bodyState={bodyState} exampleMode={exampleMode} vitals={vitals} vitalsError={vitalsState.error}
+    if (id === 'summary') return <SummaryView sourceLabel={sourceLabel} missionLabel={missionLabel} key={crewId} data={data} crewId={crewId} bodyState={bodyState} exampleMode={exampleMode} vitals={vitals} vitalsError={vitalsState.error}
       onOpen={(destination, key) => {
         if (key) setFocusRequest({ key, request: Date.now() });
         if (destination === 'body') {
@@ -168,9 +171,8 @@ export function Shell() {
               tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}><Icon name={t.id}/>{t.label}</button>)}
           </div>
         </nav>
-        {data && <div className="flight-mission" aria-label="Mission">
-          <span className="flight-source glass-sm"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>
-          <span className="flight-context"><Icon name="orbit" size={18}/><span>{data.mission.name.replaceAll('_',' ').toUpperCase()}</span><i/><Icon name="plan" size={15}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></span>
+        {data && <div className="flight-mission">
+          <span className="flight-context"><Icon name="plan" size={15}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></span>
         </div>}
         <div className="flight-crew glass-sm">
           <span className="flight-avatar"><Icon name="crew" size={19}/></span>
@@ -186,7 +188,12 @@ export function Shell() {
       {/* The Overview has no visible heading so its cards fit in the first view; the mission line lives in the header. */}
       {tab === 'summary'
         ? <h1 className="flight-sr-only">{active.title}</h1>
-        : <div className="flight-heading"><div className="flight-heading-main"><h1>{active.title}</h1></div></div>}
+        : <div className="flight-heading">
+          <div className="flight-heading-main"><h1>{active.title}</h1>
+            {data && <span className="flight-source glass-sm"><i/>{sourceLabel}</span>}
+          </div>
+          {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{missionLabel}</span></div>}
+        </div>}
       {error && data && <div className="flight-notice glass" role="status">Connection lost. Showing the last available measurements.</div>}
       {TABS.map(item => <FlightPanel key={item.id} id={item.id} hidden={tab !== item.id}>{renderView(item.id)}</FlightPanel>)}
     </main>

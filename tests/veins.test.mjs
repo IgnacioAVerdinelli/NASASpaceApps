@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { areaRows, dopplerTrace, loadVeins, radiusOf, shown, validateVeins, veinShape, veinsUrl, worseSide } from '../src/front/sketch/data/veins.js';
+import { areaRows, compressionAt, dopplerTrace, flowAtTime, loadVeins, PRESS_SECONDS, radiusOf, shown, validateVeins, veinShape, veinsUrl, worseSide } from '../src/front/sketch/data/veins.js';
 
 const scan = (label, day, left = {}, right = {}, level = 'normal') => ({ label, day, values: { left, right }, level, sides: { left: { level }, right: { level: 'normal' } }, signs: [] });
 const data = (scans, sides = { right: 'normal', left: 'normal' }) => ({ version: 1, scans, measures: [], status: { level: 'normal', signs: [], sides } });
@@ -43,4 +43,32 @@ test('the Doppler trace follows the grade', () => {
 
 test('loadVeins reports a failing API', async () => {
   await assert.rejects(loadVeins({ url: '/x', fetchImpl: async () => ({ ok: false, status: 503 }) }), /503/);
+});
+
+test('an obstructed segment has no illustrated flow, even when the recorded velocity includes noise', () => {
+  for (const grade of [1, 2, 3, 4]) for (const t of [0, 0.25, 0.5, 1.5, 10]) {
+    assert.equal(flowAtTime({ grade, speed: 2.4, clot: true }, t), 0);
+    assert.equal(flowAtTime({ grade, speed: 0, clot: false }, t), 0);
+  }
+});
+
+test('the illustrated patterns preserve direction and zero net flow for stasis', () => {
+  const values = grade => Array.from({ length: 200 }, (_, i) => flowAtTime({ grade, speed: 20, clot: false }, i / 100));
+  assert.ok(values(1).every(v => v > 0));
+  assert.ok(values(2).every(v => v >= 0));
+  assert.ok(values(2).some(v => v === 0));
+  const stagnant = values(3);
+  assert.ok(stagnant.some(v => v > 0) && stagnant.some(v => v < 0));
+  assert.ok(Math.abs(stagnant.reduce((a, b) => a + b, 0) / stagnant.length) < 1e-9);
+  assert.ok(values(4).every(v => v < 0));
+});
+
+test('the shared compression cycle closes a compressible lumen and preserves an obstructed one', () => {
+  assert.equal(compressionAt(null), 0);
+  assert.equal(compressionAt(-1), 0);
+  assert.equal(compressionAt(0), 0);
+  assert.equal(compressionAt(PRESS_SECONDS), 0);
+  assert.ok(compressionAt(1.5, false) > 0.9);
+  assert.ok(compressionAt(1.5, true) < 0.1);
+  assert.ok(compressionAt(0.4, false) > 0 && compressionAt(0.4, false) < compressionAt(1.5, false));
 });

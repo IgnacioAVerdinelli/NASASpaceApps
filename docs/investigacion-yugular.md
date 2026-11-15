@@ -277,6 +277,14 @@ Mismo camino que Eyes:
 
 El hallazgo **Alarm** genera un aviso que el Planner convierte en consulta el mismo día, igual que una alerta del reloj genera una revisión.
 
+### Visualización implementada: estudio dúplex ilustrado
+
+La pestaña vincula un corte anatómico 3D con imágenes procedurales de modo B transversal, flujo en color longitudinal y un espectro Doppler ilustrado. El área, el lado, el control, el grado de flujo, los ecos y la compresibilidad vienen del mismo registro seleccionado. Las figuras 1 y 3 de Marshall-Goebel 2019 son la referencia visual; el flujo hacia el corazón se dibuja por debajo de cero, como en esa publicación.
+
+No se reutilizan imágenes clínicas ni se reconstruye una ecografía real a partir de cinco números. El granulado, el tejido, la geometría del posible trombo, la respuesta a la presión y el detalle de las ondas son ilustraciones. La velocidad sigue siendo sintética. El color indica dirección respecto de la sonda, no oxigenación o gravedad del hallazgo. En 3D se usan trazadores de flujo con movimiento reducido 25 veces, sin representar glóbulos rojos a escala incorrecta. Un segmento marcado no compresible no muestra flujo en esta simulación, aunque su velocidad registrada tenga ruido.
+
+La comparación previa, la selección de lado y control, la reproducción de estudios, la pausa del movimiento y la compresión actualizan las vistas de forma coordinada. Los niveles siguen llegando del HealthService.
+
 ## Fuentes
 
 - Marshall-Goebel K, Laurie SS, Alferova IV, Arbeille P, Auñón-Chancellor SM, Ebert DJ y col., 2019. *Assessment of Jugular Venous Blood Flow Stasis and Thrombosis During Spaceflight.* JAMA Netw Open 2(11):e1915011. [doi:10.1001/jamanetworkopen.2019.15011](https://doi.org/10.1001/jamanetworkopen.2019.15011) · [texto completo, PMC6902784](https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6902784/fullTextXML)

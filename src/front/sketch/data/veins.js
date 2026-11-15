@@ -71,6 +71,28 @@ export function veinShape(scan, side = 'left') {
 // Radius of a circle with this area, in mm.
 export const radiusOf = area => Math.sqrt(Math.max(0, area) / Math.PI);
 
+// Display mechanics shared by the anatomical and ultrasound views. These illustrate an exam;
+// they are not a reconstruction, a measured Doppler spectrum or a model of probe force.
+export const PRESS_SECONDS = 3.2;
+export function compressionAt(seconds, obstructed = false) {
+  if (seconds == null || seconds < 0 || seconds >= PRESS_SECONDS) return 0;
+  const k = seconds < 0.8 ? seconds / 0.8 : seconds < 2.2 ? 1 : (PRESS_SECONDS - seconds);
+  const eased = Math.min(1, k) ** 2 * (3 - 2 * Math.min(1, k));
+  return eased * (obstructed ? 0.08 : 0.92);
+}
+
+// Positive = head to heart in the data. The spectral display reverses this sign to match
+// Marshall-Goebel 2019's figures: forward flow below the zero baseline.
+export function flowAtTime(shape, seconds) {
+  if (shape.clot || !shape.speed) return 0;
+  const speed = Math.abs(shape.speed);
+  const pulse = Math.sin(2 * Math.PI * seconds);
+  if (shape.grade === 1) return speed * (0.82 + 0.12 * pulse + 0.05 * Math.sin(seconds * 1.4));
+  if (shape.grade === 2) return speed * Math.max(0, 0.38 + 0.62 * pulse);
+  if (shape.grade === 3) return speed * 0.7 * pulse;
+  return -speed * (0.72 + 0.23 * pulse);
+}
+
 // Area and grade by scan, for the charts: both veins.
 export function areaRows(data) {
   return (data?.scans || []).map(s => ({
@@ -80,19 +102,13 @@ export function areaRows(data) {
   }));
 }
 
-// An illustrative Doppler trace for a flow grade: velocity over two seconds, toward the heart positive (the
-// convention of the page, not of every ultrasound machine). It is drawn from the grade, not recorded.
+// An illustrative trace for a flow grade, with heartward velocity positive in the data.
+// The imaging views put it below zero, following the publication. This is not a recorded spectrum.
 export function dopplerTrace(grade, speed = 25, points = 160, seconds = 2) {
-  const out = [], beat = 1.0;                                    // one heartbeat per second
-  const s = Math.max(4, Math.abs(speed));
+  const out = [];
   for (let i = 0; i < points; i++) {
-    const t = i / (points - 1) * seconds, phase = (t % beat) / beat;
-    const wave = Math.sin(2 * Math.PI * phase) + 0.45 * Math.sin(4 * Math.PI * phase + 0.6);
-    let v;
-    if (grade === 1) v = s * (0.85 + 0.12 * wave);
-    else if (grade === 2) v = s * (0.45 + 0.5 * wave);
-    else if (grade === 3) v = s * 0.18 * wave;
-    else v = -s * (0.6 + 0.35 * wave);
+    const t = i / (points - 1) * seconds;
+    const v = flowAtTime({ grade, speed, clot: false }, t);
     out.push({ t: Math.round(t * 1000) / 1000, v: Math.round(v * 10) / 10 });
   }
   return out;

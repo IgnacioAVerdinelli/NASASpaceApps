@@ -90,7 +90,7 @@ def test_flight_routines_stay_in_flight_and_aci_ones_book_nothing():
 
 def test_instruments_and_retest_routines():
     inst = CATALOG.instrument_measures()
-    assert set(inst) == {"dxa", "dynamometer", "cycle", "suit", "watch"}
+    assert set(inst) == {"dxa", "dynamometer", "cycle", "suit", "watch", "ocular"}
     assert CATALOG.routine("6039")["completion"] == "auto" and inst["watch"] == ["sleep_hours"]
     assert CATALOG.routine_for_measure("knee_extension_60")["id"] == "6025"     # the in-flight one
     assert CATALOG.routine_for_measure("vo2peak")["id"] == "6028"

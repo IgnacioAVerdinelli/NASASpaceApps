@@ -86,7 +86,8 @@
       "schedule_text": "Example Schedule based on 180-day ISS mission: Pre-flight: AME L-21/18 m, L- 9/6 m, In- flight: L+30; L+90; L+180d, L+270 d, R-30;",
       "schedule_page": 44,
       "schedule": [{"at": "L+30"}, {"at": "L+90"}, {"at": "L+180"}, {"at": "L+270"}, {"at": "R-30"}],
-      "completion": "crew", "instrument": null, "measures": [],
+      "completion": "auto", "instrument": "ocular",
+      "measures": ["oct_trt", "oct_mrw", "oct_choroid", "frisen_grade", "choroidal_folds", "globe_flattening", "refraction_se", "near_va", "iop", "onsd", "axial_length"],
       "performed_by": "Crew pair, guided from the ground",
       "equipment": ["optical coherence tomography (OCT)", "ultrasound", "visual acuity chart", "Amsler grid", "visual field test"],
       "iss_hardware": ["OCT", "Ultrasound-2"],
@@ -96,7 +97,7 @@
         "how": "Checks for Spaceflight Associated Neuro-ocular Syndrome: fluid shifts towards the head can swell the optic disc and fold the retina. OCT measures the thickness of the retina and optic nerve head; the ultrasound shows the optic nerve sheath.",
         "if_abnormal": "Record it and tell the crew surgeon; the standard asks to follow abnormal findings as clinically indicated."
       },
-      "assumptions": ["L+180 and L+270 are dropped on a 180-day mission", "a tolerance of 3 days is ours"]
+      "assumptions": ["L+180 and L+270 are dropped on a 180-day mission", "a tolerance of 3 days is ours", "closed by the simulated eye exam (gravsim.OcularExam, docs/investigacion-ojos.md)"]
     },
     {
       "id": "6013", "ref": "OCHMO-STD-100.1A [6013]", "section": "6.1.13",

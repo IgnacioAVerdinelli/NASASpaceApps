@@ -28,3 +28,7 @@
 @media(max-width:600px){.tabs [role="tab"]{font-size:14px;padding:9px 10px}.recommendations{padding:28px 18px 50px}.recommendations-header{flex-direction:column;gap:12px}.recommendations h2{font-size:25px}.decision-main{padding:22px}.decision-heading{flex-direction:column;gap:12px}.decision-steps{grid-template-columns:1fr;padding:0 18px;margin:24px 0}.decision-step{padding:18px 0}.decision-step+.decision-step{border-left:0;border-top:1px solid #d8d6e9}.step-label{margin-bottom:7px}.recommendation-actions{align-items:stretch}.recommendation-actions button{width:100%}}
 
 .vuelo-head .mission select{font:inherit;font-size:16px;padding:3px 8px;border:1px solid #969db9;border-radius:4px;background:#fff;color:inherit}.vuelo-head .mission select:focus-visible{outline:2px solid #6258a0;outline-offset:2px}
+
+.vuelo-head .page-link{font-size:14px;font-weight:700;color:#4f4699;border-bottom:1px solid currentColor;padding-bottom:1px;margin-left:auto}
+.decision-status[data-status="critical"],.decision-options .decision-status[data-status="critical"]{background:#fbe5e5;color:#8c212b}
+.decision-status[data-status="warning"],.decision-options .decision-status[data-status="warning"]{background:#fff0ce;color:#765000}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StrengthView } from '../fuerza/App.jsx';
-import { dayDistance, exampleRecommendations, updateStatus } from './recommendations.js';
+import { dayDistance, recommendations, updateStatus } from './recommendations.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
@@ -30,7 +30,7 @@ export function Shell() {
   const [focusRequest, setFocusRequest] = useState(null);
   const [selectedCrew, setSelectedCrew] = useState(crewFromUrl);
   const tabRefs = useRef({});
-  const examplesCrew = useRef(null);
+  const previousCrew = useRef(null);
   useEffect(() => {
     const onHash = () => setTab(fromHash());
     window.addEventListener('hashchange', onHash);
@@ -45,12 +45,11 @@ export function Shell() {
   const today = data?.mission.today ?? null;
   useEffect(() => {
     if (!data) return;
-    const mapped = data.strength.groups.map(group => ({ key: group.key, points: group.points.map((point, index) => ({ pct: point.changePct, label: data.strength.evaluations[index]?.label })) }));
-    const examples = exampleRecommendations({ id: data.crew.id, today: data.mission.today, landing: data.mission.landing }, mapped, data.strength.upcoming);
-    const sameCrew = examplesCrew.current === data.crew.id;
-    setItems(previous => examples.map(item => ({ ...item, status: sameCrew ? previous.find(old => old.id === item.id)?.status ?? item.status : item.status })));
-    if (!sameCrew) setSelectedId(examples[0]?.id);
-    examplesCrew.current = data.crew.id;
+    const current = recommendations(data);
+    const sameCrew = previousCrew.current === data.crew.id;
+    setItems(previous => current.map(item => item.type === 'Alert' ? item : ({ ...item, status: sameCrew ? previous.find(old => old.id === item.id)?.status ?? item.status : item.status })));
+    if (!sameCrew) setSelectedId(current[0]?.id);
+    previousCrew.current = data.crew.id;
   }, [data]);
   const selectedItem = items.find(item => item.id === selectedId) || items[0];
   useEffect(() => {
@@ -93,21 +92,21 @@ export function Shell() {
     {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
     {!data ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div> : <>
     <section id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations" hidden={tab !== 'recommendations'} className="recommendations">
-      <div className="recommendations-header"><div><h2>Recommendations</h2><p>Example actions based on simulated mission data.</p></div><span className="demo-label">SIMULATED EXAMPLE</span></div>
+      <div className="recommendations-header"><div><h2>Recommendations</h2><p>Alerts and upcoming assessments from HealthService.</p></div>{data.simulated && <span className="demo-label">SIMULATED DATA</span>}</div>
       <p className="recommendations-intro">Explore the measurement, observation and suggested next step.</p>
       {selectedItem ? <div className="decision-layout">
         <article className="decision-main" aria-labelledby="recommendation-detail-title">
-          <div className="decision-heading"><div><span className="decision-kind">{selectedItem.type} · {selectedItem.dayLabel}</span><h3 id="recommendation-detail-title">{selectedItem.title}</h3><p>{dayDistance(selectedItem.day, today)} · Crew member {selectedItem.crew}</p></div><span className="decision-status" data-status={selectedItem.status}>{selectedItem.status}</span></div>
-          <div className="decision-steps" aria-label="How this example was formed">
+          <div className="decision-heading"><div><span className="decision-kind">{selectedItem.type} · {selectedItem.dayLabel}</span><h3 id="recommendation-detail-title">{selectedItem.title}</h3><p>{selectedItem.type === 'Alert' ? 'Current alert' : dayDistance(selectedItem.day, today)} · Crew member {selectedItem.crew}</p></div><span className="decision-status" data-status={selectedItem.severity || selectedItem.status}>{selectedItem.severity ? `${selectedItem.severity} alert` : selectedItem.status}</span></div>
+          <div className="decision-steps" aria-label="Assessment details">
             {[['Measurement', selectedItem.measurement], ['Observation', selectedItem.finding], ['Suggested action', selectedItem.action]].map(([label, step]) => <div className="decision-step" key={label}>
               <span className="step-label">{label}</span><strong>{step.title}</strong><p>{step.detail}</p>
             </div>)}
           </div>
-          <div className="recommendation-actions"><button type="button" onClick={() => { setFocusRequest(selectedItem.muscle ? { key: selectedItem.muscle, request: Date.now() } : null); select(selectedItem.view, true); }}>View related measurement <span aria-hidden="true">→</span></button><label>Status <select value={selectedItem.status} onChange={event => setItems(current => updateStatus(current, selectedItem.id, event.target.value))}><option>Scheduled</option><option>Pending</option><option>Completed</option></select></label></div>
+          <div className="recommendation-actions"><button type="button" onClick={() => { setFocusRequest(selectedItem.muscle ? { key: selectedItem.muscle, request: Date.now() } : null); select(selectedItem.view, true); }}>View related measurement <span aria-hidden="true">→</span></button>{selectedItem.type !== 'Alert' && <label>Local demo status <select value={selectedItem.status} onChange={event => setItems(current => updateStatus(current, selectedItem.id, event.target.value))}><option>Scheduled</option><option>Pending</option><option>Completed</option></select></label>}</div>
         </article>
-        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.status}>{item.status}</span></button>)}</div></aside>
-      </div> : <div className="decision-empty"><h3>No example actions available</h3><p>A valid measurement or upcoming assessment is needed to show this demo.</p></div>}
-      <p className="recommendations-note">Illustrative recommendations based on the displayed data, not scheduler output or clinical guidance. Status changes reset when the page is reloaded.</p>
+        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{item.type === 'Alert' ? 'Current alert' : dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.severity || item.status}>{item.severity ? `${item.severity} alert` : item.status}</span></button>)}</div></aside>
+      </div> : <div className="decision-empty"><h3>No alerts or upcoming assessments</h3><p>No alerts or scheduled assessments are available for this crew member.</p></div>}
+      <p className="recommendations-note">Alerts and scheduled assessments come from HealthService. Local demo status changes are not saved or sent to the scheduler.</p>
     </section>
     {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
     </>}

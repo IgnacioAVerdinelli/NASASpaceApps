@@ -1,35 +1,52 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayDistance, exampleRecommendations, updateStatus } from '../src/front/sketch/vuelo/recommendations.js';
+import { dayDistance, recommendations, updateStatus } from '../src/front/sketch/vuelo/recommendations.js';
 import example from '../src/front/sketch/data/analyses.example.json' with { type: 'json' };
 
-const crew = { id: 'CM-1', today: 170, landing: 180 };
-const mapped = example.strength.groups.map(group => ({ key: group.key, points: group.points.map((point, i) => ({ pct: point.changePct, label: example.strength.evaluations[i]?.label })) }));
+const fixture = () => structuredClone(example);
 
-test('examples use an available measurement and preserve the actual next assessment label', () => {
-  const items = exampleRecommendations(crew, mapped, example.strength.upcoming);
-  assert.equal(items[0].crew, 'CM-1');
-  assert.equal(items[0].dayLabel, 'FD172');
-  assert.equal(items[0].measurement.title, 'Calf strength');
-  assert.match(items[0].finding.title, /pre-flight/);
-  assert.equal(items[1].dayLabel, 'R+5');
-  assert.equal(items[1].type, 'Routine');
+test('uses both schedules and surfaces the critical aerobic alert', () => {
+  const data = fixture();
+  const items = recommendations(data);
+  assert.equal(items[0].type, 'Alert');
+  assert.equal(items[0].severity, 'critical');
+  assert.equal(items[0].view, 'aerobica');
+  assert.equal(items[0].finding.detail, data.aerobic.alert.message);
+  assert.deepEqual(items.filter(item => item.type === 'Routine').map(item => item.view).sort(), ['aerobica', 'aerobica', 'fuerza', 'fuerza']);
+  assert.ok(items.some(item => item.dayLabel === 'R+5'));
+  assert.ok(!items.some(item => item.id === 'calf-retest'));
 });
 
-test('missing measurements and dates do not produce invented actions', () => {
-  assert.deepEqual(exampleRecommendations(crew, [], []), []);
-  assert.deepEqual(exampleRecommendations(crew, [{ key: 'calves', points: [{}] }], []), []);
-  assert.deepEqual(exampleRecommendations({ ...crew, today: 179 }, mapped, []), []);
-  assert.deepEqual(exampleRecommendations(crew, [], [{ day: 160, label: 'FD161' }]), []);
+test('uses scheduler labels and retest reasons without guessing the affected muscle', () => {
+  const data = fixture();
+  data.mission.today = -10;
+  data.mission.todayLabel = 'L-10';
+  data.strength.upcoming = [{ day: -5, label: 'L-5', reason: 'retest' }];
+  data.aerobic.upcoming = [{ day: 51, label: 'FD52', reason: 'retest' }];
+  data.aerobic.alert = null;
+  const items = recommendations(data);
+  assert.deepEqual(items.map(item => item.dayLabel), ['L-5', 'FD52']);
+  assert.ok(items.every(item => item.type === 'Retest'));
+  assert.ok(items.every(item => !item.muscle));
+  assert.equal(dayDistance(-5, -10), 'In 5 days');
 });
 
-test('status changes affect only the selected recommendation and reject unknown values', () => {
-  const items = [{ id: 'a', status: 'Scheduled' }, { id: 'b', status: 'Scheduled' }];
-  const updated = updateStatus(items, 'a', 'Completed');
-  assert.equal(updated[0].status, 'Completed');
-  assert.equal(updated[1].status, 'Scheduled');
-  assert.equal(items[0].status, 'Scheduled');
+test('shows strength alerts and handles empty schedules without inventing a retest', () => {
+  const data = fixture();
+  data.strength.upcoming = [];
+  data.aerobic.upcoming = [];
+  data.aerobic.alert = null;
+  assert.deepEqual(recommendations(data), []);
+  data.strength.groups[0].alert = { severity: 'warning', rule: 'beyond_typical', message: 'Faster loss' };
+  const [alert] = recommendations(data);
+  assert.equal(alert.finding.detail, 'Faster loss');
+  assert.equal(alert.muscle, data.strength.groups[0].muscleKeys[0]);
+  assert.equal(alert.dayLabel, data.mission.todayLabel);
+});
+
+test('local status changes affect only studies', () => {
+  const items = [{ id: 'a', type: 'Routine', status: 'Scheduled' }, { id: 'b', type: 'Alert' }];
+  assert.equal(updateStatus(items, 'a', 'Completed')[0].status, 'Completed');
+  assert.equal(updateStatus(items, 'b', 'Completed')[1].status, undefined);
   assert.equal(updateStatus(items, 'a', 'invalid'), items);
-  assert.equal(dayDistance(171, 170), 'In 1 day');
-  assert.equal(dayDistance(185, 170), 'In 15 days');
 });

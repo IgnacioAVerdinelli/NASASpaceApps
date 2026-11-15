@@ -115,8 +115,6 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 - `upper_arm_muscles_l`: Upper Arm Muscles (L)
 - `upper_arm_muscles_r`: Upper Arm Muscles (R)
 
-## Prototipo de recomendaciones
+## Recomendaciones y alertas
 
-La página principal `/` incluye recomendaciones **simuladas** en `vuelo/recommendations.js`, independientes del scheduler. El ejemplo usa la última medición simulada de pantorrilla de la vista de fuerza. El estado se mantiene solo mientras la página está abierta; no se envía al servidor.
-
-Para integrar el scheduler, acordar con su responsable un contrato que proporcione identificador, tripulante, estudio, fecha o día de misión, estado, motivo y referencia a la medición relacionada. El formato y las transiciones definitivas aún no están acordados; los ejemplos no representan resultados del servicio.
+La página principal muestra las alertas de ambos análisis y los estudios próximos del planificador desde `/api/v1/analyses`. Los retests se distinguen de las evaluaciones de rutina; el contrato agrupa los estudios por análisis y no identifica el músculo concreto de cada retest. Los cambios de estado son locales a la demo y no se envían al planificador.

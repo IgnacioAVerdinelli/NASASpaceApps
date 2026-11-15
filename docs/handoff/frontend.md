@@ -15,7 +15,7 @@ Lo que sigue explica qué se agregó, qué faltaba para integrarlo al sistema re
 | Archivo | Qué es |
 |---|---|
 | `src/front/sketch/vuelo.html`, `vuelo/Shell.jsx`, `vuelo/style.css` | Página "Mediciones en vuelo": header compacto y fijo con datos de la misión, más una barra de pestañas accesible (flechas, Home y End). La pestaña activa va en la URL (`#fuerza`, `#aerobica`). Las pestañas inactivas quedan montadas y ocultas, así que no se recarga el modelo 3D y se conserva el estado. |
-| `src/front/sketch/fuerza/` | Pestaña de fuerza: mapa 3D por grupo muscular, escala de cuatro niveles, línea de tiempo con las próximas pruebas, detalle con la banda de ruido y referencia CFT70. `fuerza.html` se borró: `vuelo.html#fuerza` es la única entrada. |
+| `src/front/sketch/fuerza/` | Pestaña de fuerza: mapa 3D por grupo muscular, escala de cuatro niveles, línea de tiempo con las próximas pruebas, detalle con la banda de ruido y referencia CFT70. `fuerza.html` se eliminó; la pestaña se abre desde `/#fuerza` o `vuelo.html#fuerza`. |
 | `src/front/sketch/aerobica/` | Pestaña de capacidad aeróbica: VO₂pico, órganos en 3D, trayectoria con la banda de ruido, la línea de −20 % y el mínimo NASA, alerta, referencia CFT70 y validez de la prueba ("Not recorded" hasta que el DataService guarde esos datos). |
 | `src/front/sketch/data/analyses.js`, `analyses.example.json` | Carga y valida `GET /api/v1/analyses`; el ejemplo es CM-1 de la demo en el día 170. |
 | `src/front/sketch/data/cft70-reference.json`, `cft70-aerobic-reference.json` | Referencias de CFT70, generadas por `scripts/build-cft70-*.py`. |

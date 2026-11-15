@@ -16,27 +16,34 @@ const DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', 
 const date = iso => DATE.format(new Date(iso));
 const sentence = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
+// Status chips use the shared tones: to do now = warn, booked = info, done = ok, missed = crit (cancelled stays neutral).
+const STATUS_TONE = { open: 'warn', booked: 'info', done: 'ok', missed: 'crit' };
+// Task kinds use the Overview schedule colours (--kind-*). A retest comes from a finding, like a review.
+const KIND = { study: 'study', routine: 'routine', treatment: 'treatment', retest: 'review', review: 'review' };
+
 function Status({ item, today }) {
   const s = displayStatus(item, today);
-  return <span className="plan-status" data-status={s}>{STATUS_LABEL[s]}</span>;
+  return <span className="chip plan-status" data-tone={STATUS_TONE[s]} data-status={s}>{STATUS_LABEL[s]}</span>;
 }
 
-function Tag({ item }) {
-  return <span className="plan-tag" data-type={item.type}>{TYPE_LABEL[item.type]}{item.completion === 'auto' && item.status === 'booked' ? ' · automatic' : ''}</span>;
+function Kind({ item }) {
+  return <span className="plan-kind" data-kind={KIND[item.type] || 'routine'}>{TYPE_LABEL[item.type]}</span>;
 }
+
+const isAuto = item => item.completion === 'auto' && item.status === 'booked';
 
 // Now at a glance: what is open, what opens this week, anything missed, and where the flight is.
 function NowBand({ c, mission, items, selectedId, onSelect }) {
   const toLanding = Math.max(0, Math.ceil(mission.landing - mission.today));
-  return <div className="plan-now" data-missed={c.missed > 0 || undefined}>
+  return <div className="glass plan-band" data-missed={c.missed > 0 || undefined}>
     <dl className="plan-counts">
-      <div data-tone="open"><dt>To do now</dt><dd>{c.open}</dd></div>
-      <div><dt>Opening this week</dt><dd>{c.soon}</dd></div>
-      <div data-tone={c.missed ? 'missed' : 'ok'}><dt>Missed</dt><dd>{c.missed}</dd></div>
-      <div data-tone="done"><dt>Done so far</dt><dd>{c.done}</dd></div>
+      <div data-tone="open"><dt>To do now</dt><dd className="num">{c.open}</dd></div>
+      <div><dt>Opening this week</dt><dd className="num">{c.soon}</dd></div>
+      <div data-tone={c.missed ? 'missed' : 'ok'}><dt>Missed</dt><dd className="num">{c.missed}</dd></div>
+      <div data-tone="done"><dt>Done so far</dt><dd className="num">{c.done}</dd></div>
     </dl>
     <div className="plan-flight">
-      <p className="plan-clock"><strong>{mission.todayLabel?.replace(/^FD/, 'Flight day ') ?? `Day ${Math.floor(mission.today)}`}</strong>
+      <p className="plan-clock"><strong className="num">{mission.todayLabel?.replace(/^FD/, 'Flight day ') ?? `Day ${Math.floor(mission.today)}`}</strong>
         <span>of {mission.landing} · {toLanding} days to landing</span></p>
       <FlightTrack items={items} today={mission.today} landing={mission.landing} selectedId={selectedId} onSelect={onSelect}/>
     </div>
@@ -65,10 +72,14 @@ function FlightTrack({ items, today, landing, selectedId, onSelect }) {
 }
 
 function ItemRow({ item, today, more, selected, onSelect, showStatus = false }) {
+  const auto = isAuto(item);
   return <button type="button" className="plan-row" aria-pressed={selected} onClick={() => onSelect(item.id)}>
-    <strong>{plainTitle(item)}</strong>
-    <span className="plan-row-when">{timing(item, today).replace(/^Open now · c/, 'C')}{more > 0 && <> · <b>+{more} more this week</b></>}</span>
-    <span className="plan-row-meta"><Tag item={item}/>{showStatus && <Status item={item} today={today}/>}</span>
+    <Kind item={item}/>
+    <span className="plan-row-body">
+      <strong>{plainTitle(item)}</strong>
+      <span className="plan-row-when">{timing(item, today).replace(/^Open now · c/, 'C')}{more > 0 && <> · <b>+{more} more this week</b></>}</span>
+      {(showStatus || auto) && <span className="plan-row-meta">{showStatus && <Status item={item} today={today}/>}{auto && <span className="plan-auto">Automatic</span>}</span>}
+    </span>
   </button>;
 }
 
@@ -78,12 +89,12 @@ function RoutineRow({ group, today, landing, selectedId, onSelect }) {
   const next = group.items.find(i => i.status === 'booked');
   return <div className="routine-row" data-selected={group.items.some(i => i.id === selectedId) || undefined}>
     <div className="routine-row-head"><strong>{group.key === 'findings' ? 'Retests and reviews' : plainTitle(group.items[0])}</strong>
-      <span>{done} of {group.items.length} done</span></div>
+      <span className="num">{done} of {group.items.length} done</span></div>
     {group.key === 'findings' && <p className="routine-note">Booked from your results</p>}
     {many
       ? <p className="routine-tally">{group.items.length} times across the flight{next ? ` · next: ${timing(next, today).toLowerCase()}` : ''}
-          <button type="button" onClick={() => onSelect((next || group.items.at(-1)).id)}>{next ? 'Show the next one' : 'Show the last one'}</button></p>
-      : <div className="routine-chips">{group.items.map(i => <button key={i.id} type="button" className="routine-chip" data-status={displayStatus(i, today)}
+          <button type="button" className="btn-link" onClick={() => onSelect((next || group.items.at(-1)).id)}>{next ? 'Show the next one →' : 'Show the last one →'}</button></p>
+      : <div className="routine-chips">{group.items.map(i => <button key={i.id} type="button" className="routine-chip" data-status={displayStatus(i, today)} data-tone={STATUS_TONE[displayStatus(i, today)]}
           aria-pressed={selectedId === i.id} onClick={() => onSelect(i.id)}
           aria-label={`${plainTitle(i)}, ${shortDay(i, landing)}, ${STATUS_LABEL[displayStatus(i, today)]}`} title={`${windowText(i)} · ${STATUS_LABEL[displayStatus(i, today)]}`}>
           {group.key === 'findings' ? `${TYPE_LABEL[i.type]} · ${shortDay(i, landing)}` : shortDay(i, landing)}</button>)}</div>}
@@ -94,7 +105,7 @@ function WhyBooked({ item }) {
   const f = item.finding;
   const pct = typeof f.change_pct === 'number' ? `${Math.abs(f.change_pct).toFixed(1)}% ${f.change_pct < 0 ? 'below' : 'above'} pre-flight` : 'changed since pre-flight';
   return <div className="plan-callout" data-tone="finding">
-    <span className="step-label">Why this was booked</span>
+    <span className="plan-label">Why this was booked</span>
     <p>Your {measureLabel(f.measure)} was {pct} on flight day {Math.floor(f.mission_day) + 1}{f.state === 'confirmed' ? ', confirmed by the HealthService' : ''}.{' '}
       {item.type === 'review'
         ? `A review instead of another test${f.why ? `: ${f.why}` : ''}.`
@@ -106,7 +117,7 @@ function Steps({ steps }) {
   const [ticked, setTicked] = useState(() => new Set());
   const toggle = i => setTicked(t => { const n = new Set(t); n.has(i) ? n.delete(i) : n.add(i); return n; });
   return <>
-    <div className="plan-steps-head"><h3>How to do it</h3><span>{ticked.size} of {steps.length} steps ticked</span></div>
+    <div className="plan-steps-head"><h3>How to do it</h3><span className="num">{ticked.size} of {steps.length} steps ticked</span></div>
     <ol className="plan-steps">{steps.map((s, i) => <li key={s}><label data-ticked={ticked.has(i) || undefined}>
       <input type="checkbox" checked={ticked.has(i)} onChange={() => toggle(i)}/><span className="step-n">{i + 1}</span><span>{s}</span></label></li>)}</ol>
     <p className="plan-hint">Ticks are a checklist for you only; they are not saved.</p>
@@ -152,15 +163,15 @@ function Actions({ item, crew, onChanged }) {
           <p><strong>{confirm === 'done' ? `Mark “${plainTitle(item)}” as done?` : `Mark “${plainTitle(item)}” as missed?`}</strong>
             {confirm === 'done' ? ' A done item cannot be reopened.' : ' A missed notice goes to you and the ship center.'}</p>
           <div className="plan-buttons">
-            <button type="button" className={confirm === 'missed' ? 'warn' : ''} disabled={state.busy} onClick={() => change(confirm)}>{state.busy ? 'Saving…' : confirm === 'done' ? 'Yes, it is done' : 'Yes, mark as missed'}</button>
-            <button type="button" className="secondary" disabled={state.busy} onClick={() => setConfirm(null)}>Go back</button>
+            <button type="button" className="btn-primary" data-tone={confirm === 'missed' ? 'crit' : undefined} disabled={state.busy} onClick={() => change(confirm)}>{state.busy ? 'Saving…' : confirm === 'done' ? 'Yes, it is done' : 'Yes, mark as missed'}</button>
+            <button type="button" className="plan-btn-secondary" disabled={state.busy} onClick={() => setConfirm(null)}>Go back</button>
           </div>
         </div>
       : <>
           <label><span>Note for the ground <small>(optional)</small></span><input type="text" value={note} maxLength={200} placeholder="e.g. done after breakfast, all normal" onChange={e => setNote(e.target.value)}/></label>
           <div className="plan-buttons">
-            <button type="button" className={auto ? 'secondary' : ''} onClick={() => setConfirm('done')}>Mark as done</button>
-            {item.status === 'booked' && <button type="button" className="quiet" onClick={() => setConfirm('missed')}>I could not do it</button>}
+            <button type="button" className={auto ? 'plan-btn-secondary' : 'btn-primary'} onClick={() => setConfirm('done')}>Mark as done</button>
+            {item.status === 'booked' && <button type="button" className="btn-link plan-btn-quiet" onClick={() => setConfirm('missed')}>I could not do it</button>}
           </div>
         </>)}
     {state.error && <p className="plan-error" role="alert">Not saved: {state.error}. Try again in a moment.</p>}
@@ -183,10 +194,10 @@ function Detail({ item, today, crew, onChanged }) {
   const s = displayStatus(item, today);
   const review = item.type === 'review';
   const plain = labelText(item.window.label);
-  return <article className="plan-detail" aria-labelledby="plan-detail-title" data-status={s}>
+  return <article className="glass plan-task" aria-labelledby="plan-detail-title" data-status={s}>
     <header className="plan-detail-head">
       <div>
-        <Tag item={item}/>
+        <p className="plan-kind-line"><Kind item={item}/>{isAuto(item) && <span className="plan-auto">Closes automatically</span>}</p>
         <h2 id="plan-detail-title">{plainTitle(item)}</h2>
         <p className="plan-when" data-status={s}>{timing(item, today)}</p>
         <p className="plan-window">Window {date(item.window.from)} to {date(item.window.to)} · NASA schedule: {plain}</p>
@@ -204,7 +215,7 @@ function Detail({ item, today, crew, onChanged }) {
     </div>}
 
     {routine && review && <>
-      <div className="plan-callout"><span className="step-label">What happens</span>
+      <div className="plan-callout"><span className="plan-label">What happens</span>
         <p>The flight surgeon or the crew medical officer goes over your recent {measureLabel(item.measure)} results with you and decides what comes next. There is no test to do for this item.</p></div>
       <details className="plan-source"><summary>About the {measureLabel(item.measure)} test</summary>
         <p>{routine.guide.how}</p><ol>{routine.steps.map(st => <li key={st}>{st}</li>)}</ol></details>
@@ -214,7 +225,7 @@ function Detail({ item, today, crew, onChanged }) {
     {routine && !review && <>
       {routine.guide.how && <p className="plan-guide"><strong>About it. </strong>{routine.guide.how}</p>}
       <Steps key={item.id} steps={routine.steps}/>
-      <div className="plan-callout" data-tone="abnormal"><span className="step-label">If something looks abnormal</span><p>{routine.guide.if_abnormal}</p></div>
+      <div className="plan-callout" data-tone="abnormal"><span className="plan-label">If something looks abnormal</span><p>{routine.guide.if_abnormal}</p></div>
       <Source item={item} routine={routine}/>
     </>}
     {!routine && item.routine_id && <p className="plan-hint">{routineError ? 'The instructions could not be loaded. The Planner may be restarting; try this item again in a moment.' : 'Loading the instructions…'}</p>}
@@ -248,11 +259,11 @@ export function PlanView({ crew }) {
   }, [view, crew, !!data]);
 
   if (!crew) return null;
-  if (!data) return <div className="plan plan-state" role={error ? 'alert' : 'status'}>
+  if (!data) return <div className="plan"><div className="glass plan-msg" role={error ? 'alert' : 'status'} data-tone={error ? 'error' : undefined}>
     {error
-      ? <><strong>The mission plan is not available right now.</strong><p>The Planner service is not answering. This page retries by itself; your health data in the other tabs is not affected.</p><small>Planner on port 3001</small></>
-      : <><strong>Loading the mission plan…</strong><p>Asking the Planner for {crew}'s schedule.</p></>}
-  </div>;
+      ? <><span className="chip" data-tone="warn">Planner offline</span><strong>The mission plan is not available right now.</strong><p>The Planner service is not answering. This page retries by itself; your health data in the other tabs is not affected.</p><small>Planner on port 3001</small></>
+      : <><span className="eyebrow">Mission plan</span><strong>Loading the mission plan…</strong><p>Asking the Planner for {crew}'s schedule.</p></>}
+  </div></div>;
 
   const c = counts(items, today);
   const open = next.filter(r => displayStatus(r.item, today) === 'open');
@@ -266,23 +277,24 @@ export function PlanView({ crew }) {
   const rows = (list, opts) => list.map(({ item, more }) => <ItemRow key={item.id} item={item} today={today} more={more} selected={selected?.id === item.id} onSelect={select} {...opts}/>);
 
   return <section className="plan" aria-label="Mission plan">
-    {error && <div className="connection-notice" role="status">Planner connection lost. Showing the last plan; changes can't be saved until it is back.</div>}
-    <div className="recommendations-header">
+    {error && <div className="plan-notice" role="status"><span className="chip" data-tone="warn">Offline</span>Planner connection lost. Showing the last plan; changes can't be saved until it is back.</div>}
+    <div className="plan-intro">
       <p>Schedule based on NASA's mission medical standard ({data.source.document}).</p>
-      <span className="demo-label">EXAMPLE SCHEDULE · {data.source.profile?.toUpperCase().replace('_', ' ')} · NOT CLINICAL GUIDANCE</span>
+      <span className="chip no-dot plan-demo">EXAMPLE SCHEDULE · {data.source.profile?.toUpperCase().replace('_', ' ')} · NOT CLINICAL GUIDANCE</span>
     </div>
 
     <NowBand c={c} mission={data.mission} items={items} selectedId={selected?.id} onSelect={id => { if (view === 'missed') setView('mission'); select(id); }}/>
 
-    <div className="plan-switch" role="group" aria-label="Plan view">
+    <div className="seg plan-switch" role="group" aria-label="Plan view">
       {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => { setView(v.id); setSelectedId(null); }}>
-        {v.label}{v.id === 'missed' && c.missed > 0 && <span className="plan-switch-count">{c.missed}</span>}</button>)}
+        {v.label}{v.id === 'missed' && c.missed > 0 && <span className="chip no-dot num plan-switch-count" data-tone="crit">{c.missed}</span>}</button>)}
     </div>
 
-    <div className="decision-layout plan-layout">
-      <div className="plan-list" ref={listRef} aria-label={VIEWS.find(v => v.id === view).label}>
+    <div className="plan-layout">
+      <div className="glass plan-items-card">
+      <div className="plan-items" ref={listRef} role="region" aria-label={VIEWS.find(v => v.id === view).label}>
         {view === 'next' && <>
-          <h2 className="plan-group" data-tone="open">Open now <span>{open.length ? 'do these first' : ''}</span></h2>
+          <h2 className="plan-group" data-tone="open">Open now <span>{open.length ? 'Do these first' : ''}</span></h2>
           {open.length ? rows(open) : <p className="plan-empty">Nothing is open right now.</p>}
           <h2 className="plan-group">Coming up this week</h2>
           {later.length ? rows(later) : <p className="plan-empty">Nothing else opens in the next 7 days.</p>}
@@ -294,6 +306,7 @@ export function PlanView({ crew }) {
           return groups.length > 0 && <div key={phase} className="plan-phase"><h2 className="plan-group">{phase}</h2>{groups.map(g => <RoutineRow key={g.key} group={g} today={today} landing={data.mission.landing} selectedId={selected?.id} onSelect={select}/>)}</div>;
         })}
       </div>
+      </div>
       <div ref={detailRef} className="plan-detail-wrap">
         {saved && <p className="plan-ok" role="status">✓ Saved: “{saved.title}” is {saved.status}.{saved.id !== selected?.id && selected ? ' Here is the next one.' : ''}</p>}
         {selected && <Detail key={selected.id} item={selected} today={today} crew={crew} onChanged={(updated, title) => {
@@ -303,6 +316,6 @@ export function PlanView({ crew }) {
         }}/>}
       </div>
     </div>
-    <p className="recommendations-note">{data.source.note} Status changes are saved by the Planner.</p>
+    <p className="plan-footnote">{data.source.note} Status changes are saved by the Planner.</p>
   </section>;
 }

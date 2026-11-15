@@ -3,6 +3,7 @@ import '../theme/glass.css';
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Brand } from '../vuelo/Icons.jsx';
+import { Backdrop } from '../vuelo/Backdrop.jsx';
 import './style.css';
 
 const alerts = [
@@ -39,50 +40,52 @@ function App() {
   const active = alerts.find(alert => alert.id === selected);
   const choose = id => setSelected(id);
 
-  return <main className="page">
-    <header className="header">
+  return <div className="alerts-app">
+    <Backdrop/>
+    <header className="alerts-bar glass-bar"><div className="alerts-bar-inner">
       <a className="alert-brand" href={'../' + window.location.search + '#summary'} aria-label="Trama health overview"><Brand/></a>
+      <a className="back-link btn-link" href={'../' + window.location.search + '#vitales'}><Arrow back /> Vital signs</a>
+    </div></header>
 
-      <a className="back-link" href={'../' + window.location.search + '#vitales'}><Arrow back /> Vital signs</a>
-    </header>
-
-    <section className="experience" aria-label="Wearable alerts demonstration">
-      <div className="overview">
-        <div className="intro">
-          <div className="status"><span /> SIMULATED DEMO</div>
-          <h1>Wearable alert simulator</h1>
-          <p>Select a fictional alert to see how it appears on the wearable.</p>
-        </div>
-
-        <div className="alert-list" role="group" aria-label="Choose an example alert">
-          <div className="list-heading"><h2>Example alerts</h2><span>{alerts.length} EXAMPLES</span></div>
-          {alerts.map((alert) => <button key={alert.id} type="button" className={'alert-row' + (selected === alert.id ? ' selected' : '')} aria-pressed={selected === alert.id} onClick={() => choose(alert.id)}>
-            <span className={'row-icon ' + alert.level}><Icon type={alert.level}/></span>
-            <span className="row-copy"><strong>{alert.title}</strong><span>{alert.priority} <span aria-hidden="true">·</span> {alert.time}</span></span>
-            <Arrow />
-          </button>)}
-        </div>
-        <p className="disclaimer">For demonstration only. These fictional alerts are not health assessments.</p>
+    <main className="page">
+      <div className="page-heading">
+        <h1>Wearable alert simulator</h1>
+        <span className="chip" data-tone="info">Simulated demo</span>
       </div>
 
-      <div className="preview">
-        <div className="preview-heading"><span>WEARABLE PREVIEW</span><span className="preview-live"><i /> INTERACTIVE</span></div>
-        <div className="watch-scene">
-          <div className="strap strap-top" aria-hidden="true"/><div className="strap strap-bottom" aria-hidden="true"/>
-          <div className="watch"><div className={'watch-screen ' + active.level}>
-            <div className="watch-top"><span>{active.time}</span><span>{active.priority}</span></div>
-            <div className="watch-body" aria-live="polite" key={active.id}>
-              <div className="watch-symbol"><Icon type={active.level}/></div>
-              <h2>{active.title}</h2>
-              <p>{active.short}</p>
-            </div>
-          </div></div>
+      <section className="experience" aria-label="Wearable alerts demonstration">
+        <div className="overview glass">
+          <p className="intro">Select a fictional alert to see how it appears on the wearable.</p>
+
+          <div className="alert-list" role="group" aria-label="Choose an example alert">
+            <div className="list-heading"><h2>Example alerts</h2><span>{alerts.length} examples</span></div>
+            {alerts.map((alert) => <button key={alert.id} type="button" className={'alert-row' + (selected === alert.id ? ' selected' : '')} aria-pressed={selected === alert.id} onClick={() => choose(alert.id)}>
+              <span className={'row-icon ' + alert.level}><Icon type={alert.level}/></span>
+              <span className="row-copy"><strong>{alert.title}</strong><span>{alert.priority} <span aria-hidden="true">·</span> {alert.time}</span></span>
+              <Arrow />
+            </button>)}
+          </div>
+          <p className="disclaimer">For demonstration only. These fictional alerts are not health assessments.</p>
         </div>
 
-      </div>
-    </section>
-
-  </main>;
+        <div className="preview glass">
+          <div className="preview-heading"><span className="eyebrow">Wearable preview</span><span className="chip">Interactive</span></div>
+          <div className="watch-scene">
+            <div className="watch-halo" aria-hidden="true"/>
+            <div className="strap strap-top" aria-hidden="true"/><div className="strap strap-bottom" aria-hidden="true"/>
+            <div className="watch"><div className={'watch-screen ' + active.level}>
+              <div className="watch-top"><span>{active.time}</span><span>{active.priority}</span></div>
+              <div className="watch-body" aria-live="polite" key={active.id}>
+                <div className="watch-symbol"><Icon type={active.level}/></div>
+                <h2>{active.title}</h2>
+                <p>{active.short}</p>
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>;
 }
 
 createRoot(document.getElementById('root')).render(<App/>);

@@ -1,40 +1,21 @@
-.body-map-view{color:#19213e}
-.body-map-view .overview{min-height:0;gap:18px;background:none;align-items:stretch}
-.body-map-view .body-panel,.body-map-view .summary{min-width:0;padding:26px;border-radius:16px;background:rgba(255,255,255,.78)}
-.body-map-view .body-panel-heading{align-items:start;color:#19213e;letter-spacing:0}
-.body-map-view .body-panel-heading h2,.body-map-view .summary h2{font-family:var(--font);font-size:22px;line-height:1.25;letter-spacing:-.02em;margin:0 0 7px}
-.body-map-view .body-panel-heading p{font-size:14px;font-weight:500;line-height:1.5;color:#53617b}
-.body-map-view .body-stage{min-height:520px;border-radius:12px;background:radial-gradient(ellipse at center,#e3eafb 0%,#f5f8fc 66%,transparent 75%)}
-.body-map-view .orbit{border-color:#becbe4}
-.body-map-view .summary{justify-content:start}
-.body-map-view .summary-content{max-width:none;margin:0}
-.body-map-view .summary-intro{max-width:60ch;margin-bottom:20px;color:#465574;font-size:15px}
-.body-map-view .insight-list::before{display:none}
-.body-map-view .insight-row{padding:16px 12px;border-color:#dce4ef;border-radius:8px}
-.body-map-view .insight-row:hover{background:#f1f5fc}
-.body-map-view .insight-row.is-selected{background:#eaf0ff}
-.body-map-view .insight-row.is-selected .insight-name{color:#3049b3}
-.body-map-view .insight-change{color:#4057c9}
-.body-map-view .body-caption,.body-map-view .model-credits,.body-map-view .note,.body-map-view .summary-footer{color:#53617b}
-.body-map-view .body-caption i{background:#4057c9}
-.body-map-view .explore{background:#4057c9;border-radius:9px;font-size:13px}
-.body-map-view .explore:hover{background:#3049a8}
-.body-map-view .test-mode-toggle,.body-map-view .test-controls button{color:#3049a8;background:#f1f5fc;border-color:#bccae5}
-.body-map-view .test-mode-toggle[aria-pressed="true"],.body-map-view .test-controls button[aria-pressed="true"]{color:#fff;background:#4057c9;border-color:#4057c9}
-.body-map-view .test-controls{background:#edf2fa;box-shadow:none}
-.body-map-view .test-editor input{accent-color:#4057c9}
-.body-map-view .trends{padding:44px 0 40px;background:none;scroll-margin-top:100px}
-.body-map-view .trends-inner{max-width:none}
-.body-map-view .trends-heading{margin-bottom:22px}
-.body-map-view .trends-heading h2{font-size:clamp(28px,2.8vw,38px)}
-.body-map-view .trends-heading p{color:#53617b}
-.body-map-view .trend-filter{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#465574}
-.body-map-view .trend-filter select{min-width:160px;max-width:100%;padding:10px 34px 10px 12px;border:1px solid #c3cfe1;border-radius:9px;background:#fff;color:#19213e;font:inherit}
-.body-map-view .trend-history,.body-map-view .comparison-panel{background:rgba(255,255,255,.78);border:0;border-radius:16px}
-.body-map-view .trend-latest,.body-map-view .chart-data{color:#3049b3}
-.body-map-view .legend-line{border-color:#4057c9}
-.body-map-view :focus-visible{outline:3px solid #4057c9;outline-offset:3px}
-@media(max-width:750px){.body-map-view .overview{grid-template-columns:1fr}.body-map-view .body-panel,.body-map-view .summary{padding:20px}.body-map-view .body-stage{height:clamp(380px,60svh,520px);min-height:0}.body-map-view .trends{padding-top:32px}.body-map-view .trends-heading{gap:16px}.body-map-view .trend-filter{width:100%;justify-content:space-between}.body-map-view .trend-filter select{flex:1;max-width:250px}}
-.body-map-view,.body-map-view .overview,.body-map-view .trends-inner,.body-map-view .history-list,.body-map-view .comparisons{min-width:0}
-.body-map-view .chart-table-wrap,.body-map-view .comparison-scroll{max-width:100%;overscroll-behavior-inline:contain}
-@media(max-width:750px){.body-map-view .body-panel-heading{gap:12px}.body-map-view .body-panel-heading>div{min-width:0}.body-map-view .trend-card-header>div:first-child{min-width:0}.body-map-view .trend-latest{white-space:normal}.body-map-view .insight-row{grid-template-columns:12px minmax(0,1fr) auto;gap:8px}.body-map-view .test-editor label{max-width:100%;flex-wrap:wrap}}
+/* Trends block (BodyTrends.jsx + Chart.jsx) inside the Muscles tab. Cards and tooltip styles live in ../style.css. */
+.body-map-view { min-width: 0; color: var(--ink); }
+.body-map-view .connection-notice { margin-bottom: 16px; }
+.body-map-view .trends { padding: 0; background: none; scroll-margin-top: 100px; }
+.body-map-view .trends-inner, .body-map-view .history-list, .body-map-view .comparisons { min-width: 0; }
+.body-map-view .trend-filter { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.body-map-view .trend-filter select {
+  min-width: 170px; max-width: 100%; min-height: 40px; padding: 0 34px 0 12px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background-color: rgba(255,255,255,.85);
+  color: var(--ink); font: 500 13px var(--font); cursor: pointer;
+}
+.body-map-view .trend-filter select:hover { background-color: #FFFFFF; }
+.body-map-view .trend-latest strong { color: var(--ink); }
+.body-map-view .chart-table-wrap, .body-map-view .comparison-scroll { max-width: 100%; overscroll-behavior-inline: contain; }
+.body-map-view :focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .body-map-view .trend-filter { width: 100%; justify-content: space-between; }
+  .body-map-view .trend-filter select { flex: 1; max-width: 250px; }
+  .body-map-view .trend-card-header > div:first-child { min-width: 0; }
+  .body-map-view .trend-latest { white-space: normal; }
+}

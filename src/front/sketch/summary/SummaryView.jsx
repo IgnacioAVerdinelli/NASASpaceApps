@@ -4,24 +4,36 @@ import { components } from '../aerobica/data.js';
 import { Icon } from '../vuelo/Icons.jsx';
 import BodyViewer from '../../body-3d/BodyViewer.jsx';
 import { useDashboard } from '../data/useDashboard.js';
-import { TYPE_LABEL, displayStatus, loadPlan, timing, upcoming } from '../data/plan.js';
+import { TYPE_LABEL, displayStatus, loadPlan, plainTitle, timing } from '../data/plan.js';
 import { AlertIcon } from '../fuerza/App.jsx';
 import { LEVEL_COLORS, colorScale, fmtPct, levelColor, levelText } from '../fuerza/data.js';
 import { watchNotices } from '../data/vitals.js';
 import { WatchPanel } from '../vitals/WatchPanel.jsx';
-import { aerobicLatest, alertsOf, boneLatest, missionProgress, muscleRows, overallStatus } from './data.js';
+import { SEVERITY_TEXT, aerobicLatest, alertsOf, muscleRows, overallStatus, scheduleDays, scheduleRows } from './data.js';
 import { Indicators } from './Indicators.jsx';
 import './style.css';
 
 const planTodayUrl = crew => `${(import.meta.env.VITE_PLANNER_URL || '/api/v1').replace(/\/$/, '')}/plan/today?crew=${encodeURIComponent(crew)}`;
 
-const inDays = (day, today) => {
-  const d = Math.round(day - today);
-  return d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
-};
+// Plan kinds with a colour of their own (design-system §2.4); a retest comes from a finding, like a review.
+const KIND = { review: 'review', retest: 'review', routine: 'routine', study: 'study', treatment: 'treatment' };
+const ACTION = { fuerza: 'See muscle detail', aerobica: 'See aerobic capacity', vitales: 'See vital signs' };
+const COUNT = ['No', 'One', 'Two', 'Three', 'Four', 'Five'];
 
-export function SummaryView({ data, crewId, bodyState, exampleMode, onOpen, vitals = null, vitalsError }) {
-  const { data: dashboard, error: boneError } = bodyState;
+// The sentence under "Mission status": what is going on, in the crew member's terms.
+function statusLead(status, alerts, crew, hasVitals) {
+  const who = crew ? `${crew}, ` : '';
+  const lower = text => crew ? text[0].toLowerCase() + text.slice(1) : text;
+  if (status.chip === 'crit') return who + lower('A NASA standard was crossed.');
+  if (alerts.length) {
+    const n = COUNT[alerts.length] ?? String(alerts.length);
+    const fromWatch = alerts.every(a => a.tab === 'vitales') ? ' from your watch' : '';
+    return who + lower(`${n} change${alerts.length === 1 ? '' : 's'}${fromWatch} need${alerts.length === 1 ? 's' : ''} a review.`);
+  }
+  return who + lower(hasVitals ? 'Nothing needs action now.' : 'No alerts from the flight tests.');
+}
+
+export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, vitalsError }) {
   const { data: today, error: planError } = useDashboard(exampleMode || !crewId ? null : planTodayUrl(crewId), loadPlan);
   const testAlerts = useMemo(() => alertsOf(data), [data]);
   const notices = useMemo(() => watchNotices(vitals), [vitals]);
@@ -31,8 +43,6 @@ export function SummaryView({ data, crewId, bodyState, exampleMode, onOpen, vita
   const levels = data.levels;
   const aero = data.aerobic;
   const vo2 = aerobicLatest(data);
-  const bone = boneLatest(dashboard);
-  const progress = missionProgress(data.mission);
   const worst = rows[0];
   const alerted = new Set(alerts.filter(a => a.focus).map(a => a.id.split(':')[1]));
   const [selectedKey, setSelectedKey] = useState(null);
@@ -58,100 +68,127 @@ export function SummaryView({ data, crewId, bodyState, exampleMode, onOpen, vita
     const r = rows.find(row => row.group.muscleKeys.includes(key));
     return r ? { name: r.group.name, value: fmtPct(r.point?.changePct) } : null;
   }, [rows]);
-  const tasks = today ? upcoming(today.items, today.mission.today).slice(0, 6) : [];
+  const strengthTest = worst?.point && data.strength.evaluations?.find(e => e.id === worst.point.evaluation)?.label;
 
-  return <div className="health-summary">
-    <div className="summary-grid">
-      <div className="summary-anatomy">
-        <section className="panel body-card" aria-labelledby="body-title">
-          <header className="anatomy-head">
-            <div><h2 id="body-title">Anatomical view</h2><p>Muscle strength vs pre-flight</p></div>
-            <button className="anatomy-open" type="button" aria-label="Open detailed muscle analysis" title="Open detailed muscle analysis" onClick={() => onOpen('fuerza', highlight)}><Icon name="expand"/></button>
-          </header>
-          <div className="anatomy-field">
-            <div className="anatomy-layer" role="group" aria-label="Anatomy layer">
-              {['organs', 'surface'].map(value => <button key={value} type="button" aria-pressed={value === layer} onClick={() => setLayer(value)}>{value === 'surface' ? 'Surface' : 'Internal'}</button>)}
-            </div>
-            <div className="body-card-stage">
-              <BodyViewer body={data.crew.body} layer={layer} scores={scores} selected={highlight}
-                onSelect={key => { if (rows.some(r => r.group.muscleKeys.includes(key))) setSelectedKey(key); }}
-                framing={1.08} structureColors={structureColors} viewRequest={viewRequest} showIndicators indicatorFilter={indicatorFilter}
-                colorScale={colorScale} indicatorText={indicatorText}/>
-            </div>
-            <div className="anatomy-tools">
-              <span><Icon name="rotate" size={16}/>Drag to rotate</span>
-              <div role="group" aria-label="Model orientation">{['front', 'back'].map(direction =>
-                <button type="button" key={direction} aria-pressed={viewRequest.direction === direction}
-                  onClick={() => setViewRequest(previous => ({ direction, request: previous.request + 1 }))}>
-                  {direction === 'front' ? 'Front' : 'Back'}
-                </button>)}</div>
-            </div>
-          </div>
-          <ul className="mini-legend" aria-label="Colour scale">
-            {levels.map(l => <li key={l.level}><i style={{ background: LEVEL_COLORS[l.level] }}/>{l.label}</li>)}
-          </ul>
-          <details className="model-credits"><summary>Model &amp; colour key</summary>
-            <p>The scale applies to tested muscles. The heart, lungs and vessels are shown for anatomical reference.</p>
-            <p><a href="https://github.com/MervinR07/open-anatomy-3d">Open Anatomy 3D</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><br/>{ATTRIBUTION} Surface regions and materials adapted for this viewer.</p>
-          </details>
-        </section>
+  const missionToday = today?.mission.today;
+  const days = today ? scheduleDays(missionToday, today.mission.landing) : [];
+  const tasks = today ? scheduleRows(today.items, missionToday) : [];
+  const noteOf = ({ item, more, sessions, span }) => more ? (sessions === span ? 'Daily' : `${sessions} sessions`) : timing(item, missionToday);
 
-        <section className="panel muscle-section" aria-labelledby="muscle-list-title">
-          <header className="panel-head"><h2 id="muscle-list-title">Muscle groups</h2><span>Change vs pre-flight</span></header>
-          <ul className="muscle-bars" aria-label="Muscle groups, largest loss first">
+  const chipText = alerts.length || vitals ? status.title : 'No test alerts';
+  const detail = !vitals && !alerts.length ? 'No alerts reported by the available flight tests. Wearable readings are unavailable.' : status.detail;
+
+  return <div className="health-summary ov">
+    <div className="ov-grid">
+      <div className="ov-left">
+        <Indicators aero={aero} vo2={vo2} worst={worst} levels={levels} onOpen={onOpen} strengthEvaluations={data.strength.evaluations}/>
+
+        <section className="glass ov-muscles" aria-labelledby="muscle-list-title">
+          <header className="ov-card-head"><h2 id="muscle-list-title">Muscle groups</h2><span>Change vs pre-flight</span></header>
+          <ul className="ov-muscle-list" aria-label="Muscle groups, largest loss first">
             {rows.map(({ group: g, point: p }) => {
               const loss = Math.min(30, Math.max(0, -(p?.changePct ?? 0)));
-              return <li key={g.key}><button type="button" className="muscle-bar" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? 'yes' : undefined} data-selected={g.muscleKeys.includes(highlight) || undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
-                <span className="mb-name">{g.alert && <AlertIcon/>}{g.name}</span>
-                <span className="mb-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
-                <span className="mb-value">{fmtPct(p?.changePct)}</span>
-                <span className="mb-level">{p ? levelText(p, levels) : 'No data'}</span>
+              return <li key={g.key}><button type="button" className="ov-muscle" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? g.alert.severity : undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
+                <span className="ov-muscle-name">{g.alert && <AlertIcon/>}{g.name}<small>{p ? levelText(p, levels) : 'No data'}</small></span>
+                <span className="ov-muscle-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
+                <span className="ov-muscle-value num">{fmtPct(p?.changePct)}</span>
               </button></li>;
             })}
           </ul>
         </section>
       </div>
 
-      <div className="hero-right">
-        <details className={`status-compact status-${status.tone}`}>
-          <summary>
-            <span className="status-symbol"><Icon name={status.tone === 'ok' ? 'check' : 'pulse'} size={20}/></span>
-            <span><small>Mission status</small><strong>{alerts.length || vitals ? status.title : 'No test alerts'}</strong></span>
-            <span className="status-action">{alerts.length ? `${alerts.length} to review` : progress.text}<Icon name="down" size={16}/></span>
-          </summary>
-          <div className="status-expanded">
-            <p>{!vitals && !alerts.length ? 'No alerts reported by the available flight tests. Wearable readings are unavailable.' : status.detail}</p>
-      {alerts.length > 0 && <ul className="status-alerts">
-        {alerts.map(a => <li key={a.id}><button type="button" onClick={() => onOpen(a.tab, a.focus)}>
-          <span className={`sev sev-${a.severity}`}><AlertIcon/>{a.severity === 'critical' ? 'Critical' : a.severity === 'watch' ? 'Watch' : 'Warning'}</span>
-          <strong>{a.system}</strong><span className="status-msg">{a.message}</span><span className="go">Details <span aria-hidden="true">→</span></span>
-        </button></li>)}
-      </ul>}
-            <div className="status-mission"><span>{progress.phase}</span><strong>{progress.text}</strong><div className="mission-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress.ratio * 100)} aria-label="Mission progress"><i style={{ width: `${progress.ratio * 100}%` }}/></div></div>
+      <section className="ov-body" aria-labelledby="body-title">
+        <div className="ov-body-head">
+          <div className="glass-sm ov-body-title">
+            <h2 id="body-title">Body map</h2>
+            <p>Strength vs pre-flight{strengthTest ? ` · test ${strengthTest}` : ''}</p>
+            <div className="seg" role="group" aria-label="Anatomy layer">
+              {['organs', 'surface'].map(value => <button key={value} type="button" aria-pressed={value === layer} onClick={() => setLayer(value)}>{value === 'surface' ? 'Surface' : 'Internal'}</button>)}
+            </div>
           </div>
-        </details>
-        <Indicators aero={aero} vo2={vo2} worst={worst} bone={bone} levels={levels} onOpen={onOpen}
-          strengthEvaluations={data.strength.evaluations} boneError={boneError} dashboardLoading={!dashboard && !boneError}/>
-        <div className="summary-followup">
-          {!exampleMode && <WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/>}
-          <section className="panel todo" aria-labelledby="todo-title">
-            <header className="panel-head"><h2 id="todo-title">Mission schedule</h2><span>{exampleMode ? 'Needs the Planner' : 'Now and the next 7 days'}</span></header>
-            {tasks.length ? <ol className="todo-list">
-              {tasks.map(({ item: i, more }) => <li key={i.id}><button type="button" onClick={() => onOpen('plan')}>
-                <span className="todo-kind" data-status={displayStatus(i, today.mission.today)}>{TYPE_LABEL[i.type]}</span>
-                <strong>{i.title}{more > 0 && <small> · daily</small>}</strong><span>{timing(i, today.mission.today)}</span>
-              </button></li>)}
-            </ol> : <p className="empty">{exampleMode ? 'Start the Planner to see the routine.' : today ? 'Nothing due in the next 7 days.' : planError ? 'Planner unavailable. Reconnecting…' : 'Loading…'}</p>}
-            <button type="button" className="link-btn" onClick={() => onOpen('plan')}>Open the mission plan →</button>
-            {(data.strength.upcoming[0] || aero.upcoming[0]) && <div className="next-tests">
-              <h3>Next tests</h3>
-              {data.strength.upcoming[0] && <p><b>Strength</b> {data.strength.upcoming[0].label} · {inDays(data.strength.upcoming[0].day, data.mission.today)}{data.strength.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
-              {aero.upcoming[0] && <p><b>Aerobic</b> {aero.upcoming[0].label} · {inDays(aero.upcoming[0].day, data.mission.today)}{aero.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
-            </div>}
-          </section>
+          <button type="button" className="glass-sm ov-pill" aria-label="Open detailed muscle analysis" onClick={() => onOpen('fuerza', highlight)}>Muscle detail<Icon name="expand" size={14}/></button>
         </div>
+        <div className="ov-body-stage"><div className="ov-body-canvas">
+          <BodyViewer body={data.crew.body} layer={layer} scores={scores} selected={highlight}
+            onSelect={key => { if (rows.some(r => r.group.muscleKeys.includes(key))) setSelectedKey(key); }}
+            framing={1.08} structureColors={structureColors} viewRequest={viewRequest} showIndicators indicatorFilter={indicatorFilter}
+            colorScale={colorScale} indicatorText={indicatorText}/>
+        </div></div>
+        <div className="ov-body-tools">
+          <ul className="glass-sm ov-legend" aria-label="Colour scale">
+            {levels.map(l => <li key={l.level}><i style={{ background: LEVEL_COLORS[l.level] }}/>{l.label}</li>)}
+          </ul>
+          <div className="glass-sm ov-rotate">
+            <span><Icon name="rotate" size={14}/>Drag to rotate</span>
+            <div className="seg" role="group" aria-label="Model orientation">{['front', 'back'].map(direction =>
+              <button type="button" key={direction} aria-pressed={viewRequest.direction === direction}
+                onClick={() => setViewRequest(previous => ({ direction, request: previous.request + 1 }))}>
+                {direction === 'front' ? 'Front' : 'Back'}
+              </button>)}</div>
+          </div>
+        </div>
+      </section>
+
+      <div className="ov-right">
+        <section className="glass ov-status" aria-labelledby="status-title">
+          <div className="ov-status-top">
+            <h2 id="status-title" className="eyebrow">Mission status</h2>
+            <span className="chip" data-tone={status.chip}>{chipText}</span>
+          </div>
+          <p className="ov-status-lead">{statusLead(status, alerts, data.crew?.id, Boolean(vitals))}</p>
+          <p className="ov-status-detail">{detail}</p>
+          {alerts.length > 0 && <ul className="ov-alerts">
+            {alerts.map(a => <li key={a.id} className="ov-alert" data-tone={a.severity === 'critical' ? 'crit' : 'warn'}>
+              <div className="ov-alert-body">
+                <span className="ov-alert-icon">{a.tab === 'vitales' ? <Icon name="pulse" size={18}/> : <AlertIcon/>}</span>
+                <div><strong>{a.system} · {SEVERITY_TEXT[a.severity] ?? 'Check needed'}</strong><span>{a.message}</span></div>
+              </div>
+              <div className="ov-alert-actions">
+                <button type="button" className="btn-primary" onClick={() => onOpen(a.tab, a.focus)}>{ACTION[a.tab] ?? 'Details'} <span aria-hidden="true">→</span></button>
+                {!exampleMode && <button type="button" className="btn-link ov-alert-plan" onClick={() => onOpen('plan')}>Mission plan</button>}
+              </div>
+            </li>)}
+          </ul>}
+        </section>
+        {!exampleMode && <div className="ov-wearable"><WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/></div>}
       </div>
     </div>
-    <p className="summary-foot">{data.notice}</p>
+
+    <section className="glass ov-schedule" aria-labelledby="schedule-title">
+      <header className="ov-schedule-head">
+        <div><h2 id="schedule-title">Mission schedule</h2><span>{exampleMode ? 'Needs the Planner' : 'Today and the next 6 days'}</span></div>
+        <button type="button" className="btn-link" onClick={() => onOpen('plan')}>Open the mission plan <span aria-hidden="true">→</span></button>
+      </header>
+      {tasks.length ? <div className="ov-timeline-box">
+        <div className="ov-timeline ov-timeline-head" aria-hidden="true">
+          <span>Task</span>
+          {days.map(d => <span key={d.day} data-today={d.today || undefined}>{d.label}{d.today ? ' · Today' : ''}</span>)}
+        </div>
+        <ol className="ov-timeline-rows">
+          {tasks.map(row => {
+            const { item: i, start, span } = row;
+            const kind = KIND[i.type] ?? 'routine';
+            const title = plainTitle(i);
+            const note = noteOf(row);
+            const when = span > 1 ? `${days[start].label} to ${days[start + span - 1].label}` : days[start].label;
+            return <li key={i.id}><button type="button" className="ov-timeline" data-status={displayStatus(i, missionToday)} onClick={() => onOpen('plan')}
+              aria-label={`${TYPE_LABEL[i.type] ?? i.type}: ${title}. ${note}. ${when}. Open the mission plan`}>
+              <span className="ov-today-col" aria-hidden="true"/>
+              <span className="ov-task"><span className="ov-kind" data-kind={kind}>{TYPE_LABEL[i.type] ?? i.type}</span><span className="ov-task-title">{title}</span></span>
+              <span className="ov-span" data-kind={kind} title={note} style={{ gridColumn: `${start + 2} / span ${span}` }}>{note}</span>
+            </button></li>;
+          })}
+        </ol>
+      </div> : <p className="ov-empty">{exampleMode ? 'Start the Planner to see the routine.' : today ? 'Nothing due in the next 7 days.' : planError ? 'Planner unavailable. Reconnecting…' : 'Loading…'}</p>}
+    </section>
+
+    <footer className="ov-foot">
+      <p>{data.notice}</p>
+      <details className="ov-credits"><summary>Body model &amp; colour key</summary>
+        <p>The colour scale applies to tested muscles. The heart, lungs and vessels are shown for anatomical reference.</p>
+        <p><a href="https://github.com/MervinR07/open-anatomy-3d">Open Anatomy 3D</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. {ATTRIBUTION} Surface regions and materials adapted for this viewer.</p>
+      </details>
+    </footer>
   </div>;
 }

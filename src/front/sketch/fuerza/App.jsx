@@ -9,11 +9,14 @@ import { ALERT_TEXT, colorScale, dayAxis, dayLabel, fmtNum, fmtPct, levelColor, 
 import '../style.css';
 import './style.css';
 
-const tick = { fill: '#4f5874', fontSize: 13 };
-// Identity colours (not status): they are not confused with the green-to-red scale.
-const CREW = '#4057c9';
-const THRESHOLD = '#a4242f';
-const REF_COLORS = { CONTROL: '#6d5fb8', EXERCISE: '#0e7490', FLY: '#9096ad' };
+// Chart colours come from the theme tokens (theme/glass.css) and the local ones in ./style.css.
+const tick = { fill: 'var(--chart-tick)', fontSize: 12 };
+const GRID = 'var(--chart-grid)';
+const CREW = 'var(--chart-strength)';
+const THRESHOLD = 'var(--crit-ink)';
+const NOISE = 'var(--strength-noise-band)';
+// Identity colours of the reference groups (not status): they are not confused with the green-to-red scale.
+const REF_COLORS = { CONTROL: 'var(--ref-control)', EXERCISE: 'var(--ref-exercise)', FLY: 'var(--ref-fly)' };
 
 export function AlertIcon() {
   return <svg className="alert-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1.8 15 14H1z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><path d="M8 6.2v3.6M8 11.6v.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>;
@@ -63,7 +66,7 @@ export function AlertBadge({ alert }) {
 
 export function Timeline({ label, evaluations, upcoming, index, onPick }) {
   const total = evaluations.length + upcoming.length - 1;
-  return <div className="timeline" role="group" aria-label="Evaluation to show">
+  return <div className="timeline glass" role="group" aria-label="Evaluation to show">
     <span className="timeline-label">{label}</span>
     <ol style={{ '--progress': `${total > 0 ? index / total * 100 : 0}%` }}>
       {evaluations.map((e, i) => <li key={e.id} className={(i === index ? 'on ' : '') + (i < index ? 'done' : '')}><button type="button" aria-pressed={i === index} onClick={() => onPick(i)}>{e.phase === 'pre' ? 'Pre' : e.label}</button></li>)}
@@ -94,39 +97,39 @@ function MuscleDetail({ group, evaluations, evalIndex, mission, upcoming, levels
   const ticks = Array.from({ length: (domain[1] - domain[0]) / 10 + 1 }, (_, i) => domain[1] - i * 10);
   const next = [...evaluations.slice(evalIndex + 1).map(xOf), ...upcoming.map(u => u.day)];
   const axis = dayAxis(mission, [...evaluations.map(xOf), ...upcoming.map(u => u.day)]);
-  return <section className="detail" aria-labelledby="detail-title">
+  return <section className="detail strength-detail glass" aria-labelledby="detail-title">
     <header className="detail-head">
-      <div><h2 id="detail-title">{group.name}</h2><p className="detail-sub">{group.test} · {group.region}</p>{group.alert && <p className="alert-message"><AlertBadge alert={group.alert}/> {group.alert.message}</p>}</div>
-      {latest && <div className="detail-figure"><strong>{fmtPct(latest.changePct)}</strong><span>{fmtNum(latest.value)} {group.unit} · {latest.label}</span><LevelBadge point={latest} levels={levels}/></div>}
+      <div><p className="eyebrow">Selected group</p><h2 id="detail-title">{group.name}</h2><p className="detail-sub">{group.test} · {group.region}</p>{group.alert && <p className="alert-message"><AlertBadge alert={group.alert}/> {group.alert.message}</p>}</div>
+      {latest && <div className="detail-figure"><strong className="num">{fmtPct(latest.changePct)}</strong><span>{fmtNum(latest.value)} {group.unit} · {latest.label}</span><LevelBadge point={latest} levels={levels}/></div>}
     </header>
     <div className="detail-charts">
-      <figure className="panel">
+      <figure className="detail-panel">
         <figcaption><h3>In flight</h3><p>Change in peak torque against the pre-flight reference ({fmtNum(group.baseline)} {group.unit}, mean of {group.referenceTests} tests).</p></figcaption>
         <ChartContainer config={{}} className="detail-chart"><ComposedChart data={shown} margin={{ top: 12, right: 16, left: 0, bottom: 4 }}>
-          <CartesianGrid vertical={false} stroke="#e2e2ef" strokeDasharray="3 5"/>
-          <ReferenceArea y1={-group.noiseBandPct} y2={group.noiseBandPct} fill="#e4e6ee" fillOpacity={0.9} ifOverflow="hidden"/>
-          <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4" label={{ value: '−20%', position: 'insideBottomLeft', fill: THRESHOLD, fontSize: 13 }}/>
-          <ReferenceLine x={mission.today} stroke="#a7a3c4" strokeDasharray="2 4" label={{ value: `Today ${mission.todayLabel}`, position: 'insideTopRight', fill: '#4f5874', fontSize: 12 }}/>
-          {next.map(day => <ReferenceLine key={day} x={day} stroke="#d4d0ea" strokeDasharray="1 5"/>)}
+          <CartesianGrid vertical={false} stroke={GRID}/>
+          <ReferenceArea y1={-group.noiseBandPct} y2={group.noiseBandPct} fill={NOISE} fillOpacity={1} ifOverflow="hidden"/>
+          <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4" label={{ value: '−20%', position: 'insideBottomLeft', fill: THRESHOLD, fontSize: 12, fontWeight: 600 }}/>
+          <ReferenceLine x={mission.today} stroke="var(--muted)" strokeOpacity={0.6} strokeDasharray="2 4" label={{ value: `Today ${mission.todayLabel}`, position: 'insideTopRight', fill: 'var(--muted)', fontSize: 12 }}/>
+          {next.map(day => <ReferenceLine key={day} x={day} stroke="var(--muted)" strokeOpacity={0.35} strokeDasharray="1 5"/>)}
           <XAxis dataKey="x" type="number" domain={axis.domain} ticks={axis.ticks} tickFormatter={d => dayLabel(d, mission.landing)} tick={tick} axisLine={false} tickLine={false}/>
           <YAxis domain={domain} ticks={ticks} tickFormatter={v => `${v}%`} tick={tick} axisLine={false} tickLine={false} width={48}/>
-          <Tooltip content={<Tip unit={group.unit}/>} cursor={{ stroke: '#a49acb', strokeDasharray: '3 4' }}/>
+          <Tooltip content={<Tip unit={group.unit}/>} cursor={{ stroke: 'var(--muted)', strokeOpacity: 0.5, strokeDasharray: '3 4' }}/>
           <Line dataKey="changePct" stroke={CREW} strokeWidth={2.5} dot={{ r: 7, fill: CREW, stroke: '#fff', strokeWidth: 2.5 }} activeDot={{ r: 9, stroke: '#fff', strokeWidth: 2.5 }} isAnimationActive={false}/>
         </ComposedChart></ChartContainer>
         <p className="chart-note">Grey band: ±{fmtNum(group.noiseBandPct)}%, where one test lands by measurement noise alone 90% of the time (test-retest variability from the bed-rest data). Dotted vertical lines: tests still to come.</p>
       </figure>
-      <figure className="panel">
+      <figure className="detail-panel">
         <figcaption><h3>Reference: CFT70</h3><p>Change at the end of {reference.bedRestDays} days of bed rest ({reference.post1}), mean ± SD. Same test and unit.</p></figcaption>
         {refs.length ? <ChartContainer config={{}} className="detail-chart"><ComposedChart data={refs} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
-          <CartesianGrid vertical={false} stroke="#e2e2ef" strokeDasharray="3 5"/>
-          <ReferenceArea y1={-group.noiseBandPct} y2={group.noiseBandPct} fill="#e4e6ee" fillOpacity={0.9}/>
+          <CartesianGrid vertical={false} stroke={GRID}/>
+          <ReferenceArea y1={-group.noiseBandPct} y2={group.noiseBandPct} fill={NOISE} fillOpacity={1}/>
           <ReferenceLine y={-20} stroke={THRESHOLD} strokeDasharray="6 4"/>
           {latest && <ReferenceLine y={latest.changePct} stroke={CREW} strokeDasharray="4 4" label={{ value: `Crew member ${fmtPct(latest.changePct)}`, position: 'insideTopLeft', fill: CREW, fontSize: 12 }}/>}
           <XAxis dataKey="name" type="category" tick={{ ...tick, fontSize: 12 }} axisLine={false} tickLine={false} interval={0} padding={{ left: 36, right: 36 }}/>
           <YAxis domain={domain} ticks={ticks} tickFormatter={v => `${v}%`} tick={tick} axisLine={false} tickLine={false} width={48}/>
           <Tooltip content={<Tip unit={group.unit}/>} cursor={false}/>
           <Scatter dataKey="mean" isAnimationActive={false} shape={props => <circle cx={props.cx} cy={props.cy} r={8} fill={REF_COLORS[props.payload.key]} stroke="#fff" strokeWidth={2}/>}>
-            <ErrorBar dataKey="err" direction="y" width={8} strokeWidth={2} stroke="#7c8299"/>
+            <ErrorBar dataKey="err" direction="y" width={8} strokeWidth={2} stroke="var(--muted)"/>
           </Scatter>
         </ComposedChart></ChartContainer> : <p className="chart-note">No CFT70 reference for this test.</p>}
         <p className="chart-note">Volunteers on Earth, not astronauts. FLY group: compact flywheel device (to be confirmed).</p>
@@ -198,42 +201,47 @@ export function StrengthView({ data, focusRequest = null, bodyState, trendTarget
 
   return <div className="fuerza">
     <section className="overview fuerza-overview" aria-label="Body map">
-      <div className="body-panel">
-        <div className="body-panel-heading"><span>{testMode ? 'TEST MODE' : `BODY MAP · ${current.phase === 'pre' ? 'PRE-FLIGHT' : current.label}`}</span><button type="button" className="test-mode-toggle" aria-pressed={Boolean(testMode)} aria-controls="strength-test-controls" onClick={() => { dispatchTest(testMode ? { type: 'exit' } : { type: 'start', model: { body: crew.body, layer: 'surface', scores: bodyState?.data?.body.scores || {} }, selected: selectedKey }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{testMode ? 'Exit test mode' : 'Test mode'}</button></div>
-        {testMode && <div id="strength-test-controls" className="test-controls" aria-label="Test mode controls"><p>Test mode · Changes are temporary and do not affect dashboard data.</p><div className="test-control-groups"><div role="group" aria-label="Body model">{[['male', 'Male'], ['female', 'Female']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.body === key} onClick={() => { dispatchTest({ type: 'body', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div role="group" aria-label="Anatomy layer">{[['surface', 'Surface'], ['muscles', 'Muscles'], ['skeleton', 'Bones']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.layer === key} onClick={() => { dispatchTest({ type: 'layer', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div><button type="button" onClick={() => dispatchTest({ type: 'paint' })}>Paint all</button><button type="button" onClick={() => dispatchTest({ type: 'clear' })}>Clear colors</button></div></div><div className="test-editor"><label>Muscle <select value={testMode.selected || ''} onChange={event => choose(event.target.value || null)}><option value="">Select a muscle</option>{muscles.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label><label>Intensity <input type="range" min="0" max="100" disabled={!testMode.selected} value={testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0} onChange={event => dispatchTest({ type: 'intensity', value: Number(event.target.value) })}/><output>{testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0}</output></label></div></div>}
-        <div className="body-stage"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="model-canvas">
+      <div className="strength-map">
+        <div className="map-top">
+          <div className="map-title glass-sm"><h2>{testMode ? 'Test mode' : 'Body map'}</h2><p>{testMode ? 'Temporary colours, not crew data' : `Strength vs pre-flight · ${current.phase === 'pre' ? 'pre-flight reference' : `test ${current.label}`}`}</p></div>
+          <button type="button" className="test-mode-toggle btn-glass" aria-pressed={Boolean(testMode)} aria-controls="strength-test-controls" onClick={() => { dispatchTest(testMode ? { type: 'exit' } : { type: 'start', model: { body: crew.body, layer: 'surface', scores: bodyState?.data?.body.scores || {} }, selected: selectedKey }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{testMode ? 'Exit test mode' : 'Test mode'}</button>
+        </div>
+        {testMode && <div id="strength-test-controls" className="test-controls glass-sm" aria-label="Test mode controls"><p>Test mode · Changes are temporary and do not affect dashboard data.</p><div className="test-control-groups"><div className="seg" role="group" aria-label="Body model">{[['male', 'Male'], ['female', 'Female']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.body === key} onClick={() => { dispatchTest({ type: 'body', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div className="seg" role="group" aria-label="Anatomy layer">{[['surface', 'Surface'], ['muscles', 'Muscles'], ['skeleton', 'Bones']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.layer === key} onClick={() => { dispatchTest({ type: 'layer', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div className="test-actions"><button type="button" className="btn-glass" onClick={() => dispatchTest({ type: 'paint' })}>Paint all</button><button type="button" className="btn-glass" onClick={() => dispatchTest({ type: 'clear' })}>Clear colors</button></div></div><div className="test-editor"><label>Muscle <select value={testMode.selected || ''} onChange={event => choose(event.target.value || null)}><option value="">Select a muscle</option>{muscles.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label><label>Intensity <input type="range" min="0" max="100" disabled={!testMode.selected} value={testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0} onChange={event => dispatchTest({ type: 'intensity', value: Number(event.target.value) })}/><output className="num">{testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0}</output></label></div></div>}
+        <div className="body-stage"><div className="body-halo" aria-hidden="true"/><div className="model-canvas">
           <BodyViewer body={testMode?.body ?? crew.body} layer={testMode?.layer ?? "surface"} scores={testMode?.scores ?? shownScores} selected={testMode ? testMode.selected : selectedKey} onSelect={choose} framing={1.1} showIndicators={!testMode} checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={testMode ? undefined : colorScale} indicatorText={testMode ? undefined : indicatorText}/>
         </div></div>
-        {!testMode && <ul className="legend-levels" aria-label="Colour scale">
+        {!testMode && <ul className="legend-levels glass-sm" aria-label="Colour scale">
           {levels.map(level => <li key={level.level}><i style={{ background: levelColor(level.level) }}/><span>{level.label}<small>{level.range}</small></span></li>)}
           <li><i className="not-assessed"/><span>Not measured<small>no valid test</small></span></li>
         </ul>}
-        <Timeline label="Dynamometer tests" evaluations={evaluations} upcoming={upcoming} index={evalIndex} onPick={pickEvaluation}/>
       </div>
 
-      <div className="summary">
-        <div className="summary-content">
-          <p className="summary-intro">Largest loss first, at {current.phase === 'pre' ? 'the pre-flight reference' : `the ${current.label} test`}. Select a group to see its course and the reference.</p>
-          <div className="insight-list" role="group" aria-label="Muscle groups tested">
-            {rows.map(({ group: g, point }) => {
-              const active = g.key === selectedGroup;
-              return <button type="button" key={g.key} className={'insight-row' + (active ? ' is-selected' : '')} aria-pressed={active} onClick={() => choose(active && selectedKey ? selectedKey : g.keys[0])}>
-                <span className="insight-marker" aria-hidden="true" style={{ background: levelColor(point.level), borderColor: levelColor(point.level) }}/>
-                <span className="insight-main"><span className="insight-name">{g.name}</span><span className="insight-detail">{g.test} · {fmtNum(point.value)} {g.unit}</span><span className="badges"><LevelBadge point={point} levels={levels}/><AlertBadge alert={g.alert}/></span></span>
-                <span className="insight-change">{fmtPct(point.changePct)}</span>
-              </button>;
-            })}
-          </div>
-          <p className="note">{notice} Levels, noise and alerts come from the HealthService. Trunk flexion is not shown: its bed-rest data runs the wrong way.</p>
+      <div className="strength-groups glass">
+        <header className="groups-head"><h2 id="strength-groups-title">Muscle groups</h2><span>Change vs pre-flight · {current.phase === 'pre' ? 'Pre' : current.label}</span></header>
+        <p className="summary-intro">Largest loss first, at {current.phase === 'pre' ? 'the pre-flight reference' : `the ${current.label} test`}. Select a group to see its course and the reference.</p>
+        <div className="insight-list" role="group" aria-labelledby="strength-groups-title">
+          {rows.map(({ group: g, point }) => {
+            const active = g.key === selectedGroup;
+            const loss = point.changePct == null ? 0 : Math.min(100, Math.max(0, -point.changePct) / 30 * 100);
+            return <button type="button" key={g.key} className={'insight-row' + (active ? ' is-selected' : '')} aria-pressed={active} onClick={() => choose(active && selectedKey ? selectedKey : g.keys[0])}>
+              <span className="insight-marker" aria-hidden="true" style={{ background: levelColor(point.level) }}/>
+              <span className="insight-main"><span className="insight-name">{g.name}</span><span className="insight-detail">{g.test} · {fmtNum(point.value)} {g.unit}</span><span className="insight-bar" aria-hidden="true"><i style={{ width: `${loss}%`, background: levelColor(point.level) }}/></span><span className="badges"><LevelBadge point={point} levels={levels}/><AlertBadge alert={g.alert}/></span></span>
+              <span className="insight-change num">{fmtPct(point.changePct)}</span>
+            </button>;
+          })}
         </div>
+        <p className="note">{notice} Levels, noise and alerts come from the HealthService. Trunk flexion is not shown: its bed-rest data runs the wrong way.</p>
       </div>
+
+      <div className="strength-timeline"><Timeline label="Dynamometer tests" evaluations={evaluations} upcoming={upcoming} index={evalIndex} onPick={pickEvaluation}/></div>
     </section>
 
     {group && <MuscleDetail group={group} evaluations={evaluations} evalIndex={evalIndex} mission={mission} upcoming={upcoming} levels={levels}/>}
 
-    {bodyState?.data ? <BodyTrends key={trendTarget} dashboard={bodyState.data} stale={Boolean(bodyState.error)}/> : <section id="trends" className="strength-trends-state" role={bodyState?.error ? 'alert' : 'status'}><h2>Trends</h2><p>{bodyState?.error ? 'Trend data is unavailable. Reconnecting…' : 'Loading trend data…'}</p></section>}
+    {bodyState?.data ? <BodyTrends key={trendTarget} dashboard={bodyState.data} stale={Boolean(bodyState.error)}/> : <section id="trends" className="strength-trends-state glass" role={bodyState?.error ? 'alert' : 'status'}><h2>Trends</h2><p>{bodyState?.error ? 'Trend data is unavailable. Reconnecting…' : 'Loading trend data…'}</p></section>}
 
-    <section className="method" aria-labelledby="method-title">
+    <section className="method strength-method glass" aria-labelledby="method-title">
+      <p className="eyebrow">Method</p>
       <h2 id="method-title">How it is measured</h2>
       <p className="lede">Percent change in peak torque against the pre-flight reference, per muscle group. Proposed method: an on-board isokinetic dynamometer (MARES-type, ESA), with NASA's <i>Medical Volume B 5.3</i> protocol. Reference: the CFT70 bed-rest study (NLSP MR079G).</p>
       <div className="method-grid">

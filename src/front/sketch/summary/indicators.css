@@ -1,37 +1,31 @@
-.summary-indicators {
-  min-width: 0;
-  container: indicators / inline-size;
-  border: 1px solid #ffffffb8;
-  border-radius: 16px;
-  padding: clamp(14px, 1.15vw, 22px);
-  background: linear-gradient(130deg, #f6fbfd7d, #ecf5f65c);
+/* Indicator cards of the overview (design-system §6): Aerobic capacity and Strength · largest loss. */
+.ov-metric {
+  /* Strength's icon tint: the peach of the loss tone. Not a theme token yet. */
+  --ov-tint-strength: rgba(255,211,191,.9);
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+  width: 100%; min-width: 0; padding: 18px 20px;
+  border: 0; text-align: left; font: inherit; cursor: pointer;
+  transition: filter .16s;
 }
-.summary-indicators-heading { margin-bottom: 14px; }
-.summary-indicators-heading h2 { margin: 0; color: #19213e; font-size: 17px; letter-spacing: -.02em; }
-.summary-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.summary-metric {
-  min-width: 0; min-height: 140px; display: flex; flex-direction: column; align-items: stretch; padding: 15px;
-  color: #19213e; border: 1px solid rgba(255, 255, 255, .8); border-radius: 12px;
-  background: linear-gradient(135deg, #ffffffb8, var(--metric-tint, #dce6f58a));
-  box-shadow: inset 0 1px 0 #ffffffe6, 0 4px 14px -10px #253e6359;
-  backdrop-filter: blur(16px) saturate(130%); -webkit-backdrop-filter: blur(16px) saturate(130%);
-  text-align: left; font: inherit; cursor: pointer;
+.ov-metric:hover { filter: brightness(1.03); }
+.ov-metric:hover .ov-metric-arrow { color: var(--link); }
+.ov-metric:active { filter: brightness(.99); }
+.ov-metric-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ov-metric-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov-metric-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-sm); }
+.ov-metric-aerobica .ov-metric-icon { background: var(--info-bg); color: var(--link); }
+.ov-metric-fuerza .ov-metric-icon { background: var(--ov-tint-strength); color: var(--loss-ink); }
+.ov-metric-arrow { flex: none; display: grid; color: var(--muted); }
+.ov-metric-reading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 10px; }
+.ov-metric-figure { flex: none; max-width: 100%; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 4px; color: var(--ink); }
+.ov-metric-value { font-size: 42px; line-height: 1; white-space: nowrap; }
+.ov-metric-unit { font-size: 12px; color: var(--muted); }
+.ov-metric-pct { font-size: 20px; color: var(--muted); margin-left: -3px; }
+.ov-metric-name { margin-left: 4px; font-size: 13px; font-weight: 600; }
+.ov-metric-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.ov-trend { flex: 1 1 64px; display: block; max-width: 100px; height: 40px; margin-left: auto; }
+.ov-trend-empty { flex: 1 1 64px; max-width: 110px; margin-left: auto; font-size: 11px; line-height: 1.25; color: var(--muted); text-align: right; }
+@media (max-width: 760px) {
+  .ov-metric-value { font-size: 34px; }
 }
-.summary-metric-fuerza { --metric-tint: #f3f6f676; }
-.summary-metric-bone { --metric-tint: #dcebe582; }
-.summary-metric:hover { background: rgba(255, 255, 255, .85); }
-.summary-metric:active { background: rgba(224, 231, 251, .9); }
-.summary-metric:focus-visible { outline: 3px solid #4057c9; outline-offset: 3px; }
-.summary-metric-top { display: flex; gap: 8px; color: #4d5975; font-size: 13px; font-weight: 700; }
-.summary-metric-arrow { margin-left: auto; color: #4057c9; font-size: 15px; }
-.summary-metric-reading { display: flex; align-items: end; gap: 8px; margin-top: auto; padding-top: 12px; }
-.summary-metric-value { font-size: clamp(26px, 2.1vw, 36px); line-height: 1; font-weight: 750; letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.summary-metric-value small { margin-left: 4px; color: #58647d; font-size: 11px; letter-spacing: 0; font-weight: 600; }
-.health-summary .summary-metric-bone .summary-metric-value { font-size: clamp(26px, 2vw, 36px); }
-.summary-metric-change { margin-top: 7px; color: #4f5b76; font-size: 12px; line-height: 1.3; font-weight: 700; }
-.summary-metric-alert { margin-top: 5px; color: #85470f; font-size: 11px; font-weight: 750; }
-.summary-metric-alert-critical { color: #a12f3b; }
-.summary-trend { flex: 1; min-width: 40px; height: 35px; }
-.summary-trend-empty { flex: 1; color: #596680; font-size: 10px; line-height: 1.2; }
-@container indicators (max-width: 660px) { .summary-metric-grid { grid-template-columns: 1fr; gap: 9px; } .summary-metric { min-height: 112px; } .summary-trend { max-width: 150px; margin-left: auto; } }
-@media (prefers-reduced-transparency: reduce) { .summary-metric { background: #f4f8fc; backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .ov-metric { transition: none; } }

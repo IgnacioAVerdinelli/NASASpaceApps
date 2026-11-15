@@ -1,35 +1,205 @@
-/* Aerobic capacity tab: reuses the strength styles (overview, timeline, detail, method). */
-.aerobica{background:#f8f9fe}
-.component-legend{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding:0;position:relative;z-index:2}
-.component-legend button{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:700;color:#2f3756;background:#fff;border:1px solid #dcdcec;border-radius:20px;padding:6px 14px 6px 10px;cursor:pointer;transition:background-color .2s,border-color .2s}
-.component-legend button:hover{background:#f1f0fa}
-.component-legend button[aria-pressed="true"]{border-color:#2f2850;background:#efedf9}
-.component-legend button:focus-visible{outline:3px solid #6055a5;outline-offset:2px}
-.component-legend i{width:12px;height:12px;border-radius:50%;flex:none}
+/* Aerobic capacity tab · Frosted glass (docs/design-system.md, tokens in theme/glass.css).
+   The layout classes are the tab's own (aero-*); the shared pieces it borrows from the strength tab
+   (Timeline, LevelBadge, AlertBadge) are restyled here under .aerobica so this tab does not depend on
+   how fuerza/style.css styles them. */
 
-.vo2-figure{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-bottom:26px;margin-bottom:22px;border-bottom:1px solid #d8daea}
-.vo2-label{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#4f5874}
-.vo2-figure strong{font-family:var(--font);font-size:52px;font-weight:600;letter-spacing:-.03em;line-height:1;color:#2f2850;font-variant-numeric:tabular-nums}
-.vo2-figure strong small{font-size:18px;font-weight:600;letter-spacing:0;color:#4f5874}
-.vo2-change{font-size:16px;color:#2f3756;font-variant-numeric:tabular-nums}
-.vo2-floor{font-size:14.5px;color:#4f5874}
-.vo2-floor b{color:#2f2850;font-variant-numeric:tabular-nums}
-.component-detail{display:flex;flex-direction:column;gap:8px;margin-top:8px;font-size:14.5px;line-height:1.6;color:#3e4563}
+.aerobica { min-width: 0; color: var(--ink); font-family: var(--font); }
+.aerobica h2, .aerobica h3, .aerobica p, .aerobica figure, .aerobica dl, .aerobica dd { margin: 0; }
+.aerobica :focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
 
-.validity{margin-top:24px}
-.validity h3{font-family:var(--font);font-size:21px;letter-spacing:-.02em}
-.validity-sub{font-size:15px;line-height:1.6;color:#4f5874;margin-top:8px;max-width:80ch}
-.table-scroll{overflow-x:auto;margin-top:16px}
-.validity table{width:100%;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums;color:#2f3756}
-.validity th,.validity td{text-align:left;padding:11px 14px;border-bottom:1px solid #dcdcec;white-space:nowrap}
-.validity thead th{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#4f5874}
-.validity tbody th{font-weight:800}
-.validity tr.is-current{background:#e9e7f6}
-.check{display:inline-flex;align-items:center;gap:6px;font-weight:700}
-.check::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
-.check.ok{color:#2f6b47}
-.check.no{color:#a4242f}
-.validity td.not-recorded{color:#6b7290;font-style:italic;white-space:normal}
-.vo2-figure .alert-message{margin-top:4px;font-size:14.5px}
-.aerobica .vo2-figure strong{color:#19213e}.aerobica .vo2-label{color:#465574}.aerobica .component-legend button{border-color:#d6e0ee;color:#344465}.aerobica .component-legend button[aria-pressed="true"]{background:#eaf0ff;border-color:#4057c9;color:#3049b3}.aerobica .validity tr.is-current{background:#eaf0ff}
-.aerobica .table-scroll{max-width:100%;overscroll-behavior-inline:contain}
+/* ---- Overview: the organs on the backdrop + the VO2 card ---- */
+.aero-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, .9fr);
+  gap: 24px;
+  align-items: start;
+}
+.aero-map { position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.aero-map-title { align-self: flex-start; position: relative; z-index: 2; padding: 10px 14px 11px; }
+.aero-map-title h2 { font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--ink-strong); }
+.aero-map-title p { margin-top: 2px; font-size: 12px; color: var(--muted); }
+
+.aero-stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 520px; margin-top: -54px; }
+.aero-halo {
+  position: absolute; left: 50%; top: 50%; width: min(92%, 440px); aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.62) 0%, rgba(255,255,255,0) 70%); pointer-events: none;
+}
+.aerobica .aero-stage .orbit { position: absolute; aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(255,255,255,.75); pointer-events: none; }
+.aerobica .aero-stage .orbit-one { width: min(76%, 470px); }
+.aerobica .aero-stage .orbit-two { width: min(58%, 360px); border-color: rgba(255,255,255,.5); }
+.aerobica .aero-stage .model-canvas { position: absolute; inset: 0; z-index: 1; }
+
+/* Component toggles: a glass strip of pills (the same toggles as the rows of the card). */
+.aerobica .component-legend {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 2px; align-self: flex-start;
+  margin: 0; padding: 4px; position: relative; z-index: 2; border-radius: calc(var(--r-sm) + 2px);
+}
+.aerobica .component-legend button {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 12px;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink-2);
+  font: 600 13px var(--font); cursor: pointer; transition: background-color .16s, box-shadow .16s, color .16s;
+}
+.aerobica .component-legend button:hover { background: var(--glass-hover); color: var(--ink-strong); }
+.aerobica .component-legend button[aria-pressed="true"] { background: var(--tab-on-bg); box-shadow: var(--tab-on-shadow); color: var(--ink-strong); }
+.aerobica .component-legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
+
+/* Timeline of cycle tests (component from fuerza/App.jsx). */
+.aerobica .timeline {
+  position: relative; isolation: isolate; z-index: 2; min-width: 0; max-width: 100%;
+  margin: 0; padding: 12px 16px 10px; border-radius: var(--r-sm);
+  background: var(--glass-sm-bg); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-sm-shadow), inset 0 0 0 1px rgba(255,255,255,.7);
+}
+.aerobica .timeline-label { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.aerobica .timeline ol { margin: 10px 0 0; padding: 24px 0 0; gap: 4px; font-size: 12px; color: var(--ink-2); }
+.aerobica .timeline ol::before { top: 8px; height: 2px; background: linear-gradient(90deg, var(--link) 0 var(--progress,0%), rgba(23,32,57,.14) var(--progress,0%)); }
+.aerobica .timeline li::before { top: -24px; width: 14px; height: 14px; margin-left: -7px; border: 2px solid var(--link); background: #FFFFFF; }
+.aerobica .timeline li.next::before { border-color: rgba(23,32,57,.3); border-style: dashed; background: rgba(255,255,255,.6); }
+.aerobica .timeline li.done::before, .aerobica .timeline li.on::before { background: var(--link); }
+.aerobica .timeline li.on::before { box-shadow: 0 0 0 5px rgba(34,56,168,.16); }
+.aerobica .timeline li button {
+  min-height: 44px; min-width: 44px; padding: 0 8px; border-radius: var(--r-pill);
+  font: 600 12px var(--font); color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.aerobica .timeline li button:hover { background: var(--glass-hover); color: var(--ink-strong); }
+.aerobica .timeline li.on button { background: var(--tab-on-bg); color: var(--ink-strong); box-shadow: var(--tab-on-shadow); }
+.aerobica .timeline li button:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+.aerobica .timeline li.next { padding-top: 8px; color: var(--muted); font-size: 12px; }
+.aerobica .timeline li.next small { display: block; font-size: 11px; color: var(--muted); }
+
+/* ---- VO2 card ---- */
+.aero-summary { min-width: 0; padding: 22px; }
+.vo2-figure { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.vo2-value { line-height: 1; color: var(--ink); }
+.vo2-value .num { font-size: 42px; line-height: 1; }
+.vo2-value small { font-size: 13px; color: var(--muted); }
+.vo2-readings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; width: 100%; margin-top: 4px; }
+.vo2-readings dt { font-size: 11px; line-height: 1.35; color: var(--muted); }
+.vo2-readings dd { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.vo2-readings dd .num { font-size: 20px; line-height: 1.1; color: var(--ink); }
+.vo2-readings dd small { font-size: 11px; line-height: 1.35; color: var(--muted); }
+.aero-alert {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; margin-top: 4px;
+  padding: 12px 14px; border-radius: var(--r-sm); background: var(--warn-wash); border: 1px solid var(--warn-wash-border);
+}
+.aero-alert[data-tone="crit"] { background: rgba(251,225,227,.7); border-color: var(--crit-border); }
+.aero-alert p { font-size: 13px; line-height: 1.45; color: var(--ink); }
+
+.aero-intro { margin-top: 16px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.aero-components { display: grid; margin: 10px -10px 0; }
+.aero-component {
+  display: grid; grid-template-columns: 10px minmax(0, 1fr) 16px; gap: 12px; align-items: start;
+  width: 100%; min-height: 56px; padding: 10px; border: 0; border-radius: var(--r-sm);
+  background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+  transition: background-color .16s, box-shadow .16s;
+}
+.aero-component + .aero-component { box-shadow: 0 -1px 0 var(--line-soft); }
+.aero-component:hover { background: var(--glass-hover); }
+.aero-component.is-selected { background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px rgba(34,56,168,.35); }
+.aero-component-marker { width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
+.aero-component-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.aero-component-name { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.aero-component-role { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.aero-component-chevron { margin-top: 2px; color: var(--muted); transition: transform .2s; }
+.aero-component.is-selected .aero-component-chevron { transform: rotate(180deg); color: var(--link); }
+.aerobica .component-detail { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.aerobica .component-detail b { color: var(--ink); font-weight: 600; }
+.aero-note { margin-top: 14px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+
+/* LevelBadge / AlertBadge (fuerza/App.jsx) as status chips. */
+.aerobica .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.aerobica .level-badge {
+  display: inline-flex; align-items: center; gap: 5px; width: max-content; padding: 3px 9px;
+  border-radius: var(--r-pill); background: rgba(255,255,255,.85); border: 1px solid #A9B5C8;
+  color: var(--ink-2); font: 600 11px/1.3 var(--font); white-space: nowrap;
+}
+.aerobica .level-badge i { width: 7px; height: 7px; }
+.aerobica .level-badge.level-4 { background: var(--crit-bg); border-color: var(--crit-border); color: var(--crit-ink); }
+.aerobica .level-badge.level-none { color: var(--muted); }
+.aerobica .level-badge small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.aerobica .level-badge.level-4 small { color: var(--crit-ink); }
+.aerobica .alert-badge {
+  display: inline-flex; align-items: center; gap: 5px; width: max-content; padding: 3px 9px;
+  border-radius: var(--r-pill); border: 1px solid; font: 600 11px/1.3 var(--font);
+}
+.aerobica .alert-badge.alert-critical { background: var(--crit-bg); border-color: var(--crit-border); color: var(--crit-ink); }
+.aerobica .alert-badge.alert-warning { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-ink); }
+.aerobica .alert-badge .alert-icon { color: currentColor; }
+.aerobica .alert-badge.alert-critical .alert-icon { color: var(--crit-dot); }
+.aerobica .alert-badge.alert-warning .alert-icon { color: var(--warn-dot); }
+
+/* ---- Detail: trajectory, reference, validity ---- */
+.aero-detail { margin-top: 32px; }
+.aero-section-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 16px; }
+.aero-section-head h2 { font-size: 22px; font-weight: 600; line-height: 1.2; color: var(--ink-strong); }
+.aero-section-head p { padding: 5px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.aero-charts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 16px; }
+.aero-panel { min-width: 0; padding: 20px 22px; }
+.aero-panel h3 { font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--ink); }
+.aero-panel figcaption p { margin-top: 4px; max-width: 70ch; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.aero-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 12px 0 0; padding: 0; font-size: 11px; color: var(--ink-2); }
+.aero-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.aero-legend i { flex: none; width: 18px; height: 0; border-top: 2px solid; }
+.aero-legend .key-crew { border-color: var(--chart-line); border-top-width: 2.5px; }
+.aero-legend .key-noise { height: 10px; border: 0; border-radius: 2px; background: rgba(23,32,57,.12); }
+.aero-legend .key-warn { border-color: var(--warn-dot); border-top-style: dashed; }
+.aero-legend .key-crit { border-color: var(--crit-dot); }
+.aero-chart { height: 300px; margin-top: 12px; border-radius: var(--r-sm); background: var(--chart-plot-bg); }
+.aero-chart-note { margin-top: 10px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+.aero-validity { margin-top: 16px; }
+.aero-validity-sub { margin-top: 4px; max-width: 80ch; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.aerobica .table-scroll { max-width: 100%; margin-top: 12px; overflow-x: auto; overscroll-behavior-inline: contain; border-radius: var(--r-sm); }
+.aero-validity table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.aero-validity th, .aero-validity td { padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
+.aero-validity thead th { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--line); }
+.aero-validity tbody th { font-weight: 600; }
+.aero-validity td.num { font-size: 14px; }
+.aero-validity tbody tr:hover { background: rgba(255,255,255,.25); }
+.aero-validity tr.is-current { background: rgba(255,255,255,.62); box-shadow: inset 3px 0 0 var(--link); }
+.aero-validity td.not-recorded { font-style: italic; color: var(--muted); white-space: normal; }
+
+/* ---- Method ---- */
+.aero-method { margin-top: 16px; padding: 22px; }
+.aero-method h2 { font-size: 17px; font-weight: 600; color: var(--ink); }
+.aero-lede { margin-top: 6px; max-width: 80ch; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.aero-method-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.aero-method-grid h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.aero-method-grid p { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.aero-method-grid b { font-weight: 600; color: var(--ink); }
+.aero-source { margin-top: 18px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+
+/* ---- Responsive ---- */
+@media (max-width: 1180px) {
+  .aero-overview { grid-template-columns: minmax(0, 1fr) minmax(320px, .95fr); }
+  .aero-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .aero-charts { grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); }
+}
+@media (max-width: 1000px) {
+  .aero-charts { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .aero-overview { grid-template-columns: minmax(0, 1fr); }
+  .aero-stage { min-height: 460px; }
+}
+@media (max-width: 760px) {
+  .aero-stage { min-height: 400px; margin-top: -40px; }
+  .aero-summary, .aero-panel, .aero-method { padding: 18px 16px; }
+  .vo2-value .num { font-size: 34px; }
+  .aero-method-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .aero-chart { height: 260px; }
+  .aero-section-head h2 { font-size: 20px; }
+  .aerobica .component-legend { align-self: stretch; }
+  .aerobica .component-legend li { flex: 1 1 auto; }
+  .aerobica .component-legend button { width: 100%; justify-content: center; }
+  .aerobica .timeline ol { overflow-x: auto; justify-content: space-between; padding-top: 28px; padding-bottom: 4px; scrollbar-width: thin; }
+  .aerobica .timeline li { flex: 0 0 auto; min-width: 56px; }
+  .aerobica .timeline ol::before { top: 12px; }
+  .aerobica .timeline li::before { top: -22px; }
+}
+@media (max-width: 420px) {
+  .vo2-readings { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aero-component, .aero-component-chevron, .aerobica .component-legend button { transition: none; }
+}

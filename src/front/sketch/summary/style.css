@@ -1,212 +1,159 @@
-.health-summary { color: var(--flight-ink); }
-.health-summary button { font-family: inherit; cursor: pointer; }
-.summary-grid {
-  display: grid;
-  grid-template-columns: minmax(0, .85fr) minmax(0, 1.55fr);
-  align-items: start;
-  gap: clamp(20px, 1.65vw, 32px);
-  column-gap: clamp(36px, 3.4vw, 62px);
+/* Overview (#summary) in the "Frosted glass" system: docs/design-system.md §6–7. */
+.ov {
+  /* Local tones not in theme/glass.css yet. */
+  --ov-crit-wash: rgba(251,225,227,.6);       /* critical alert box, the crit twin of --warn-wash */
+  --ov-today-line: rgba(34,56,168,.16);        /* edges of the TODAY column: --link at 16% */
+  color: var(--ink);
 }
-.panel {
-  min-width: 0;
-  padding: 22px;
-  border-radius: 16px;
-  background: #fff;
+.ov button { font-family: inherit; }
+.ov h2 { margin: 0; }
+
+.ov-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr) 348px; gap: 24px; align-items: stretch; }
+.ov-left, .ov-right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ov-muscles { flex: 1; }
+.ov-wearable { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ov-wearable > * { flex: 1; }
+
+/* ---- Card heads ---- */
+.ov-card-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 8px; }
+.ov-card-head h2 { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.ov-card-head > span { font-size: 11px; color: var(--muted); }
+
+/* ---- Muscle groups ---- */
+.ov-muscles { padding: 18px 20px; }
+.ov-muscle-list { list-style: none; margin: 0; padding: 0; }
+.ov-muscle {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 58px; align-items: center; gap: 10px;
+  width: calc(100% + 16px); min-height: 44px; margin: 0 -8px; padding: 4px 8px;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink);
+  text-align: left; font: inherit; cursor: pointer;
 }
-.panel-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.panel-head h2, .panel-head h3, .anatomy-head h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.2; letter-spacing: -.035em; }
-.panel-head > span, .anatomy-head p { color: #50617a; font-size: 12px; line-height: 1.5; }
-.body-card {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  background: radial-gradient(ellipse at 44% 35%, #fff 3%, transparent 59%), linear-gradient(145deg, #e4ebf0, #d8e2ed 68%, #e9f0f5);
-  box-shadow: inset 0 0 0 1px #d7e1e9;
-  padding: 0;
+.ov-muscle:hover { background: var(--glass-hover); }
+.ov-muscle[aria-pressed=true] { background: rgba(255,255,255,.55); box-shadow: inset 0 0 0 1px var(--link); }
+.ov-muscle-name { min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov-muscle-name small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+.ov-muscle-name .alert-icon { margin-right: 4px; vertical-align: -2px; color: var(--warn-ink); }
+.ov-muscle[data-alert=critical] .alert-icon { color: var(--crit-ink); }
+.ov-muscle-track { position: relative; height: 8px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.5); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.ov-muscle-track i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; }
+.ov-muscle-value { font-size: 17px; text-align: right; white-space: nowrap; }
+
+/* ---- Body map: no card, straight on the backdrop ---- */
+.ov-body { position: relative; isolation: isolate; min-width: 0; min-height: 640px; display: flex; flex-direction: column; gap: 12px; }
+.ov-body::before {
+  content: ''; position: absolute; z-index: -1; left: 50%; top: 52%;
+  width: min(520px, 100%); aspect-ratio: 1 / 1.2; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.6), rgba(255,255,255,0));
+  pointer-events: none;
 }
-.anatomy-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px 4px; }
-.anatomy-head p { margin: 5px 0 0; }
-.anatomy-open, .anatomy-layer button, .anatomy-tools button {
-  color: #344562;
-  border: 0;
-  background: transparent;
+.ov-body-head, .ov-body-tools { position: relative; z-index: 3; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 12px; }
+.ov-body-head { align-items: flex-start; }
+.ov-body-tools { align-items: center; }
+.ov-body-title { padding: 10px 14px 12px; }
+.ov-body-title h2 { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.ov-body-title p { margin: 2px 0 8px; font-size: 12px; color: var(--muted); }
+.ov-pill {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px;
+  border: 0; border-radius: var(--r-pill); color: var(--link); font: 600 12px var(--font); cursor: pointer;
 }
-.anatomy-open { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #ffffffa8; }
-.anatomy-open:hover { color: var(--flight-blue); background: white; }
-.anatomy-field { flex: 1; position: relative; isolation: isolate; min-height: clamp(400px, 54vh, 530px); }
-.anatomy-field::before {
-  content: '';
-  position: absolute;
-  inset: 0 14px;
-  z-index: -1;
-  opacity: .6;
-  background-image: radial-gradient(#9daec4 .7px, transparent .8px);
-  background-size: 17px 17px;
-  mask-image: linear-gradient(transparent, black 14%, black 83%, transparent);
+.ov-pill:hover { color: var(--link-hover); }
+.ov-body-stage { position: relative; flex: 1; min-height: 460px; }
+.ov-body-canvas { position: absolute; inset: 0; }
+.ov-legend { list-style: none; margin: 0; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--ink-2); }
+.ov-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.ov-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.ov-rotate { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; }
+.ov-rotate > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-2); }
+
+/* ---- Mission status ---- */
+.ov-status { padding: 20px; }
+.ov-status-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ov-status-top .chip { padding: 4px 10px; font-size: 12px; }
+.ov-status-lead { margin: 10px 0 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.ov-status-detail { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ov-alerts { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.ov-alert {
+  --a-icon-bg: var(--kind-review-bg); --a-icon-ink: var(--warn-ink);
+  padding: 14px; border-radius: calc(var(--r-card) - 4px);
+  background: var(--warn-wash); border: 1px solid var(--warn-wash-border);
 }
-.body-card-stage { position: absolute; inset: 5px 6px 40px; }
-.anatomy-layer, .anatomy-tools > div {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 9px;
-  background: rgba(255,255,255,.67);
-  backdrop-filter: blur(9px);
+.ov-alert[data-tone=crit] { --a-icon-bg: var(--crit-bg); --a-icon-ink: var(--crit-ink); background: var(--ov-crit-wash); border-color: var(--crit-border); }
+.ov-alert-body { display: flex; gap: 10px; font-size: 13px; line-height: 1.45; }
+.ov-alert-body strong { display: block; font-weight: 600; }
+.ov-alert-body span { display: block; }
+.ov-alert-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--a-icon-bg); color: var(--a-icon-ink); }
+.ov-alert-icon .alert-icon { width: 16px; height: 16px; }
+.ov-alert-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 10px; }
+.ov-alert-plan { padding-inline: 4px; }
+
+/* ---- Mission schedule ---- */
+.ov-schedule { margin-top: 24px; padding: 16px 22px 18px; }
+.ov-schedule-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 16px; margin-bottom: 4px; }
+.ov-schedule-head > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.ov-schedule-head h2 { font-size: 17px; font-weight: 600; }
+.ov-schedule-head > div > span { font-size: 12px; color: var(--muted); }
+.ov-timeline { display: grid; grid-template-columns: 250px repeat(7, minmax(0, 1fr)); align-items: center; }
+.ov-timeline-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ov-timeline-head > span:not(:first-child) { text-align: center; }
+.ov-timeline-head > [data-today] { color: var(--link); }
+.ov-timeline-rows { list-style: none; margin: 0; padding: 0; }
+.ov-timeline-rows .ov-timeline {
+  width: 100%; min-height: 46px; padding: 0;
+  border: 0; border-bottom: 1px solid var(--line-soft); background: transparent;
+  color: var(--ink); text-align: left; font: inherit; cursor: pointer;
 }
-.anatomy-layer { position: absolute; z-index: 4; top: 8px; left: 22px; }
-.anatomy-layer button, .anatomy-tools button { font-size: 12px; font-weight: 600; min-height: 32px; padding-inline: 10px; border-radius: 7px; }
-.anatomy-layer button[aria-pressed=true], .anatomy-tools button[aria-pressed=true] { background: #fff; color: #263e6e; box-shadow: 0 1px 4px #384e6926; }
-.anatomy-layer button:hover, .anatomy-tools button:hover { color: #233a9d; }
-.anatomy-tools { position: absolute; inset: auto 22px 5px; display: flex; justify-content: space-between; align-items: center; gap: 7px; }
-.anatomy-tools > span { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #44556d; }
-.body-card .atlas-indicator-text { background: rgba(255,255,255,.94); border-radius: 6px; color: #26334d; }
-.body-card .atlas-indicator-dot { background: #4057c9; }
-.body-card .atlas-indicator-line path { stroke: #7084a6; }
-.mini-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 8px 22px 0; padding: 11px 0 0; border-top: 1px solid #bccbd6; }
-.mini-legend li { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #37465a; }
-.mini-legend i { width: 7px; height: 7px; border-radius: 50%; }
-.body-card .model-credits { padding: 0 22px 8px; margin: 3px 0 0; color: #40516a; font-size: 11px; line-height: 1.5; }
-.model-credits summary { cursor: pointer; padding-block: 5px; }
-.body-card .model-credits p { margin-bottom: 5px; }
-.body-card .model-credits a { text-decoration: underline; }
-.summary-anatomy, .hero-right, .summary-followup {
-  display: grid;
-  align-content: start;
-  gap: clamp(16px, 1.25vw, 24px);
-  min-width: 0;
+.ov-timeline-rows li:last-child .ov-timeline { border-bottom: 0; }
+.ov-timeline-rows .ov-timeline:hover { background: var(--glass-hover); }
+.ov-timeline-rows .ov-timeline:hover .ov-task-title { color: var(--link); }
+.ov-today-col { grid-column: 2; grid-row: 1; align-self: stretch; background: var(--glass-hover); border-inline: 1px solid var(--ov-today-line); }
+.ov-task { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding-block: 6px; padding-right: 12px; }
+.ov-task-title { min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov [data-kind] { background: var(--k-bg); color: var(--k-ink); border: 1px solid var(--k-border); }
+.ov [data-kind=review] { --k-bg: var(--kind-review-bg); --k-ink: var(--kind-review-ink); --k-border: var(--kind-review-border); }
+.ov [data-kind=routine] { --k-bg: var(--kind-routine-bg); --k-ink: var(--kind-routine-ink); --k-border: var(--kind-routine-border); }
+.ov [data-kind=study] { --k-bg: var(--kind-study-bg); --k-ink: var(--kind-study-ink); --k-border: var(--kind-study-border); }
+.ov [data-kind=treatment] { --k-bg: var(--kind-treatment-bg); --k-ink: var(--kind-treatment-ink); --k-border: var(--kind-treatment-border); }
+.ov-kind { flex: none; width: 78px; padding: 4px 0; border-radius: var(--r-pill); text-align: center; font-size: 11px; font-weight: 700; }
+.ov-span {
+  grid-row: 1; z-index: 1; min-width: 0; margin: 0 4px; padding: 6px 10px; border-radius: var(--r-sm);
+  font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.hero-right { container: overview-data / inline-size; }
-.summary-followup { align-items: start; }
-@container overview-data (min-width: 720px) {
-  .summary-followup { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
-  .summary-followup > :only-child { grid-column: 1 / -1; }
-  .summary-followup .compact-watch-main { grid-template-columns: 1fr; gap: 22px; padding-block: 16px 22px; }
-  .summary-followup .compact-watch-plot { height: clamp(112px, 14vh, 155px); }
+.ov-empty { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+/* ---- Footer ---- */
+.ov-foot { margin-top: 18px; font-size: 11px; line-height: 1.5; color: var(--ink-2); }
+.ov-foot p { margin: 0; }
+.ov-credits summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; }
+.ov-credits p { max-width: 110ch; margin-bottom: 4px; }
+.ov-credits a { color: var(--link); text-decoration: underline; }
+
+/* ---- Responsive (design-system §7) ---- */
+@media (max-width: 1180px) {
+  .ov-grid { grid-template-columns: minmax(0, 1fr) 320px; }
+  .ov-body { grid-column: 1; grid-row: 1; }
+  .ov-right { grid-column: 2; grid-row: 1; }
+  .ov-left { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  .ov-timeline { grid-template-columns: 210px repeat(7, minmax(0, 1fr)); }
 }
-.status-compact { background: #fff; border-radius: 14px; }
-.status-compact summary { display: flex; align-items: center; gap: 10px; padding: 11px 16px; min-height: 59px; cursor: pointer; list-style: none; }
-.status-compact summary::-webkit-details-marker { display: none; }
-.status-symbol { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #246a51; background: #e2f2e8; }
-.status-warning .status-symbol { color: #865711; background: #fff2d9; }
-.status-critical .status-symbol { color: #9a2b3c; background: #ffeaec; }
-.status-compact summary small, .status-compact summary strong { display: block; }
-.status-compact summary small { color: #54617a; font-size: 11px; margin-bottom: 2px; }
-.status-compact summary strong { font-size: 16px; }
-.status-action { margin-left: auto; color: #465973; font-size: 12px; display: inline-flex; align-items: center; gap: 8px; }
-.status-expanded { padding: 0 16px 16px; color: #4e5b72; font-size: 13px; line-height: 1.5; }
-.status-alerts, .todo-list, .muscle-bars { list-style: none; margin: 0; padding: 0; }
-.status-alerts button { display: flex; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; width: 100%; padding: 9px 0; border: 0; text-align: left; background: transparent; color: #243149; }
-.sev { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
-.sev-critical { color: #a02433; }
-.sev-warning, .sev-watch { color: #805817; }
-.go { color: var(--flight-blue); font-weight: 600; }
-.status-mission { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
-.mission-bar { flex: 1; height: 4px; border-radius: 3px; background: #e0e6ef; }
-.mission-bar i { display: block; height: 100%; border-radius: 3px; background: var(--flight-blue); }
-.muscle-bar {
-  width: 100%; min-height: 44px; display: grid;
-  grid-template-columns: minmax(75px, 1fr) minmax(35px, 1fr) 62px minmax(75px, .9fr);
-  gap: 7px; align-items: center; text-align: left; padding: 6px 8px;
-  border: 0; border-radius: 7px; background: transparent; color: #23324c;
-}
-.muscle-bar:hover, .muscle-bar[aria-pressed=true] { background: #eff3fa; }
-.mb-name, .mb-value { font-size: 13px; font-weight: 600; }
-.mb-track { height: 5px; overflow: hidden; background: #e7ecf2; border-radius: 4px; }
-.mb-track i { display: block; height: 100%; border-radius: inherit; }
-.mb-level { font-size: 11px; color: #4b5c71; }
-.todo-list { display: grid; gap: 2px; }
-.todo-list button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 10px; min-height: 52px; background: transparent; border: 0; border-bottom: 1px solid #e2e8f0; padding: 8px 0; text-align: left; color: #273550; }
-.todo-list button:hover { color: var(--flight-blue); }
-.todo-list strong { grid-area: 1 / 1; font-size: 13px; }
-.todo-list button > span:last-child { grid-area: 2 / 1 / auto / -1; }
-.todo-kind { grid-area: 1 / 2; color: #4e6091; font-size: 11px; }
-.todo-list button > span:last-child, .next-tests p, .empty, .summary-foot { font-size: 12px; line-height: 1.5; color: #53617b; }
-.link-btn { background: transparent; color: var(--flight-blue); font-weight: 600; min-height: 44px; padding: 8px 0; border: 0; }
-.next-tests { border-top: 1px solid #e2e8f0; padding-top: 12px; }
-.next-tests h3 { margin: 0 0 4px; font-size: 13px; }
-.health-summary > .summary-foot { margin-top: 15px; }
-@media (max-width: 1020px) {
-  .summary-grid { gap: 18px 26px; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); }
-  .anatomy-head, .panel { padding: 16px; }
-  .body-card { padding: 0; }
-  .anatomy-head { padding-bottom: 2px; }
-  .mb-level { grid-column: 1/-1; }
-  .muscle-bar { grid-template-columns: 1fr 1fr 54px; }
+@media (max-width: 960px) {
+  .ov-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov-muscles { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
-  .summary-grid { grid-template-columns: minmax(0, 1fr); }
-  .summary-anatomy, .hero-right, .summary-followup { display: contents; }
-  .status-compact { grid-row: 1; }
-  .body-card { grid-row: 2; margin-bottom: 10px; }
-  .summary-indicators { grid-row: 3; }
-  .compact-watch { grid-row: 4; }
-  .muscle-section { grid-row: 5; }
-  .todo { grid-row: 6; }
-  .summary-grid:not(:has(.compact-watch)) .muscle-section { grid-row: 4; }
-  .summary-grid:not(:has(.compact-watch)) .todo { grid-row: 5; }
-  .anatomy-field { min-height: 410px; }
-  .mb-level { grid-column: auto; }
-  .muscle-bar { grid-template-columns: 1fr .6fr auto 1fr; }
+  .ov-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .ov-left, .ov-right { display: contents; }
+  .ov-status { order: 1; }
+  .ov-body { order: 2; grid-column: auto; grid-row: auto; min-height: 560px; }
+  .ov-metric-aerobica { order: 3; }
+  .ov-metric-fuerza { order: 4; }
+  .ov-muscles { order: 5; grid-column: auto; }
+  .ov-wearable { order: 6; }
+  .ov-body-stage { min-height: 400px; }
+  .ov-schedule { margin-top: 16px; padding-inline: 16px; }
+  .ov-timeline-box { overflow-x: auto; margin-inline: -16px; padding-inline: 16px; }
+  .ov-timeline { min-width: 720px; grid-template-columns: 190px repeat(7, minmax(0, 1fr)); }
 }
 @media (max-width: 460px) {
-  .anatomy-field { min-height: 395px; }
-  .anatomy-head { padding-inline: 16px; }
-  .anatomy-layer { left: 12px; }
-  .anatomy-layer button, .anatomy-tools button { min-height: 40px; }
-  .anatomy-tools { inset-inline: 14px; }
-  .mini-legend { margin-inline: 16px; }
-  .body-card .model-credits { padding-inline: 16px; }
-  .todo-list { grid-template-columns: 1fr; }
-}
-@media (min-width: 1400px) {
-  .anatomy-field { min-height: clamp(415px, 51svh, 620px); }
-}
-
-/* Keep the complete overview visible on landscape desktop displays. */
-@media (min-width: 1200px) and (min-height: 660px) {
-  .vuelo:has(#panel-summary:not([hidden])) .flight-bar-inner { min-height: 56px; }
-  .vuelo:has(#panel-summary:not([hidden])) .flight-heading { padding-block: 14px; }
-  .vuelo:has(#panel-summary:not([hidden])) .flight-heading h1 { font-size: clamp(30px, 4.5vh, 44px); }
-  .vuelo:has(#panel-summary:not([hidden])) .flight-content { padding-bottom: 4px; }
-  .summary-anatomy, .hero-right, .summary-followup { gap: clamp(12px, 1.65vh, 22px); }
-  .summary-anatomy {
-    min-height: calc(100svh - 128px - clamp(34px, 5.1vh, 50px));
-    grid-template-rows: 1fr auto;
-  }
-  .summary-grid .anatomy-head { padding: 12px 18px 0; }
-  .summary-grid .anatomy-head h2, .summary-grid .panel-head h2 { font-size: 18px; }
-  .summary-grid .anatomy-field { min-height: 205px; }
-  .summary-grid .mini-legend { margin-top: 3px; padding-top: 7px; }
-  .summary-grid .body-card .model-credits { margin-top: 0; padding-bottom: 3px; }
-  .summary-grid :is(.muscle-section, .todo, .compact-watch) { padding: 14px 18px; }
-  .summary-grid .muscle-bar { min-height: clamp(26px, 3.65vh, 40px); padding-block: 3px; }
-  .summary-grid .panel-head { margin-bottom: 8px; }
-  .summary-grid .status-compact summary { min-height: 44px; padding-block: 5px; }
-  .summary-grid .summary-indicators { padding: 12px 15px 15px; }
-  .summary-grid .summary-indicators-heading { margin-bottom: 8px; }
-  .summary-grid .summary-metric { min-height: clamp(100px, 13vh, 145px); padding: 10px 12px; }
-  .summary-grid .summary-metric-reading { padding-top: 6px; }
-  .summary-grid .summary-metric-change { font-weight: 550; }
-  .summary-grid .summary-metric-value { font-size: clamp(32px, 5vh, 50px); }
-  .summary-grid .summary-metric-bone .summary-metric-value { font-size: clamp(24px, 3.65vh, 34px); }
-  .summary-followup { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-  .summary-followup > :only-child { grid-column: 1 / -1; }
-  .summary-followup .compact-watch-main { grid-template-columns: 1fr; gap: 10px; padding-block: 5px 12px; }
-  .summary-followup .compact-watch-plot { height: clamp(60px, 10vh, 116px); }
-  .summary-followup .compact-watch-link { min-height: 32px; }
-  .summary-followup .compact-watch-secondary { gap: 10px; padding-top: 10px; }
-  .summary-grid .todo-list button { min-height: 34px; padding-block: 1px; }
-  .summary-grid .todo-list strong { grid-column: 1 / -1; font-size: 12px; }
-  .summary-grid .todo-kind { grid-area: 2 / 2; font-size: 10px; }
-  .summary-grid .todo-list button > span:last-child { grid-area: 2 / 1; font-size: 11px; line-height: 1.2; }
-  .summary-grid .link-btn { min-height: 32px; padding: 4px 0; }
-  .summary-grid .next-tests { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; padding-top: 7px; }
-  .summary-grid .next-tests h3 { margin: 0; }
-  .summary-grid .next-tests p { margin: 0; font-size: 11px; }
-  .health-summary > .summary-foot { margin-top: 3px; }
-}
-@media (min-width: 1200px) and (max-height: 800px) and (min-height: 660px) {
-  .summary-followup .compact-watch-plot { height: 60px; }
-  .summary-followup .compact-watch-secondary span { font-size: 11px; }
+  .ov .seg > button { min-height: 40px; }
+  .ov-rotate { padding-block: 3px; }
 }

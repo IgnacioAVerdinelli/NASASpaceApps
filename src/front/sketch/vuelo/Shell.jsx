@@ -13,6 +13,7 @@ import { useDashboard } from '../data/useDashboard.js';
 import { Brand, Icon } from './Icons.jsx';
 import { missionName, person } from '../data/roster.js';
 import { Backdrop } from './Backdrop.jsx';
+import { measurementsHref } from '../como-medimos/navigation.js';
 import '../style.css';
 import '../fuerza/style.css';
 import './style.css';
@@ -176,6 +177,7 @@ export function Shell() {
         {data && <div className="flight-mission">
           <span className="flight-context"><Icon name="plan" size={15}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></span>
         </div>}
+        <div className="flight-header-actions">
         <div className="flight-crew glass-sm">
           <span className="flight-avatar">{person(crewId).photo ? <img src={person(crewId).photo} alt=""/> : <Icon name="crew" size={19}/>}</span>
           <div><span className="flight-crew-label">Crew member</span>
@@ -183,6 +185,8 @@ export function Shell() {
               ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id} value={id}>{person(id).name}</option>)}</select>
               : <strong>{crewId ? person(crewId).name : '—'}</strong>}
           </div>
+        </div>
+        <a className="flight-measurements btn-link" href={measurementsHref(window.location.href, selectedCrew || crewId)}>How we measure ↗</a>
         </div>
       </div>
     </header>

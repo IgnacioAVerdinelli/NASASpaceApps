@@ -18,7 +18,8 @@ def people(n=600):
 def test_one_exam_reads_every_measure_in_its_unit():
     m, (cm, *_) = people(1)
     rs = gs.OcularExam(seed=1).measure_all(cm, 89)
-    assert [r.measure for r in rs] == list(OCULAR_MEASURES)
+    assert [r.measure for r in rs] == list(OCULAR_MEASURES) * 2
+    assert [r.side for r in rs] == ["right"] * len(OCULAR_MEASURES) + ["left"] * len(OCULAR_MEASURES)
     assert all(r.instrument == "ocular" and r.unit == gs.MEASURES[r.measure]["unit"] for r in rs)
     assert all(gs.LIMITS[r.measure][0] <= r.value <= gs.LIMITS[r.measure][1] for r in rs)
     assert {r.unit for r in rs} <= set(gs.UNITS)
@@ -26,7 +27,7 @@ def test_one_exam_reads_every_measure_in_its_unit():
 
 def test_the_crew_reproduces_the_published_shares():
     m, crew = people()
-    ch = [profile(c).changes(c, 149.0) for c in crew]          # flight day 150
+    ch = [profile(c).changes(c, 149.0, eye) for c in crew for eye in ("right", "left")]   # flight day 150, every eye
     share = lambda f: np.mean([f(c) for c in ch])
     assert share(lambda c: c["oct_trt"] >= 20) == pytest.approx(0.66, abs=0.07)      # consensus 2026: 66-69 %
     assert share(lambda c: c["oct_trt"] >= 55) == pytest.approx(0.15, abs=0.05)      # ~15 % Frisén >= 1
@@ -61,4 +62,19 @@ def test_the_dataservice_stores_eye_readings():
     data = gs.DataService()
     data.ingest(gs.OcularExam(seed=2).measure_all(cm, 89))
     stored = data.readings(cm.id, list(OCULAR_MEASURES))
-    assert len(stored) == len(OCULAR_MEASURES) and all(r.quality == "ok" for r in stored)
+    assert len(stored) == 2 * len(OCULAR_MEASURES) and all(r.quality == "ok" for r in stored)
+
+
+def test_each_eye_has_its_own_course_and_one_eye_can_carry_it():
+    m, crew = people(300)
+    a = np.array([[profile(c).changes(c, 149.0, e)["oct_trt"] for e in ("right", "left")] for c in crew])
+    r = np.corrcoef(a[:, 0], a[:, 1])[0, 1]
+    assert 0.6 < r < 0.95                                     # alike, not the same
+    assert np.mean((a[:, 0] >= 55) != (a[:, 1] >= 55)) > 0.03  # some people cross the line in one eye only
+    cm = crew[0]
+    gs.set_sans(cm, 1.8, eye="right")
+    p = profile(cm)
+    right, left = (p.changes(cm, 149.0, e)["oct_trt"] for e in ("right", "left"))
+    assert right >= 55 and left < right - 20
+    with pytest.raises(ValueError):
+        gs.set_sans(cm, 1.0, eye="middle")

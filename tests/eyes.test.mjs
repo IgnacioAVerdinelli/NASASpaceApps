@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { eyeShape, eyesUrl, loadEyes, octRows, shown, validateEyes } from '../src/front/sketch/data/eyes.js';
+import { eyeShape, eyesUrl, loadEyes, octRows, shown, validateEyes, worseEye } from '../src/front/sketch/data/eyes.js';
 
-const exam = (label, day, changes, values = {}, cls = 'none') => ({ label, day, changes, values, class: cls, signs: [] });
-const data = exams => ({ version: 1, exams, measures: [], status: { class: 'none', signs: [] }, thresholds: { oct_trt: { A: 20, B: 55 } } });
+const exam = (label, day, changes, values = {}, cls = 'none', left = {}) => ({ label, day, changes: { right: changes, left }, values: { right: values, left: {} }, class: cls, eyes: { right: { class: cls }, left: { class: 'none' } }, signs: [] });
+const data = (exams, eyes = { right: 'none', left: 'none' }) => ({ version: 2, exams, measures: [], status: { class: 'none', signs: [], eyes }, thresholds: { oct_trt: { A: 20, B: 55 } } });
 
 test('URL and validation', () => {
   assert.equal(eyesUrl('/api/v1/dashboard', 'CM-1'), '/api/v1/eyes?crew=CM-1');
   assert.equal(eyesUrl('http://h:3000/api/v1/dashboard?day=9', 'CM 1'), 'http://h:3000/api/v1/eyes?crew=CM+1');
-  assert.throws(() => validateEyes({ version: 1, exams: [] }));
+  assert.throws(() => validateEyes({ version: 1, exams: [], measures: [], status: {} }));
   assert.ok(validateEyes(data([])));
 });
 
@@ -20,8 +20,11 @@ test('the drawing reads the changes, never below zero', () => {
 });
 
 test('OCT rows and how values read', () => {
-  const rows = octRows(data([exam('L-30', -30, { oct_trt: 0 }), exam('FD30', 29, { oct_trt: 22, oct_mrw: 25 }, {}, 'A')]));
-  assert.deepEqual(rows[1], { day: 29, label: 'FD30', cls: 'A', trt: 22, mrw: 25, choroid: null });
+  const rows = octRows(data([exam('L-30', -30, { oct_trt: 0 }), exam('FD30', 29, { oct_trt: 22, oct_mrw: 25 }, {}, 'A', { oct_trt: 4 })]));
+  assert.deepEqual(rows[1], { day: 29, label: 'FD30', cls: 'A', trt: 22, mrw: 25, choroid: null, otherTrt: 4 });
+  assert.equal(octRows(data([exam('FD30', 29, { oct_trt: 22 }, {}, 'A', { oct_trt: 4 })]), 'left')[0].trt, 4);
+  assert.equal(worseEye(data([], { right: 'A', left: 'B' })), 'left');
+  assert.equal(worseEye(data([], { right: 'none', left: 'none' })), 'right');
   assert.equal(shown({ measure: 'frisen_grade', unit: 'grade' }, 1), 'Grade 1');
   assert.equal(shown({ measure: 'choroidal_folds', unit: 'flag' }, 0), 'Not seen');
   assert.equal(shown({ measure: 'onsd', unit: 'mm', decimals: 2 }, 6.1), '6.10 mm');

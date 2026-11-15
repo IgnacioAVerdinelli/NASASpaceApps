@@ -8,6 +8,8 @@ Classes (consensus 2026, Table 2; one criterion is enough):
 - A, earliest indication: retinal thickness around the disc (TRT) >= +20 um, any chorioretinal fold, any
   flattening of the back of the eye, or a refraction shift over +0.50 D;
 - B, clinically concerning: TRT >= +55 um or Frisen grade >= 1.
+SANS can show in one eye only (consensus 2026: "in either or both eyes"), so each eye is classed on its own against
+its own pre-flight exam and the person takes the worse eye's class; averaging the eyes could hide it.
 Classes C and D need visual fields and long-term follow-up, which the simulated exam does not give.
 A class A or B exam is a finding for the Planner, which books a flight-surgeon review.
 """
@@ -46,6 +48,8 @@ EXAM = [
      "A shorter eye sees worse up close"),
 ]
 MEASURES = [e[0] for e in EXAM]
+EYES = ("right", "left")
+EYE_NAMES = {"right": "Right eye", "left": "Left eye"}
 FLAGS = {"frisen_grade", "choroidal_folds", "globe_flattening"}
 CLASS_ORDER = ["none", "A", "B"]
 CLASS_TEXT = {
@@ -56,81 +60,98 @@ CLASS_TEXT = {
 
 
 def exams(mission: MissionInfo, records: list[dict]) -> list[dict]:
-    """The exam sessions, oldest first: the readings of one day grouped, {day, label, at, values}."""
+    """The exam sessions, oldest first: the readings of one day grouped by eye, {day, label, at, values: {eye: {...}}}.
+    A reading without a side counts for both eyes."""
     by_day: dict[float, dict] = {}
     for r in records:
         if r.get("quality", "ok") != "ok" or r.get("value") is None or r["measure"] not in MEASURES:
             continue
         day = mission.day_of(r["timestamp"])
-        key = round(day, 1)
-        e = by_day.setdefault(key, {"day": round(day, 3), "label": r.get("day_label") or mission.label(day),
-                                    "at": r["timestamp"], "values": {}})
-        e["values"][r["measure"]] = r["value"]
+        e = by_day.setdefault(round(day, 1), {"day": round(day, 3), "label": r.get("day_label") or mission.label(day),
+                                              "at": r["timestamp"], "values": {eye: {} for eye in EYES}})
+        for eye in ([r["side"]] if r.get("side") in EYES else EYES):
+            e["values"][eye][r["measure"]] = r["value"]
     return [by_day[k] for k in sorted(by_day)]
 
 
-def baseline(sessions: list[dict]) -> dict[str, float]:
-    """The pre-flight reference: the mean of the exams before launch (the first exam when there is none)."""
+def baseline(sessions: list[dict]) -> dict[str, dict[str, float]]:
+    """The pre-flight reference of each eye: the mean of the exams before launch (the first exam when there is none)."""
     pre = [e for e in sessions if e["day"] < 0] or sessions[:1]
     out = {}
-    for m in MEASURES:
-        vals = [e["values"][m] for e in pre if m in e["values"]]
-        if vals:
-            out[m] = 0.0 if m in FLAGS else fmean(vals)
+    for eye in EYES:
+        out[eye] = {}
+        for m in MEASURES:
+            vals = [e["values"][eye][m] for e in pre if m in e["values"][eye]]
+            if vals:
+                out[eye][m] = 0.0 if m in FLAGS else fmean(vals)
     return out
 
 
 def classify(changes: dict[str, float], values: dict[str, float]) -> tuple[str, list[dict]]:
-    """The SANS class of one exam and the signs behind it (consensus 2026, Table 2)."""
+    """The SANS class of one eye at one exam and the signs behind it (consensus 2026, Table 2)."""
     trt = changes.get("oct_trt")
     signs = []
     if trt is not None and (trt >= TRT_B or values.get("frisen_grade", 0) >= 1):
         signs.append({"sign": "disc_edema", "class": "B",
-                      "text": f"Optic disc swelling: retina {trt:+.0f} µm around the disc" +
+                      "text": f"optic disc swelling, retina {trt:+.0f} µm around the disc" +
                               (f", Frisén grade {values['frisen_grade']:.0f}" if values.get("frisen_grade", 0) >= 1 else "")})
     elif trt is not None and trt >= TRT_A:
-        signs.append({"sign": "disc_edema", "class": "A", "text": f"Early optic disc swelling: retina {trt:+.0f} µm around the disc"})
+        signs.append({"sign": "disc_edema", "class": "A", "text": f"early optic disc swelling, retina {trt:+.0f} µm around the disc"})
     if values.get("choroidal_folds", 0) >= 1:
-        signs.append({"sign": "folds", "class": "A", "text": "Folds in the back of the eye"})
+        signs.append({"sign": "folds", "class": "A", "text": "folds in the back of the eye"})
     if values.get("globe_flattening", 0) >= 1:
-        signs.append({"sign": "globe_flattening", "class": "A", "text": "The back of the eye is flattened"})
+        signs.append({"sign": "globe_flattening", "class": "A", "text": "the back of the eye is flattened"})
     ref = changes.get("refraction_se")
     if ref is not None and ref > REFRACTION_A:
-        signs.append({"sign": "refraction", "class": "A", "text": f"Near vision shifted {ref:+.2f} D"})
-    cls = max((s["class"] for s in signs), key=CLASS_ORDER.index, default="none")
-    return cls, signs
+        signs.append({"sign": "refraction", "class": "A", "text": f"near vision shifted {ref:+.2f} D"})
+    return worst(s["class"] for s in signs), signs
+
+
+def worst(classes) -> str:
+    return max(classes, key=CLASS_ORDER.index, default="none")
 
 
 def build_eyes(mission: MissionInfo, crew_id: str, day: float, records: list[dict], simulated: bool = True) -> dict:
-    """GET /api/v1/eyes: every exam up to `day` against the pre-flight one, the SANS class and the latest signs."""
+    """GET /api/v1/eyes: every exam up to `day`, each eye against its own pre-flight exam; the class of the person is
+    the worse eye's, since SANS can show in one eye only and an average would hide it."""
     sessions = [e for e in exams(mission, records) if e["day"] <= day + 1e-9]
     base = baseline(sessions)
     for e in sessions:
-        e["changes"] = {m: round(v - base[m], 3) for m, v in e["values"].items() if m in base}
-        e["class"], e["signs"] = classify(e["changes"], e["values"]) if e["day"] >= 0 else ("none", [])
+        e["changes"], e["eyes"] = {}, {}
+        for eye in EYES:
+            vals, b = e["values"][eye], base[eye]
+            e["changes"][eye] = {m: round(v - b[m], 3) for m, v in vals.items() if m in b}
+            cls, signs = classify(e["changes"][eye], vals) if e["day"] >= 0 else ("none", [])
+            e["eyes"][eye] = {"class": cls, "signs": [s | {"eye": eye} for s in signs]}
+        e["class"] = worst(e["eyes"][eye]["class"] for eye in EYES)
+        e["signs"] = [s for eye in EYES for s in e["eyes"][eye]["signs"]]
     flight = [e for e in sessions if e["day"] >= 0]
     latest = sessions[-1] if sessions else None
     current = flight[-1] if flight else None
     cls = current["class"] if current else "none"
     measures = []
     for mid, name, unit, decimals, group, device, about in EXAM:
-        series = [{"day": e["day"], "label": e["label"], "value": e["values"][mid], "change": e["changes"].get(mid)}
-                  for e in sessions if mid in e["values"]]
-        last = series[-1] if series else None
+        per_eye = {}
+        for eye in EYES:
+            series = [{"day": e["day"], "label": e["label"], "value": e["values"][eye][mid],
+                       "change": e["changes"][eye].get(mid)} for e in sessions if mid in e["values"][eye]]
+            per_eye[eye] = {"baseline": base[eye].get(mid), "latest": series[-1] if series else None, "series": series}
         measures.append({"measure": mid, "name": name, "unit": unit, "decimals": decimals, "group": group,
-                         "device": device, "about": about, "baseline": base.get(mid), "flag": mid in FLAGS,
-                         "latest": last, "series": series})
+                         "device": device, "about": about, "flag": mid in FLAGS, "eyes": per_eye})
     peak = max(flight, key=lambda e: CLASS_ORDER.index(e["class"]), default=None)
+    by_eye = {eye: current["eyes"][eye]["class"] if current else "none" for eye in EYES}
     return {
-        "version": 1, "crew": {"id": crew_id}, "simulated": simulated,
+        "version": 2, "crew": {"id": crew_id}, "simulated": simulated, "eyeOrder": list(EYES),
         "mission": {"today": round(day, 3), "todayLabel": mission.label(day), "landing": mission.landing},
-        "status": {"class": cls, "text": CLASS_TEXT[cls], "signs": current["signs"] if current else [],
+        "status": {"class": cls, "text": CLASS_TEXT[cls], "eyes": by_eye,
+                   "signs": [s | {"text": f"{EYE_NAMES[s['eye']]}: {s['text']}"} for s in current["signs"]] if current else [],
                    "examLabel": current["label"] if current else None,
                    "worstClass": peak["class"] if peak else "none", "worstLabel": peak["label"] if peak else None},
         "thresholds": {"oct_trt": {"A": TRT_A, "B": TRT_B}, "refraction_se": {"A": REFRACTION_A}},
         "exams": sessions, "latest": latest, "measures": measures,
         "notice": ("Synthetic data, modelled on published NASA results. " if simulated else "")
-                  + "Classes follow the 2026 SANS expert consensus; not a medical assessment.",
+                  + "Each eye is compared with its own pre-flight exam; the class is the worse eye's (2026 SANS expert "
+                    "consensus). Not a medical assessment.",
     }
 
 

@@ -119,7 +119,7 @@ def mission_parser(description: str, port: int) -> argparse.ArgumentParser:
     ap.add_argument("--fatigue", action="append", default=[], metavar="CREW:DAY[:DAYS]",
                     help="a fatigue spell the watch should catch, e.g. CM-3:132:6 (repeatable; CrewMember.add_fatigue)")
     ap.add_argument("--sans", action="append", default=[], metavar="CREW:Z",
-                    help="a crew member's SANS susceptibility in SD, e.g. CM-1:1.5 (repeatable; gravsim.ocular.set_sans)")
+                    help="a crew member's SANS susceptibility in SD, e.g. CM-1:1.5, or CM-1:1.8:R for mostly the right eye (repeatable; gravsim.ocular.set_sans)")
     return ap
 
 
@@ -134,14 +134,15 @@ def apply_fatigue(mission: Mission, specs: list[str]) -> None:
 
 
 def apply_sans(mission: Mission, specs: list[str]) -> None:
-    """--sans CREW:Z options onto the mission's crew (the eye exam, gravsim.ocular)."""
+    """--sans CREW:Z[:EYE] options onto the mission's crew (the eye exam, gravsim.ocular). EYE R or L: mostly that eye."""
     from .ocular import set_sans
     crew = {c.id: c for c in mission.crew}
+    eyes = {"R": "right", "L": "left"}
     for spec in specs:
         parts = spec.split(":")
-        if len(parts) != 2 or parts[0] not in crew:
-            raise SystemExit(f"--sans {spec!r}: expected CREW:Z with CREW one of {sorted(crew)}")
-        set_sans(crew[parts[0]], float(parts[1]))
+        if len(parts) not in (2, 3) or parts[0] not in crew or (len(parts) == 3 and parts[2].upper() not in eyes):
+            raise SystemExit(f"--sans {spec!r}: expected CREW:Z[:R|L] with CREW one of {sorted(crew)}")
+        set_sans(crew[parts[0]], float(parts[1]), eyes[parts[2].upper()] if len(parts) == 3 else None)
 
 
 def mission_clock(mission: Mission, day: float, speed: float) -> Callable[[], float]:

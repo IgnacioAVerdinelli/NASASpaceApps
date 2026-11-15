@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDashboard } from '../data/useDashboard.js';
-import { CLASSES, GROUPS, eyeShape, eyesUrl, fmt, loadEyes, octRows, shown } from '../data/eyes.js';
+import { CLASSES, EYES, EYE_LABEL, GROUPS, eyeShape, eyesUrl, fmt, loadEyes, octRows, shown, worseEye } from '../data/eyes.js';
 import BodyViewer from '../../body-3d/BodyViewer.jsx';
 import { Eye3D } from './Eye3D.jsx';
 import './style.css';
@@ -14,9 +14,9 @@ const LINES = [
 const tick = { fontSize: 13, fill: '#4f5874' };
 const CLASS_COLORS = { none: '#9fc9ae', A: '#ef9959', B: '#d94d4b' };      // the body viewer's intensity palette
 
-// Where: the same 3D body as the other analyses, organs layer, the eyes coloured by the SANS class of the exam.
-function BodyContext({ body, cls }) {
-  const colors = useMemo(() => ({ eye_l: CLASS_COLORS[cls], eye_r: CLASS_COLORS[cls] }), [cls]);
+// Where: the same 3D body as the other analyses, organs layer, each eye coloured by its own SANS class.
+function BodyContext({ body, classes }) {
+  const colors = useMemo(() => ({ eye_r: CLASS_COLORS[classes.right], eye_l: CLASS_COLORS[classes.left] }), [classes.right, classes.left]);
   const [exploration] = useState({ key: 'eye_l', request: 1 });
   return <div className="eye-body"><BodyViewer body={body} layer="organs" structureColors={colors} selected="eye_l" framing={1.1} explorationRequest={exploration}/></div>;
 }
@@ -25,19 +25,27 @@ function ClassPill({ cls }) {
   return <span className="eye-pill" data-class={cls}><i/>{CLASSES[cls]?.short ?? cls}</span>;
 }
 
-function ExamPicker({ exams, index, onPick, playing, onPlay }) {
+function EyePicker({ eye, classes, onPick }) {
+  return <div className="eye-picker" role="radiogroup" aria-label="Eye">
+    {EYES.map(e => <button key={e} type="button" role="radio" aria-checked={e === eye} data-class={classes[e]} onClick={() => onPick(e)}>
+      {EYE_LABEL[e]}<i/>
+    </button>)}
+  </div>;
+}
+
+function ExamPicker({ exams, index, onPick, playing, onPlay, eye }) {
   return <div className="exam-picker">
     <button type="button" className="exam-play" onClick={onPlay} aria-pressed={playing}>{playing ? '❚❚ Pause' : '▶ Play the mission'}</button>
     <div className="exam-steps" role="radiogroup" aria-label="Exam">
-      {exams.map((e, i) => <button key={e.day} type="button" role="radio" aria-checked={i === index} data-class={e.class} onClick={() => onPick(i)}>
+      {exams.map((e, i) => <button key={e.day} type="button" role="radio" aria-checked={i === index} data-class={e.eyes?.[eye]?.class ?? e.class} onClick={() => onPick(i)}>
         <span>{e.label}</span><i/>
       </button>)}
     </div>
   </div>;
 }
 
-function Facts({ exam }) {
-  const c = exam.changes || {}, v = exam.values || {};
+function Facts({ exam, eye }) {
+  const c = exam.changes?.[eye] || {}, v = exam.values?.[eye] || {};
   const rows = [
     ['Swelling at the optic disc', `${fmt(c.oct_trt, 0, true)} µm`],
     ['Choroid', `${fmt(c.oct_choroid, 0, true)} µm`],
@@ -48,10 +56,11 @@ function Facts({ exam }) {
   return <dl className="eye-facts">{rows.map(([k, val]) => <div key={k}><dt>{k}</dt><dd>{val}</dd></div>)}</dl>;
 }
 
-function OctChart({ data }) {
-  const rows = octRows(data);
+function OctChart({ data, eye }) {
+  const rows = octRows(data, eye);
+  const other = eye === 'right' ? 'left' : 'right';
   const th = data.thresholds.oct_trt;
-  const values = rows.flatMap(r => [r.trt, r.mrw, r.choroid]).filter(v => v != null);
+  const values = rows.flatMap(r => [r.trt, r.mrw, r.choroid, r.otherTrt]).filter(v => v != null);
   const top = Math.max(th.B + 15, ...values);
   const bottom = Math.min(-10, ...values);
   const lo = Math.floor(bottom / 20) * 20, hi = Math.ceil(top / 20) * 20;
@@ -67,21 +76,28 @@ function OctChart({ data }) {
       <Tooltip formatter={(v, name) => [`${fmt(v, 0, true)} µm`, name]}/>
       {LINES.map(l => <Line key={l.key} dataKey={l.key} name={l.name} stroke={l.color} strokeWidth={l.key === 'trt' ? 3 : 2}
         dot={{ r: l.key === 'trt' ? 6 : 4, fill: l.color, stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false}/>)}
+      <Line dataKey="otherTrt" name={`Retina, ${EYE_LABEL[other].toLowerCase()}`} stroke="#9b97b8" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: '#9b97b8' }} isAnimationActive={false}/>
     </LineChart>
   </ResponsiveContainer></div>;
 }
 
-function TestCard({ group, measures }) {
+function EyeCell({ m, eye }) {
+  const e = m.eyes?.[eye];
+  if (!e?.latest) return <td>—</td>;
+  const change = m.flag || e.latest.change == null ? null : `${fmt(e.latest.change, m.decimals, true)} ${m.unit}`;
+  const before = m.flag ? (m.measure === 'frisen_grade' ? 'Grade 0' : 'Not seen') : shown(m, e.baseline);
+  return <td><b>{shown(m, e.latest.value)}</b>{change && <span className="eye-change"> {change}</span>}<small>Pre-flight {before}</small></td>;
+}
+
+function TestCard({ group, measures, last }) {
   return <article className="panel eye-card">
     <header><h3>{group.title}</h3><span>{group.device}</span></header>
     <p>{group.about}</p>
     <table>
-      <thead><tr><th scope="col">Measure</th><th scope="col">Pre-flight</th><th scope="col">Last exam</th><th scope="col">Change</th></tr></thead>
+      <thead><tr><th scope="col">Measure{last ? ` · ${last}` : ''}</th>{EYES.map(e => <th key={e} scope="col">{EYE_LABEL[e]}</th>)}</tr></thead>
       <tbody>{measures.map(m => <tr key={m.measure}>
         <th scope="row">{m.name}<small>{m.about}</small></th>
-        <td>{m.flag ? (m.measure === 'frisen_grade' ? 'Grade 0' : 'Not seen') : shown(m, m.baseline)}</td>
-        <td><b>{shown(m, m.latest?.value)}</b>{m.latest && <small>{m.latest.label}</small>}</td>
-        <td>{m.flag || m.latest?.change == null ? '' : `${fmt(m.latest.change, m.decimals, true)} ${m.unit}`}</td>
+        {EYES.map(e => <EyeCell key={e} m={m} eye={e}/>)}
       </tr>)}</tbody>
     </table>
   </article>;
@@ -92,8 +108,10 @@ export function EyesView({ apiUrl, crewId, body = 'male' }) {
   const exams = data?.exams || [];
   const [picked, setPicked] = useState(null);       // null follows the latest exam
   const [playing, setPlaying] = useState(false);
+  const [eyeChoice, setEyeChoice] = useState(null);  // null shows the worse eye
+  const eye = eyeChoice ?? worseEye(data);
   const index = picked == null ? exams.length - 1 : Math.min(picked, exams.length - 1);
-  useEffect(() => { setPicked(null); setPlaying(false); }, [crewId]);
+  useEffect(() => { setPicked(null); setPlaying(false); setEyeChoice(null); }, [crewId]);
   useEffect(() => {
     if (!playing) return undefined;
     const timer = setInterval(() => setPicked(i => {
@@ -122,31 +140,33 @@ export function EyesView({ apiUrl, crewId, body = 'male' }) {
         <div><h3>{CLASSES[status.class]?.label}</h3><p>{status.text}</p></div>
       </div>
       {status.signs.length > 0 && <ul className="eye-signs">{status.signs.map(s => <li key={s.sign} data-class={s.class}>{s.text}</li>)}</ul>}
+      <p className="eye-status-eyes">{EYES.map(e => <span key={e}>{EYE_LABEL[e]} <ClassPill cls={status.eyes[e]}/></span>)}</p>
       <p className="eye-status-meta">{status.examLabel ? `Last exam in flight: ${status.examLabel}` : 'No exam in flight yet'}{status.worstClass !== 'none' && status.worstClass !== status.class ? ` · Highest so far: ${CLASSES[status.worstClass].short} at ${status.worstLabel}` : ''}</p>
     </section>
 
     {exams.length === 0 ? <p className="connection-notice">No eye exam recorded yet.</p> : <div className="eye-main">
       <figure className="panel eye-figure">
-        <figcaption><div><strong>Your eye at {exam.label}</strong><span>Cut in half to show the layers. Drag to rotate. {pre && exam.day >= 0 ? `Dashed: ${pre.label}, before flight. ` : ''}Changes drawn about 40 times larger so they can be seen.</span></div><ClassPill cls={exam.class}/></figcaption>
-        <Eye3D shape={eyeShape(exam)} cls={exam.class} title={`3D cut of the eye at ${exam.label}`}/>
-        <ExamPicker exams={exams} index={index} onPick={i => { setPlaying(false); setPicked(i); }} playing={playing}
+        <figcaption><div><strong>{EYE_LABEL[eye]} at {exam.label}</strong><span>Cut in half to show the layers. Drag to rotate. {pre && exam.day >= 0 ? `Dashed: ${pre.label}, before flight. ` : ''}Changes drawn about 40 times larger so they can be seen.</span></div><ClassPill cls={exam.eyes[eye].class}/></figcaption>
+        <EyePicker eye={eye} classes={{ right: exam.eyes.right.class, left: exam.eyes.left.class }} onPick={setEyeChoice}/>
+        <Eye3D shape={eyeShape(exam, eye)} cls={exam.eyes[eye].class} title={`3D cut of the ${eye} eye at ${exam.label}`}/>
+        <ExamPicker exams={exams} index={index} eye={eye} onPick={i => { setPlaying(false); setPicked(i); }} playing={playing}
           onPlay={() => { if (!playing) setPicked(0); setPlaying(p => !p); }}/>
-        <Facts exam={exam}/>
+        <Facts exam={exam} eye={eye}/>
       </figure>
       <div className="eye-side">
       <figure className="panel eye-where">
-        <figcaption><div><strong>Where</strong><span>Both eyes, coloured by the class of the exam.</span></div></figcaption>
-        <BodyContext body={body} cls={exam.class}/>
+        <figcaption><div><strong>Where</strong><span>Each eye coloured by its own class at {exam.label}: right {CLASSES[exam.eyes.right.class].short}, left {CLASSES[exam.eyes.left.class].short}.</span></div></figcaption>
+        <BodyContext body={body} classes={{ right: exam.eyes.right.class, left: exam.eyes.left.class }}/>
       </figure>
       <figure className="panel eye-oct">
-        <figcaption><div><strong>OCT · change from pre-flight (µm)</strong><span>The retina around the optic disc is the first sign of SANS. The lines are the 2026 expert consensus classes.</span></div></figcaption>
-        <OctChart data={data}/>
-        <ul className="oct-legend">{LINES.map(l => <li key={l.key}><i style={{ background: l.color }}/>{l.name}</li>)}</ul>
+        <figcaption><div><strong>OCT · {EYE_LABEL[eye].toLowerCase()} · change from pre-flight (µm)</strong><span>The retina around the optic disc is the first sign of SANS. The lines are the 2026 expert consensus classes; dashed grey is the other eye's retina.</span></div></figcaption>
+        <OctChart data={data} eye={eye}/>
+        <ul className="oct-legend">{LINES.map(l => <li key={l.key}><i style={{ background: l.color }}/>{l.name}</li>)}<li><i className="dashed"/>{EYE_LABEL[eye === 'right' ? 'left' : 'right']}, retina</li></ul>
       </figure>
       </div>
     </div>}
 
-    <div className="eye-cards">{byGroup.map(({ group, measures }) => <TestCard key={group.id} group={group} measures={measures}/>)}</div>
+    <div className="eye-cards">{byGroup.map(({ group, measures }) => <TestCard key={group.id} group={group} measures={measures} last={data.latest?.label}/>)}</div>
     <p className="eye-notice">{data.notice}</p>
   </div>;
 }

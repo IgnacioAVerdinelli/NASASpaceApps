@@ -12,7 +12,7 @@ export function eyesUrl(dashboardUrl, crew) {
 }
 
 export function validateEyes(data) {
-  if (!data || data.version !== 1 || !Array.isArray(data.exams) || !Array.isArray(data.measures) || !data.status) {
+  if (!data || data.version !== 2 || !Array.isArray(data.exams) || !Array.isArray(data.measures) || !data.status) {
     throw new Error('Invalid eye exam data from the HealthService');
   }
   return data;
@@ -23,6 +23,14 @@ export async function loadEyes({ url, signal, fetchImpl = fetch }) {
   if (!response.ok) throw new Error(`Eye exam request failed (${response.status})`);
   return validateEyes(await response.json());
 }
+
+// Each eye is compared with its own pre-flight exam (SANS can show in one eye only).
+export const EYES = ['right', 'left'];
+export const EYE_LABEL = { right: 'Right eye', left: 'Left eye' };
+const RANK = { none: 0, A: 1, B: 2 };
+
+// The eye to show first: the worse one at the latest exam (the right one on a tie).
+export const worseEye = data => EYES.reduce((best, eye) => (RANK[data?.status?.eyes?.[eye]] ?? 0) > (RANK[data?.status?.eyes?.[best]] ?? 0) ? eye : best, 'right');
 
 export const CLASSES = {
   none: { label: 'No sign of SANS', short: 'No sign' },
@@ -56,8 +64,8 @@ export function shown(measure, value) {
 }
 
 // The drawing of one exam: its changes from pre-flight, read as shapes (no thresholds here). Missing values are 0.
-export function eyeShape(exam) {
-  const c = exam?.changes || {}, v = exam?.values || {};
+export function eyeShape(exam, eye = 'right') {
+  const c = exam?.changes?.[eye] || {}, v = exam?.values?.[eye] || {};
   return {
     disc: Math.max(0, c.oct_trt ?? 0),            // µm of swelling at the disc
     choroid: Math.max(0, c.oct_choroid ?? 0),     // µm of thicker choroid
@@ -67,10 +75,12 @@ export function eyeShape(exam) {
   };
 }
 
-// OCT changes by exam, for the chart.
-export function octRows(data) {
+// OCT changes by exam, for the chart: the shown eye's three layers and the other eye's retina, to compare.
+export function octRows(data, eye = 'right') {
+  const other = eye === 'right' ? 'left' : 'right';
   return (data?.exams || []).map(e => ({
-    day: e.day, label: e.label, cls: e.class,
-    trt: e.changes?.oct_trt ?? null, mrw: e.changes?.oct_mrw ?? null, choroid: e.changes?.oct_choroid ?? null,
+    day: e.day, label: e.label, cls: e.eyes?.[eye]?.class ?? 'none',
+    trt: e.changes?.[eye]?.oct_trt ?? null, mrw: e.changes?.[eye]?.oct_mrw ?? null, choroid: e.changes?.[eye]?.oct_choroid ?? null,
+    otherTrt: e.changes?.[other]?.oct_trt ?? null,
   }));
 }

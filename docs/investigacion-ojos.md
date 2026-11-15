@@ -123,14 +123,20 @@ Una sola pestaña que resume todas las pruebas oculares:
 
 | Parte | Dónde | Qué hace |
 |---|---|---|
-| Simulador | `sim/gravsim/ocular.py` (`OcularExam`, `SansProfile`, `set_sans`) | Un perfil de SANS por tripulante con los números de §6; 11 medidas, ruido propio en unidades absolutas |
+| Simulador | `sim/gravsim/ocular.py` (`OcularExam`, `SansProfile`, `EyeProfile`, `set_sans`) | Un perfil de SANS por tripulante y por ojo con los números de §6; 11 medidas por ojo, ruido propio en unidades absolutas |
 | Calendario | `sim/gravsim/schedule.py`, instrumento `ocular` | Antes del vuelo, FD30, FD90, cada 90 días, R−30; R+3, R+30, R+180 |
 | Medidas | `params.json` (vía `sim/fit/fit_params.py`, `ASSUMED_OCULAR`), `units.py`, `pipeline.py` | Unidades µm, mm, D, logMAR, grade y flag, con sus límites |
 | Demo | `gravsim.serve --sans CM-1:1.5`; `SANS=` en `scripts/demo.sh` | Un tripulante con susceptibilidad alta (clase B cerca de FD90) |
-| Análisis | `health/healthservice/eyes.py`; `GET /api/v1/eyes?crew=&day=` | Cada examen contra el previo al vuelo; clases A y B del consenso de 2026 |
+| Análisis | `health/healthservice/eyes.py`; `GET /api/v1/eyes?crew=&day=` (versión 2, por ojo) | Cada ojo contra su examen previo al vuelo; clases A y B del consenso de 2026; la persona toma la del peor ojo |
 | Hallazgos | Worker (`healthservice.demo`), `source: ocular`, medida `eyes` | Clase A: sospechado; clase B: confirmado; sin signos: cerrado |
 | Planner | `plan.py`, rutina 6012 en el catálogo | La rutina se cierra sola con el examen; un hallazgo ocular agenda una revisión del médico de vuelo |
 | Página | `src/front/sketch/ojos/` (`EyesView`, `Eye3D`), `data/eyes.js`, pestaña "Eyes" en `vuelo/Shell.jsx` | Estado; ojo 3D cortado al medio (Three.js, mismas luces y materiales que el cuerpo) que se deforma con cada examen y se anima por la misión; el cuerpo 3D de los otros análisis (capa de órganos) con los ojos coloreados por la clase; gráfico OCT con las líneas de +20 y +55 µm; una tarjeta por prueba |
+
+**Cada ojo por separado.** El SANS puede aparecer en un solo ojo (consenso 2026: "en uno o en ambos ojos"; Mader 2011: hipermetropía "en 1 o en ambos ojos"; la revisión de la vaina del nervio de 2022 advierte que promediar ojos asimétricos puede esconderlo). Por eso:
+- el simulador da lecturas por ojo (`side` "right" / "left"); los dos ojos comparten la susceptibilidad de la persona, con una correlación de 0,85 entre ellos (**supuesto**: no encontramos el dato publicado) y un pequeño desvío propio antes del vuelo;
+- `--sans CM-1:1.8:R` (o `SANS=` en `scripts/demo.sh`) da SANS sobre todo en el ojo derecho: el otro responde 1,5 desvíos menos;
+- el HealthService compara cada ojo con su propio examen previo y le da una clase; la persona toma la clase del **peor ojo**, y cada signo dice de qué ojo es;
+- la página tiene un selector de ojo (empieza por el peor), el cuerpo 3D colorea cada ojo con su clase, el gráfico OCT muestra la retina del otro ojo punteada y las tarjetas tienen una columna por ojo.
 
 El ojo 3D exagera los cambios unas 40 veces para que se vean; los valores están en las tarjetas. Las clases C y D no se simulan: requieren campo visual y seguimiento a largo plazo.
 

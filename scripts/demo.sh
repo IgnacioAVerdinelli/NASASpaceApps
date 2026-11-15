@@ -13,7 +13,7 @@ DEMO_DIR="${DEMO_DIR:-$ROOT/.demo}"
 DAY="${DAY:-130}"
 SPEED="${SPEED:-0.5}"
 FATIGUE="${FATIGUE:-CM-3:126:7}"
-SANS="${SANS:-CM-1:1.5}"         # SANS susceptibility for the eye exam (docs/investigacion-ojos.md)
+SANS="${SANS:-CM-1:1.8:R}"       # SANS for the eye exam, mostly in CM-1's right eye (docs/investigacion-ojos.md)
 PORT="${PORT:-5190}"
 
 # El entorno de Python: .venv en la raíz (o health/.venv, como dice el README); bin/ en Linux y macOS, Scripts/ en Windows.

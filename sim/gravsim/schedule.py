@@ -90,6 +90,6 @@ def timeline(mission, schedule: str | int = "nasa", instruments: dict[str, Instr
                 out += inst.measure_all(cm, d)
     if until is not None:          # a spacewalk that started by `until` may run past it
         out = [r for r in out if r.mission_day <= until]
-    out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure))
+    out.sort(key=lambda r: (r.mission_day, r.crew_id, r.instrument, r.measure, r.side or ""))   # side, as pipeline.order
     return out
 

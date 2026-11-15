@@ -76,3 +76,15 @@
 .eye-where{margin:0;display:grid;gap:8px}
 .eye-body{height:260px;border-radius:12px;background:#f3f2fa;overflow:hidden}
 @media(max-width:1180px){.eye-3d{height:380px}}
+
+/* each eye on its own */
+.eye-picker{display:flex;gap:4px;padding:3px;background:#ecebf5;border-radius:10px;width:max-content}
+.eye-picker button{display:flex;align-items:center;gap:7px;font:inherit;font-size:14.5px;font-weight:800;color:#4f5874;background:none;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+.eye-picker button i{width:9px;height:9px;border-radius:50%;background:#3f9a68}
+.eye-picker button[data-class="A"] i{background:#c98a0b}
+.eye-picker button[data-class="B"] i{background:#a4242f}
+.eye-picker button[aria-checked="true"]{background:#fff;color:#2f2850;box-shadow:0 1px 3px #2f285022}
+.eye-status-eyes{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:15px;font-weight:700;color:#3d4462}
+.eye-status-eyes span{display:inline-flex;align-items:center;gap:8px}
+.oct-legend i.dashed{height:0;border-top:2px dashed #9b97b8;background:none}
+.eye-card .eye-change{font-size:13.5px;font-weight:700;color:#625992}

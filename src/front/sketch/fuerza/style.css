@@ -124,3 +124,7 @@
 .fuerza .panel,.aerobica .panel{min-width:0}
 .fuerza .timeline,.aerobica .timeline{min-width:0;max-width:100%}
 @media(max-width:750px){.fuerza .timeline ol,.aerobica .timeline ol{padding-top:30px;padding-bottom:6px;scrollbar-width:thin}.fuerza .timeline li,.aerobica .timeline li{flex:0 0 auto;min-width:64px}.fuerza .timeline ol::before,.aerobica .timeline ol::before{top:12px;min-width:calc(100% - 8%)}.fuerza .detail-chart,.aerobica .detail-chart{height:260px}.fuerza .detail-charts,.aerobica .detail-charts{grid-template-columns:minmax(0,1fr)}}
+.strength-trends-state{padding:40px 0;color:#465574}.strength-trends-state h2{font-size:28px;color:#19213e}.strength-trends-state p{margin-top:8px}
+.fuerza .test-mode-toggle,.fuerza .test-controls button{color:#3049a8;background:#f1f5fc;border-color:#bccae5}
+.fuerza .test-mode-toggle[aria-pressed="true"],.fuerza .test-controls button[aria-pressed="true"]{color:#fff;background:#4057c9;border-color:#4057c9}
+.fuerza .test-controls{background:#edf2fa;box-shadow:none}.fuerza .test-editor input{accent-color:#4057c9}

@@ -4,7 +4,6 @@
 .watch-panel{gap:14px}
 .vital-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .vital-tile{display:flex;flex-direction:column;gap:6px;min-width:0;text-align:left;font:inherit;color:#2f2850;background:#f6f5fc;border:1px solid #e2e1ee;border-radius:12px;padding:14px 16px;cursor:pointer}
-.vital-tile:hover{background:#efedf8}
 .vital-tile[data-status="deviation"]{background:#fff6e0;border-color:#e8c46a}
 .vital-tile[data-status="low_now"]{background:#fde8e8;border-color:#d9727b}
 .vital-tile-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:15px;font-weight:800;color:#3d4462}
@@ -67,31 +66,66 @@
 @media(max-width:760px){.vital-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.vital-cards{grid-template-columns:1fr}.vitals-view{padding:14px 12px 24px}.day-legend{margin-left:0}}
 @media(max-width:460px){.vital-tiles{grid-template-columns:1fr}}
 
-/* Sensor tiles echo the watch face while charts remain on the clinical canvas. */
-.watch-panel{gap:22px}.vital-tiles{gap:10px}
-.vital-tile,.vital-tile[data-status="deviation"],.vital-tile[data-status="low_now"]{min-height:190px;padding:17px;background:linear-gradient(145deg,#143d35,#0d2925);border:1px solid #315a50;border-radius:16px;color:#f1faf6;box-shadow:0 8px 18px #102b251a;transition:transform .2s ease,background .2s ease}
-.vital-tile:hover{background:linear-gradient(145deg,#1c5045,#10322c);transform:translateY(-2px)}
-.vital-tile:focus-visible,.day-compare button:focus-visible{outline:3px solid #4057c9;outline-offset:3px}
-.vital-tile-head{color:#c4e0d6;font-size:14px;flex-wrap:wrap}.vital-value{font-size:clamp(28px,2.4vw,38px);color:#fff;margin-top:5px}.vital-value small{color:#b8d9ce}.vital-text{color:#c9ded7;font-size:13px;margin-top:auto}.vital-text b{color:#ffd793}.vital-tile .vital-pill{font-size:11px;padding:3px 7px}.vital-spark{height:38px}
+.watch-panel { gap: 22px; }
+.vital-tiles { gap: 10px; }
+.vital-tile {
+  min-height: 190px;
+  padding: 17px;
+  border-radius: 16px;
+  background: #edf5fa;
+  border-color: #c8dce9;
+  color: #192d4b;
+}
+button.vital-tile:hover { background: #e1eff8; }
+.vital-tile[data-status="deviation"] { background: #fff8e9; border-color: #c09238; }
+.vital-tile[data-status="low_now"] { background: #fff1f0; border-color: #bd5960; }
+.vital-tile:focus-visible, .day-compare button:focus-visible { outline: 3px solid #4057c9; outline-offset: 3px; }
+.vital-tile-head { color: #415c75; font-size: 14px; flex-wrap: wrap; }
+.vital-value { color: #192d4b; font-size: clamp(28px,2.4vw,38px); margin-top: 5px; }
+.vital-value small { color: #536e85; }
+.vital-text { color: #415c75; font-size: 13px; margin-top: auto; }
+.vital-text b { color: #825400; }
+.vital-tile .vital-pill { font-size: 11px; padding: 3px 7px; }
+.vital-spark { height: 38px; }
 .vitals-view{color:#19213e}.vitals-intro p{max-width:75ch;color:#4a5871}.vital-card h3,.day-chart figcaption strong{color:#19213e}.vital-card h4{color:#4057c9}.day-compare{background:#e9eef4}.day-compare button[aria-pressed="true"]{color:#19213e}
 @media(max-width:460px){.vital-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.vital-tile{min-height:180px;padding:13px}.vital-value{font-size:28px}.vital-value small{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.vital-tile{transition:none}}
 
-.compact-watch{min-width:0;padding:20px 22px 0;border-radius:16px;background:linear-gradient(135deg,#183f36,#0a2925);color:#effaf5;box-shadow:0 12px 28px #153d3026}
-.compact-watch-top{display:flex;justify-content:space-between;gap:12px;color:#b6d7cb;font-size:11px;font-weight:800;letter-spacing:.06em}
-.compact-watch-main{display:grid;grid-template-columns:minmax(150px,1fr) minmax(100px,1fr);align-items:end;gap:16px;padding:22px 0 18px}
-.compact-watch-label,.compact-watch-time{display:block;color:#c1ddd2;font-size:13px}.compact-watch-value{font-size:46px;line-height:1.1;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}.compact-watch-value small{font-size:15px;color:#c1ddd2;letter-spacing:0}.compact-watch-time{margin-top:6px;font-size:11px}
-.compact-watch-trace{height:74px;display:flex;align-items:center;justify-content:center;color:#c1ddd2;font-size:12px}
-.compact-watch-secondary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 0;border-top:1px solid #52746a}.compact-watch-secondary>div{display:grid;gap:4px;min-width:0}.compact-watch-secondary span{color:#c1ddd2;font-size:11px}.compact-watch-secondary strong{font-size:20px;font-variant-numeric:tabular-nums}.compact-watch-secondary small{font-size:12px;font-weight:600;color:#c1ddd2}
-.compact-watch-link{display:flex;justify-content:space-between;width:100%;padding:14px 0;border:0;border-top:1px solid #52746a;background:none;color:#fff;font:inherit;font-size:14px;font-weight:800;text-align:left;cursor:pointer}.compact-watch-link:hover{color:#a5ecd4}.compact-watch-link:focus-visible{outline:3px solid #a5ecd4;outline-offset:3px}
-@media(max-width:460px){.compact-watch{padding:18px 16px 0}.compact-watch-main{grid-template-columns:1fr 1fr}.compact-watch-value{font-size:38px}.compact-watch-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.compact-watch{padding:16px 20px;background:linear-gradient(145deg,#204b40 0%,#10342c 50%,#092722 100%)}
-.compact-watch-top{align-items:center;letter-spacing:0}.compact-watch-top h3{display:flex;align-items:center;gap:8px;margin:0;color:#fff;font-size:15px}.compact-watch-top h3 svg{color:#a6dfcc}
-.compact-watch-link{width:auto;align-items:center;gap:8px;padding:4px 0;border:0;font-size:13px}
-.compact-watch-main{grid-template-columns:minmax(150px,.8fr) minmax(140px,1.2fr);align-items:center;gap:20px;padding:14px 0 12px}
-.compact-watch-value{font-size:40px}.compact-watch-trace{height:auto;display:block}.compact-watch-trace>span{font-size:12px;font-weight:700}.compact-watch-plot{height:65px;margin-top:3px}.compact-watch-no-trace{display:flex;align-items:center;height:65px}
-.compact-watch-secondary{padding:11px 0 0;gap:16px}.compact-watch-secondary span{font-size:12px}.compact-watch-secondary strong{font-size:19px}.compact-watch-shared-time,.compact-watch-error{margin:7px 0 0;color:#c1ddd2;font-size:11px}.compact-watch-error{color:#fff0c4;font-size:12px}
-@media(max-width:460px){.compact-watch{padding:16px}.compact-watch-main{grid-template-columns:1fr 1fr;gap:10px}.compact-watch-value{font-size:34px}}
+.compact-watch {
+  --watch-muted: #475e75;
+  min-width: 0;
+  padding: 16px 22px 20px;
+  border: 1px solid #c4d9e7;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f4faff, #e2f0f8);
+  box-shadow: 0 8px 22px -15px #294c6740;
+  color: #192d4b;
+}
+.compact-watch-top, .compact-watch-top h3, .compact-watch-link { display: flex; align-items: center; gap: 8px; }
+.compact-watch-top { justify-content: space-between; }
+.compact-watch-top h3 { margin: 0; font-size: 18px; }
+.compact-watch-top h3 svg { color: #315db5; }
+.compact-watch-link { min-height: 44px; padding: 4px 0 4px 8px; border: 0; background: none; color: #284fa5; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.compact-watch-link:hover { color: #183970; text-decoration: underline; }
+.compact-watch-main { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); align-items: center; gap: 20px; padding: 12px 0 19px; }
+.compact-watch-label, .compact-watch-time { display: block; color: var(--watch-muted); font-size: 13px; }
+.compact-watch-value { font-size: 40px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.compact-watch-value small { color: var(--watch-muted); font-size: 15px; letter-spacing: 0; }
+.compact-watch-time, .compact-watch-shared-time { margin: 6px 0 0; font-size: 11px; color: var(--watch-muted); }
+.compact-watch-trace { min-width: 0; color: var(--watch-muted); font-size: 12px; }
+.compact-watch-trace > span { font-weight: 650; }
+.compact-watch-plot { height: 65px; margin-top: 4px; }
+.compact-watch-no-trace { display: flex; align-items: center; min-height: 65px; }
+.compact-watch-secondary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #c4d9e7; }
+.compact-watch-secondary > div { min-width: 0; display: grid; gap: 4px; }
+.compact-watch-secondary span, .compact-watch-secondary small { color: var(--watch-muted); font-size: 12px; }
+.compact-watch-secondary strong { font-size: 19px; font-variant-numeric: tabular-nums; }
+.compact-watch-error { margin: 7px 0 0; color: #813b33; font-size: 12px; }
+@media (max-width: 460px) {
+  .compact-watch { padding: 14px 16px 18px; }
+  .compact-watch-main { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .compact-watch-secondary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
 
 .flight-view .vitals-view { padding: 0; }
 article.vital-tile { cursor: default; }
@@ -104,3 +138,9 @@ article.vital-tile { cursor: default; }
 .watch-reference { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; }
 .watch-reference summary, .watch-reference a { cursor: pointer; padding-block: 10px; color: #304393; font-weight: 600; }
 .watch-reference p { max-width: 65ch; line-height: 1.55; color: #41516a; }
+
+/* Glossy forest instrument, with the sensor readings as its focal point. */
+.vital-tile,.vital-tile[data-status="deviation"],.vital-tile[data-status="low_now"]{border-radius:26px;background:radial-gradient(ellipse at 50% 45%,#102f25 0%,#0b241c 68%,#164c37 100%);border-color:#3c795a;box-shadow:inset 0 1px 12px #8ce7ac1a;color:#edf8f0}
+.vital-tile:hover{background:radial-gradient(ellipse at 50% 45%,#173e30 0%,#103328 68%,#1b5a40 100%)}
+.vital-tile[data-status="deviation"]{border-color:#d4a74f}.vital-tile[data-status="low_now"]{border-color:#db777a}
+.vital-tile-head,.vital-text{color:#c1d7ca}.vital-value{color:#f0fff4;font-family:'Bitcount Prop Single',monospace;letter-spacing:0;font-weight:500}.vital-value small{color:#c1d7ca;font-family:inherit}.vital-text b{color:#ffd38a}

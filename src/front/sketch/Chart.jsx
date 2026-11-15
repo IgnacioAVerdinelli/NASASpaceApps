@@ -35,7 +35,7 @@ function HistoryChart({ chart, motion }) {
   const pad = (high - low || Math.max(Math.abs(high) * 0.1, 1)) * 0.15;
   const latest = valid.at(-1);
   const unit = chart.unit ? ` ${chart.unit}` : '';
-  return <article className="trend-history"><div className="trend-card-header"><div><h3>{chart.title}</h3><p>{chart.description}</p></div>{latest && <div className="trend-latest"><strong>{format(latest.value)}<small>{unit}</small></strong><span>{date(latest.time)}</span></div>}</div>
+  return <article className="trend-history" id={`chart-${chart.id}`}><div className="trend-card-header"><div><h3>{chart.title}</h3><p>{chart.description}</p></div>{latest && <div className="trend-latest"><strong>{format(latest.value)}<small>{unit}</small></strong><span>{date(latest.time)}</span></div>}</div>
     {!valid.length ? <p className="chart-empty">No data available for this period.</p> : <><ChartContainer config={{ value: { ...config.value, label: chart.unit || 'Value' } }} className="history-chart"><AreaChart accessibilityLayer data={rows} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
       <defs><linearGradient id={`trend-fill-${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8196e6" stopOpacity={0.28}/><stop offset="100%" stopColor="#8196e6" stopOpacity={0.02}/></linearGradient></defs>
       <CartesianGrid vertical={false} stroke="#e2e2ef" strokeDasharray="3 5"/><XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={shortDate} tick={tick} axisLine={false} tickLine={false} minTickGap={24}/><YAxis domain={[low - pad, high + pad]} tickFormatter={format} tick={tick} axisLine={false} tickLine={false} width={46}/>

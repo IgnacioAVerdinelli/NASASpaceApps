@@ -1,5 +1,4 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { App as BodyMap } from '../App.jsx';
 import { StrengthView } from '../fuerza/App.jsx';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
@@ -23,13 +22,12 @@ const TABS = [
   { id: 'aerobica', label: 'Aerobic', title: 'Aerobic capacity' },
   { id: 'vitales', label: 'Wearable', title: 'Vital signs' },
   { id: 'plan', label: 'Mission plan', title: 'Mission plan' },
-  { id: 'body', label: 'Body map', title: 'Body map & trends' },
 ];
 
 function tabFromUrl() {
   const hash = window.location.hash.slice(1);
   if (TABS.some(t => t.id === hash)) return hash;
-  return hash === 'trends' || window.location.pathname.endsWith('/overview.html') ? 'body' : 'summary';
+  return hash === 'body' || hash === 'trends' || hash === 'hip-bone' || window.location.pathname.endsWith('/overview.html') ? 'fuerza' : 'summary';
 }
 
 function DataNotice({ error, subject = 'health data' }) {
@@ -53,6 +51,7 @@ export function Shell() {
   const [tab, setTab] = useState(tabFromUrl);
   const [visited, setVisited] = useState(() => new Set([tab]));
   const [focusRequest, setFocusRequest] = useState(null);
+  const [trendTarget, setTrendTarget] = useState(() => window.location.hash);
   const [selectedCrew, setSelectedCrew] = useState(() => new URLSearchParams(window.location.search).get('crew') || '');
   const tabRefs = useRef({});
   const crewState = useDashboard(exampleMode ? null : apiUrl, loadCrew);
@@ -63,7 +62,7 @@ export function Shell() {
   const crewId = selected ?? data?.crew.id;
   const vitalsState = useDashboard(exampleMode || !crewId ? null : vitalsUrl(apiUrl, crewId), loadVitals);
   const vitals = vitalsState.data?.crew.id === crewId ? vitalsState.data : null;
-  const needsBodyData = visited.has('body') || visited.has('summary');
+  const needsBodyData = visited.has('fuerza') || visited.has('summary');
   const bodyUrl = exampleMode ? '' : crewId ? dashboardUrl(apiUrl, crewId) : null;
   const bodyState = useDashboard(needsBodyData ? bodyUrl : null, loadDashboard);
   const active = TABS.find(item => item.id === tab);
@@ -78,6 +77,7 @@ export function Shell() {
     const restore = () => {
       activate(tabFromUrl());
       setSelectedCrew(new URLSearchParams(window.location.search).get('crew') || '');
+      setTrendTarget(window.location.hash);
     };
     window.addEventListener('hashchange', restore);
     window.addEventListener('popstate', restore);
@@ -95,10 +95,11 @@ export function Shell() {
     window.history.replaceState(null, '', url);
   }, [crewId]);
   useEffect(() => {
-    if (tab === 'body' && bodyState.data && window.location.hash === '#trends') {
-      document.getElementById('trends')?.scrollIntoView();
+    if (tab === 'fuerza' && bodyState.data && (trendTarget === '#trends' || trendTarget === '#hip-bone')) {
+      const target = (trendTarget === '#hip-bone' && document.getElementById('chart-hip_bmd-trend')) || document.getElementById('trends');
+      target?.scrollIntoView();
     }
-  }, [tab, Boolean(bodyState.data)]);
+  }, [tab, Boolean(bodyState.data), Boolean(data), trendTarget]);
 
   function select(id, focus = false) {
     if (id !== tab) {
@@ -106,6 +107,7 @@ export function Shell() {
       url.hash = id;
       window.history.pushState(null, '', url);
       activate(id);
+      setTrendTarget('');
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
     if (focus) tabRefs.current[id]?.focus({ preventScroll: true });
@@ -121,7 +123,6 @@ export function Shell() {
 
   function renderView(id) {
     if (!visited.has(id)) return null;
-    if (id === 'body') return bodyState.data ? <BodyMap key={crewId} dashboard={bodyState.data} stale={Boolean(bodyState.error)}/> : <DataNotice subject="body map" error={bodyState.error || crewState.error}/>;
     if (id === 'vitales' || id === 'plan') {
       if (exampleMode) return <div className="flight-notice"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
       if (!crewId) return <DataNotice error={crewState.error}/>;
@@ -132,12 +133,14 @@ export function Shell() {
       onOpen={(destination, key) => {
         if (key) setFocusRequest({ key, request: Date.now() });
         if (destination === 'body') {
-          window.location.hash = 'trends';
-          tabRefs.current.body?.focus({ preventScroll: true });
+          setTrendTarget('#hip-bone');
+          window.location.hash = 'hip-bone';
+          activate('fuerza');
+          tabRefs.current.fuerza?.focus({ preventScroll: true });
         } else select(destination, true);
       }}/>;
     return id === 'fuerza'
-      ? <StrengthView key={crewId} data={data} focusRequest={focusRequest}/>
+      ? <StrengthView key={crewId} data={data} focusRequest={focusRequest} bodyState={bodyState} trendTarget={trendTarget}/>
       : <AerobicView key={crewId} data={data}/>;
   }
 

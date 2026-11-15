@@ -10,10 +10,23 @@ const alerts = [
   { id: 'sync', priority: 'Normal', level: 'low', time: 'Yesterday', title: 'Sync complete', short: 'Your data has been synced.' },
 ];
 
+const ALERT_DOTS = {
+  warning: [
+    [7, 1], [6, 3], [8, 3], [5, 5], [9, 5], [4, 7], [10, 7],
+    [3, 9], [11, 9], [2, 11], [12, 11],
+    [1, 13], [3, 13], [5, 13], [7, 13], [9, 13], [11, 13], [13, 13],
+    [7, 5], [7, 7], [7, 10],
+  ],
+  complete: [
+    [1, 7], [3, 9], [5, 11], [7, 9], [9, 7], [11, 5], [13, 3],
+  ],
+};
+
 function Icon({ type }) {
-  if (type === 'high') return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.7 19h18.6L12 3Z"/><path d="M12 9v4.5M12 16.5h.01"/></svg>;
-  if (type === 'medium') return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.7 19h18.6L12 3Z"/><path d="M12 9v4.5M12 16.5h.01"/></svg>;
-  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>;
+  const dots = ALERT_DOTS[type === 'low' ? 'complete' : 'warning'];
+  return <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    {dots.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.5" height="1.5" rx=".2"/>)}
+  </svg>;
 }
 
 function Arrow({ back = false }) {

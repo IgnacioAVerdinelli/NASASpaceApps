@@ -2,9 +2,10 @@
 .health-summary button { font-family: inherit; cursor: pointer; }
 .summary-grid {
   display: grid;
-  grid-template-columns: minmax(0, .83fr) minmax(0, 1.17fr);
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.55fr);
   align-items: start;
-  gap: 20px;
+  gap: clamp(20px, 1.65vw, 32px);
+  column-gap: clamp(36px, 3.4vw, 62px);
 }
 .panel {
   min-width: 0;
@@ -69,7 +70,20 @@
 .model-credits summary { cursor: pointer; padding-block: 5px; }
 .body-card .model-credits p { margin-bottom: 5px; }
 .body-card .model-credits a { text-decoration: underline; }
-.hero-right { display: grid; align-content: start; gap: 16px; min-width: 0; }
+.summary-anatomy, .hero-right, .summary-followup {
+  display: grid;
+  align-content: start;
+  gap: clamp(16px, 1.25vw, 24px);
+  min-width: 0;
+}
+.hero-right { container: overview-data / inline-size; }
+.summary-followup { align-items: start; }
+@container overview-data (min-width: 720px) {
+  .summary-followup { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+  .summary-followup > :only-child { grid-column: 1 / -1; }
+  .summary-followup .compact-watch-main { grid-template-columns: 1fr; gap: 22px; padding-block: 16px 22px; }
+  .summary-followup .compact-watch-plot { height: clamp(112px, 14vh, 155px); }
+}
 .status-compact { background: #fff; border-radius: 14px; }
 .status-compact summary { display: flex; align-items: center; gap: 10px; padding: 11px 16px; min-height: 59px; cursor: pointer; list-style: none; }
 .status-compact summary::-webkit-details-marker { display: none; }
@@ -101,18 +115,19 @@
 .mb-track { height: 5px; overflow: hidden; background: #e7ecf2; border-radius: 4px; }
 .mb-track i { display: block; height: 100%; border-radius: inherit; }
 .mb-level { font-size: 11px; color: #4b5c71; }
-.todo-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; }
-.todo-list button { width: 100%; display: grid; gap: 3px; min-height: 52px; background: transparent; border: 0; border-bottom: 1px solid #e2e8f0; padding: 8px 0; text-align: left; color: #273550; }
+.todo-list { display: grid; gap: 2px; }
+.todo-list button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 10px; min-height: 52px; background: transparent; border: 0; border-bottom: 1px solid #e2e8f0; padding: 8px 0; text-align: left; color: #273550; }
 .todo-list button:hover { color: var(--flight-blue); }
-.todo-list strong { font-size: 13px; }
-.todo-kind { color: #4e6091; font-size: 11px; }
+.todo-list strong { grid-area: 1 / 1; font-size: 13px; }
+.todo-list button > span:last-child { grid-area: 2 / 1 / auto / -1; }
+.todo-kind { grid-area: 1 / 2; color: #4e6091; font-size: 11px; }
 .todo-list button > span:last-child, .next-tests p, .empty, .summary-foot { font-size: 12px; line-height: 1.5; color: #53617b; }
 .link-btn { background: transparent; color: var(--flight-blue); font-weight: 600; min-height: 44px; padding: 8px 0; border: 0; }
 .next-tests { border-top: 1px solid #e2e8f0; padding-top: 12px; }
 .next-tests h3 { margin: 0 0 4px; font-size: 13px; }
 .health-summary > .summary-foot { margin-top: 15px; }
 @media (max-width: 1020px) {
-  .summary-grid { gap: 14px; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); }
+  .summary-grid { gap: 18px 26px; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); }
   .anatomy-head, .panel { padding: 16px; }
   .body-card { padding: 0; }
   .anatomy-head { padding-bottom: 2px; }
@@ -121,6 +136,15 @@
 }
 @media (max-width: 760px) {
   .summary-grid { grid-template-columns: minmax(0, 1fr); }
+  .summary-anatomy, .hero-right, .summary-followup { display: contents; }
+  .status-compact { grid-row: 1; }
+  .body-card { grid-row: 2; margin-bottom: 10px; }
+  .summary-indicators { grid-row: 3; }
+  .compact-watch { grid-row: 4; }
+  .muscle-section { grid-row: 5; }
+  .todo { grid-row: 6; }
+  .summary-grid:not(:has(.compact-watch)) .muscle-section { grid-row: 4; }
+  .summary-grid:not(:has(.compact-watch)) .todo { grid-row: 5; }
   .anatomy-field { min-height: 410px; }
   .mb-level { grid-column: auto; }
   .muscle-bar { grid-template-columns: 1fr .6fr auto 1fr; }
@@ -135,7 +159,54 @@
   .body-card .model-credits { padding-inline: 16px; }
   .todo-list { grid-template-columns: 1fr; }
 }
-@media (max-width: 760px) {
-  .hero-right { display: contents; }
-  .status-compact { grid-row: 1; }
+@media (min-width: 1400px) {
+  .anatomy-field { min-height: clamp(415px, 51svh, 620px); }
+}
+
+/* Keep the complete overview visible on landscape desktop displays. */
+@media (min-width: 1200px) and (min-height: 660px) {
+  .vuelo:has(#panel-summary:not([hidden])) .flight-bar-inner { min-height: 56px; }
+  .vuelo:has(#panel-summary:not([hidden])) .flight-heading { padding-block: 14px; }
+  .vuelo:has(#panel-summary:not([hidden])) .flight-heading h1 { font-size: clamp(30px, 4.5vh, 44px); }
+  .vuelo:has(#panel-summary:not([hidden])) .flight-content { padding-bottom: 4px; }
+  .summary-anatomy, .hero-right, .summary-followup { gap: clamp(12px, 1.65vh, 22px); }
+  .summary-anatomy {
+    min-height: calc(100svh - 128px - clamp(34px, 5.1vh, 50px));
+    grid-template-rows: 1fr auto;
+  }
+  .summary-grid .anatomy-head { padding: 12px 18px 0; }
+  .summary-grid .anatomy-head h2, .summary-grid .panel-head h2 { font-size: 18px; }
+  .summary-grid .anatomy-field { min-height: 205px; }
+  .summary-grid .mini-legend { margin-top: 3px; padding-top: 7px; }
+  .summary-grid .body-card .model-credits { margin-top: 0; padding-bottom: 3px; }
+  .summary-grid :is(.muscle-section, .todo, .compact-watch) { padding: 14px 18px; }
+  .summary-grid .muscle-bar { min-height: clamp(26px, 3.65vh, 40px); padding-block: 3px; }
+  .summary-grid .panel-head { margin-bottom: 8px; }
+  .summary-grid .status-compact summary { min-height: 44px; padding-block: 5px; }
+  .summary-grid .summary-indicators { padding: 12px 15px 15px; }
+  .summary-grid .summary-indicators-heading { margin-bottom: 8px; }
+  .summary-grid .summary-metric { min-height: clamp(100px, 13vh, 145px); padding: 10px 12px; }
+  .summary-grid .summary-metric-reading { padding-top: 6px; }
+  .summary-grid .summary-metric-change { font-weight: 550; }
+  .summary-grid .summary-metric-value { font-size: clamp(32px, 5vh, 50px); }
+  .summary-grid .summary-metric-bone .summary-metric-value { font-size: clamp(24px, 3.65vh, 34px); }
+  .summary-followup { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+  .summary-followup > :only-child { grid-column: 1 / -1; }
+  .summary-followup .compact-watch-main { grid-template-columns: 1fr; gap: 10px; padding-block: 5px 12px; }
+  .summary-followup .compact-watch-plot { height: clamp(60px, 10vh, 116px); }
+  .summary-followup .compact-watch-link { min-height: 32px; }
+  .summary-followup .compact-watch-secondary { gap: 10px; padding-top: 10px; }
+  .summary-grid .todo-list button { min-height: 34px; padding-block: 1px; }
+  .summary-grid .todo-list strong { grid-column: 1 / -1; font-size: 12px; }
+  .summary-grid .todo-kind { grid-area: 2 / 2; font-size: 10px; }
+  .summary-grid .todo-list button > span:last-child { grid-area: 2 / 1; font-size: 11px; line-height: 1.2; }
+  .summary-grid .link-btn { min-height: 32px; padding: 4px 0; }
+  .summary-grid .next-tests { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; padding-top: 7px; }
+  .summary-grid .next-tests h3 { margin: 0; }
+  .summary-grid .next-tests p { margin: 0; font-size: 11px; }
+  .health-summary > .summary-foot { margin-top: 3px; }
+}
+@media (min-width: 1200px) and (max-height: 800px) and (min-height: 660px) {
+  .summary-followup .compact-watch-plot { height: 60px; }
+  .summary-followup .compact-watch-secondary span { font-size: 11px; }
 }

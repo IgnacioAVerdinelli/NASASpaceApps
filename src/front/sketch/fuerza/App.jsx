@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { CartesianGrid, ComposedChart, ErrorBar, Line, ReferenceArea, ReferenceLine, Scatter, Tooltip, XAxis, YAxis } from 'recharts';
 import BodyViewer from '../../body-3d/BodyViewer.jsx';
+import { BodyTrends } from '../BodyTrends.jsx';
+import { muscles, SURFACE_MUSCLE_KEYS } from '../../body-3d/anatomy.js';
+import { testModeReducer } from '../data/testMode.js';
 import { ChartContainer } from '../components/chart.jsx';
 import { ALERT_TEXT, colorScale, dayAxis, dayLabel, fmtNum, fmtPct, levelColor, levelText, reference, referenceFor, xOf } from './data.js';
 import '../style.css';
@@ -133,9 +136,10 @@ function MuscleDetail({ group, evaluations, evalIndex, mission, upcoming, levels
 }
 
 // Strength view. The header and the tabs come from vuelo/Shell.jsx.
-export function StrengthView({ data, focusRequest = null }) {
+export function StrengthView({ data, focusRequest = null, bodyState, trendTarget }) {
   const { strength, mission, crew, levels, notice } = data;
   const { evaluations, upcoming } = strength;
+  const [testMode, dispatchTest] = useReducer(testModeReducer, null);
   const groups = useMemo(() => strength.groups.map(group => ({ ...group, keys: group.muscleKeys })), [strength.groups]);
   const [evalIndex, pickEvaluation] = useEvaluationIndex(evaluations.length);
   // Opens on the group with the largest loss at the latest test.
@@ -174,6 +178,11 @@ export function StrengthView({ data, focusRequest = null }) {
 
   // As on the main page: zoom to exactly the area touched; touching it again goes back to the whole body.
   const choose = key => {
+    if (testMode) {
+      dispatchTest({ type: 'select', value: key });
+      if (testMode.layer !== 'skeleton' && (testMode.layer !== 'surface' || !key || SURFACE_MUSCLE_KEYS.has(key))) setExploration(prev => ({ key: prev.key === key ? null : key, request: prev.request + 1 }));
+      return;
+    }
     if (!keyToGroup.has(key)) return;
     setSelectedKey(key);
     setExploration(prev => ({ key: prev.key === key ? null : key, request: prev.request + 1 }));
@@ -190,14 +199,15 @@ export function StrengthView({ data, focusRequest = null }) {
   return <div className="fuerza">
     <section className="overview fuerza-overview" aria-label="Body map">
       <div className="body-panel">
-        <div className="body-panel-heading"><span>BODY MAP · {current.phase === 'pre' ? 'PRE-FLIGHT' : current.label}</span><span>{groups.length} muscle groups · both sides share one value</span></div>
+        <div className="body-panel-heading"><span>{testMode ? 'TEST MODE' : `BODY MAP · ${current.phase === 'pre' ? 'PRE-FLIGHT' : current.label}`}</span><button type="button" className="test-mode-toggle" aria-pressed={Boolean(testMode)} aria-controls="strength-test-controls" onClick={() => { dispatchTest(testMode ? { type: 'exit' } : { type: 'start', model: { body: crew.body, layer: 'surface', scores: bodyState?.data?.body.scores || {} }, selected: selectedKey }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{testMode ? 'Exit test mode' : 'Test mode'}</button></div>
+        {testMode && <div id="strength-test-controls" className="test-controls" aria-label="Test mode controls"><p>Test mode · Changes are temporary and do not affect dashboard data.</p><div className="test-control-groups"><div role="group" aria-label="Body model">{[['male', 'Male'], ['female', 'Female']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.body === key} onClick={() => { dispatchTest({ type: 'body', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div role="group" aria-label="Anatomy layer">{[['surface', 'Surface'], ['muscles', 'Muscles'], ['skeleton', 'Bones']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.layer === key} onClick={() => { dispatchTest({ type: 'layer', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div><button type="button" onClick={() => dispatchTest({ type: 'paint' })}>Paint all</button><button type="button" onClick={() => dispatchTest({ type: 'clear' })}>Clear colors</button></div></div><div className="test-editor"><label>Muscle <select value={testMode.selected || ''} onChange={event => choose(event.target.value || null)}><option value="">Select a muscle</option>{muscles.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label><label>Intensity <input type="range" min="0" max="100" disabled={!testMode.selected} value={testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0} onChange={event => dispatchTest({ type: 'intensity', value: Number(event.target.value) })}/><output>{testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0}</output></label></div></div>}
         <div className="body-stage"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="model-canvas">
-          <BodyViewer body={crew.body} layer="surface" scores={shownScores} selected={selectedKey} onSelect={choose} framing={1.1} showIndicators checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={colorScale} indicatorText={indicatorText}/>
+          <BodyViewer body={testMode?.body ?? crew.body} layer={testMode?.layer ?? "surface"} scores={testMode?.scores ?? shownScores} selected={testMode ? testMode.selected : selectedKey} onSelect={choose} framing={1.1} showIndicators={!testMode} checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={testMode ? undefined : colorScale} indicatorText={testMode ? undefined : indicatorText}/>
         </div></div>
-        <ul className="legend-levels" aria-label="Colour scale">
+        {!testMode && <ul className="legend-levels" aria-label="Colour scale">
           {levels.map(level => <li key={level.level}><i style={{ background: levelColor(level.level) }}/><span>{level.label}<small>{level.range}</small></span></li>)}
           <li><i className="not-assessed"/><span>Not measured<small>no valid test</small></span></li>
-        </ul>
+        </ul>}
         <Timeline label="Dynamometer tests" evaluations={evaluations} upcoming={upcoming} index={evalIndex} onPick={pickEvaluation}/>
       </div>
 
@@ -220,6 +230,8 @@ export function StrengthView({ data, focusRequest = null }) {
     </section>
 
     {group && <MuscleDetail group={group} evaluations={evaluations} evalIndex={evalIndex} mission={mission} upcoming={upcoming} levels={levels}/>}
+
+    {bodyState?.data ? <BodyTrends key={trendTarget} dashboard={bodyState.data} stale={Boolean(bodyState.error)}/> : <section id="trends" className="strength-trends-state" role={bodyState?.error ? 'alert' : 'status'}><h2>Trends</h2><p>{bodyState?.error ? 'Trend data is unavailable. Reconnecting…' : 'Loading trend data…'}</p></section>}
 
     <section className="method" aria-labelledby="method-title">
       <h2 id="method-title">How it is measured</h2>

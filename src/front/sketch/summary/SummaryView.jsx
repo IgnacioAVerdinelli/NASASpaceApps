@@ -62,38 +62,55 @@ export function SummaryView({ data, crewId, bodyState, exampleMode, onOpen, vita
 
   return <div className="health-summary">
     <div className="summary-grid">
-      <section className="panel body-card" aria-labelledby="body-title">
-        <header className="anatomy-head">
-          <div><h2 id="body-title">Anatomical view</h2><p>Muscle strength vs pre-flight</p></div>
-          <button className="anatomy-open" type="button" aria-label="Open detailed muscle analysis" title="Open detailed muscle analysis" onClick={() => onOpen('fuerza', highlight)}><Icon name="expand"/></button>
-        </header>
-        <div className="anatomy-field">
-          <div className="anatomy-layer" role="group" aria-label="Anatomy layer">
-            {['organs', 'surface'].map(value => <button key={value} type="button" aria-pressed={value === layer} onClick={() => setLayer(value)}>{value === 'surface' ? 'Surface' : 'Internal'}</button>)}
+      <div className="summary-anatomy">
+        <section className="panel body-card" aria-labelledby="body-title">
+          <header className="anatomy-head">
+            <div><h2 id="body-title">Anatomical view</h2><p>Muscle strength vs pre-flight</p></div>
+            <button className="anatomy-open" type="button" aria-label="Open detailed muscle analysis" title="Open detailed muscle analysis" onClick={() => onOpen('fuerza', highlight)}><Icon name="expand"/></button>
+          </header>
+          <div className="anatomy-field">
+            <div className="anatomy-layer" role="group" aria-label="Anatomy layer">
+              {['organs', 'surface'].map(value => <button key={value} type="button" aria-pressed={value === layer} onClick={() => setLayer(value)}>{value === 'surface' ? 'Surface' : 'Internal'}</button>)}
+            </div>
+            <div className="body-card-stage">
+              <BodyViewer body={data.crew.body} layer={layer} scores={scores} selected={highlight}
+                onSelect={key => { if (rows.some(r => r.group.muscleKeys.includes(key))) setSelectedKey(key); }}
+                framing={1.08} structureColors={structureColors} viewRequest={viewRequest} showIndicators indicatorFilter={indicatorFilter}
+                colorScale={colorScale} indicatorText={indicatorText}/>
+            </div>
+            <div className="anatomy-tools">
+              <span><Icon name="rotate" size={16}/>Drag to rotate</span>
+              <div role="group" aria-label="Model orientation">{['front', 'back'].map(direction =>
+                <button type="button" key={direction} aria-pressed={viewRequest.direction === direction}
+                  onClick={() => setViewRequest(previous => ({ direction, request: previous.request + 1 }))}>
+                  {direction === 'front' ? 'Front' : 'Back'}
+                </button>)}</div>
+            </div>
           </div>
-          <div className="body-card-stage">
-            <BodyViewer body={data.crew.body} layer={layer} scores={scores} selected={highlight}
-              onSelect={key => { if (rows.some(r => r.group.muscleKeys.includes(key))) setSelectedKey(key); }}
-              framing={1.08} structureColors={structureColors} viewRequest={viewRequest} showIndicators indicatorFilter={indicatorFilter}
-              colorScale={colorScale} indicatorText={indicatorText}/>
-          </div>
-          <div className="anatomy-tools">
-            <span><Icon name="rotate" size={16}/>Drag to rotate</span>
-            <div role="group" aria-label="Model orientation">{['front', 'back'].map(direction =>
-              <button type="button" key={direction} aria-pressed={viewRequest.direction === direction}
-                onClick={() => setViewRequest(previous => ({ direction, request: previous.request + 1 }))}>
-                {direction === 'front' ? 'Front' : 'Back'}
-              </button>)}</div>
-          </div>
-        </div>
-        <ul className="mini-legend" aria-label="Colour scale">
-          {levels.map(l => <li key={l.level}><i style={{ background: LEVEL_COLORS[l.level] }}/>{l.label}</li>)}
-        </ul>
-        <details className="model-credits"><summary>Model &amp; colour key</summary>
-          <p>The scale applies to tested muscles. The heart, lungs and vessels are shown for anatomical reference.</p>
-          <p><a href="https://github.com/MervinR07/open-anatomy-3d">Open Anatomy 3D</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><br/>{ATTRIBUTION} Surface regions and materials adapted for this viewer.</p>
-        </details>
-      </section>
+          <ul className="mini-legend" aria-label="Colour scale">
+            {levels.map(l => <li key={l.level}><i style={{ background: LEVEL_COLORS[l.level] }}/>{l.label}</li>)}
+          </ul>
+          <details className="model-credits"><summary>Model &amp; colour key</summary>
+            <p>The scale applies to tested muscles. The heart, lungs and vessels are shown for anatomical reference.</p>
+            <p><a href="https://github.com/MervinR07/open-anatomy-3d">Open Anatomy 3D</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><br/>{ATTRIBUTION} Surface regions and materials adapted for this viewer.</p>
+          </details>
+        </section>
+
+        <section className="panel muscle-section" aria-labelledby="muscle-list-title">
+          <header className="panel-head"><h2 id="muscle-list-title">Muscle groups</h2><span>Change vs pre-flight</span></header>
+          <ul className="muscle-bars" aria-label="Muscle groups, largest loss first">
+            {rows.map(({ group: g, point: p }) => {
+              const loss = Math.min(30, Math.max(0, -(p?.changePct ?? 0)));
+              return <li key={g.key}><button type="button" className="muscle-bar" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? 'yes' : undefined} data-selected={g.muscleKeys.includes(highlight) || undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
+                <span className="mb-name">{g.alert && <AlertIcon/>}{g.name}</span>
+                <span className="mb-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
+                <span className="mb-value">{fmtPct(p?.changePct)}</span>
+                <span className="mb-level">{p ? levelText(p, levels) : 'No data'}</span>
+              </button></li>;
+            })}
+          </ul>
+        </section>
+      </div>
 
       <div className="hero-right">
         <details className={`status-compact status-${status.tone}`}>
@@ -115,38 +132,25 @@ export function SummaryView({ data, crewId, bodyState, exampleMode, onOpen, vita
         </details>
         <Indicators aero={aero} vo2={vo2} worst={worst} bone={bone} levels={levels} onOpen={onOpen}
           strengthEvaluations={data.strength.evaluations} boneError={boneError} dashboardLoading={!dashboard && !boneError}/>
-        {!exampleMode && <WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/>}
+        <div className="summary-followup">
+          {!exampleMode && <WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/>}
+          <section className="panel todo" aria-labelledby="todo-title">
+            <header className="panel-head"><h2 id="todo-title">Mission schedule</h2><span>{exampleMode ? 'Needs the Planner' : 'Now and the next 7 days'}</span></header>
+            {tasks.length ? <ol className="todo-list">
+              {tasks.map(({ item: i, more }) => <li key={i.id}><button type="button" onClick={() => onOpen('plan')}>
+                <span className="todo-kind" data-status={displayStatus(i, today.mission.today)}>{TYPE_LABEL[i.type]}</span>
+                <strong>{i.title}{more > 0 && <small> · daily</small>}</strong><span>{timing(i, today.mission.today)}</span>
+              </button></li>)}
+            </ol> : <p className="empty">{exampleMode ? 'Start the Planner to see the routine.' : today ? 'Nothing due in the next 7 days.' : planError ? 'Planner unavailable. Reconnecting…' : 'Loading…'}</p>}
+            <button type="button" className="link-btn" onClick={() => onOpen('plan')}>Open the mission plan →</button>
+            {(data.strength.upcoming[0] || aero.upcoming[0]) && <div className="next-tests">
+              <h3>Next tests</h3>
+              {data.strength.upcoming[0] && <p><b>Strength</b> {data.strength.upcoming[0].label} · {inDays(data.strength.upcoming[0].day, data.mission.today)}{data.strength.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
+              {aero.upcoming[0] && <p><b>Aerobic</b> {aero.upcoming[0].label} · {inDays(aero.upcoming[0].day, data.mission.today)}{aero.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
+            </div>}
+          </section>
+        </div>
       </div>
-      <section className="panel muscle-section" aria-labelledby="muscle-list-title">
-        <header className="panel-head"><h2 id="muscle-list-title">Muscle groups</h2><span>Change vs pre-flight</span></header>
-        <ul className="muscle-bars" aria-label="Muscle groups, largest loss first">
-          {rows.map(({ group: g, point: p }) => {
-            const loss = Math.min(30, Math.max(0, -(p?.changePct ?? 0)));
-            return <li key={g.key}><button type="button" className="muscle-bar" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? 'yes' : undefined} data-selected={g.muscleKeys.includes(highlight) || undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
-              <span className="mb-name">{g.alert && <AlertIcon/>}{g.name}</span>
-              <span className="mb-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
-              <span className="mb-value">{fmtPct(p?.changePct)}</span>
-              <span className="mb-level">{p ? levelText(p, levels) : 'No data'}</span>
-            </button></li>;
-          })}
-        </ul>
-      </section>
-
-      <section className="panel todo" aria-labelledby="todo-title">
-        <header className="panel-head"><h2 id="todo-title">Mission schedule</h2><span>{exampleMode ? 'Needs the Planner' : 'Now and the next 7 days'}</span></header>
-        {tasks.length ? <ol className="todo-list">
-          {tasks.map(({ item: i, more }) => <li key={i.id}><button type="button" onClick={() => onOpen('plan')}>
-            <span className="todo-kind" data-status={displayStatus(i, today.mission.today)}>{TYPE_LABEL[i.type]}</span>
-            <strong>{i.title}{more > 0 && <small> · daily</small>}</strong><span>{timing(i, today.mission.today)}</span>
-          </button></li>)}
-        </ol> : <p className="empty">{exampleMode ? 'Start the Planner to see the routine.' : today ? 'Nothing due in the next 7 days.' : planError ? 'Planner unavailable. Reconnecting…' : 'Loading…'}</p>}
-        <button type="button" className="link-btn" onClick={() => onOpen('plan')}>Open the mission plan →</button>
-        {(data.strength.upcoming[0] || aero.upcoming[0]) && <div className="next-tests">
-          <h3>Next tests</h3>
-          {data.strength.upcoming[0] && <p><b>Strength</b> {data.strength.upcoming[0].label} · {inDays(data.strength.upcoming[0].day, data.mission.today)}{data.strength.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
-          {aero.upcoming[0] && <p><b>Aerobic</b> {aero.upcoming[0].label} · {inDays(aero.upcoming[0].day, data.mission.today)}{aero.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
-        </div>}
-      </section>
     </div>
     <p className="summary-foot">{data.notice}</p>
   </div>;

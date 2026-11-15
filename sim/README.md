@@ -4,6 +4,8 @@
 
 **Watch:** `gs.Watch` is the crew's first line of monitoring: heart rate every 15 minutes, all day, and the night's sleep (6.9 h on the ground, 6.09 h in flight, Barger et al. 2014). The timeline reads it every day, so a 180-day mission has about 23 000 watch readings per crew member; the DataService filters by measure in SQL and in memory, and `GET /api/v1/readings` takes `start` to ask only for a window. `crew.add_fatigue(day, days)` or `--fatigue CM-3:132:6` makes a spell only the watch and the wearable see (resting heart rate +12 %, HRV −30 %, about 1.6 h less sleep). Design and the analysis built on it: [docs/wearable.md](../docs/wearable.md).
 
+**Eye exam and jugular ultrasound:** two instruments stand in for the ISS imaging studies of OCHMO-STD-100.1A, both simulated from published group results because there is no open per-person data. `gs.OcularExam` ([6012], SANS: OCT, fundus, vision, tonometry, ocular ultrasound; [docs/investigacion-ojos.md](../docs/investigacion-ojos.md)) reads each eye (`side` right/left) on FD30, FD90, every 90 days and R−30; `gs.set_sans(crew, z, eye=None)` or `--sans CM-1:1.8:R` picks a susceptibility. `gs.JugularUltrasound` ([6041]: duplex ultrasound of both internal jugular veins; [docs/investigacion-yugular.md](../docs/investigacion-yugular.md)) reads each vein's area (mm², supine before flight), flow grade 1–4, slow-blood echoes 0–2, whether it collapses when pressed and peak speed (cm/s, negative when it flows back) on L−90, FD30, FD60 (every 60 days on longer missions), R−42, R+1 and R+45. `gs.set_stasis(crew, z)` / `--stasis CM-2:1.5` picks a stasis susceptibility and `gs.add_thrombus(crew, day, side="left")` / `--thrombus CM-2:45[:L|R]` a clot. `tests/test_ocular.py` and `tests/test_vascular.py` check that a large crew reproduces the published shares.
+
 **Booked retests:** with `--run-booked`, the generator also runs each retest the Planner books (a `retest` item of its plan, a result of kind `plan`; see docs/planner.md): when its window opens, it measures the test on that measure's instrument at the start of the window and ingests it like any reading (`run_booked_studies()` in `serve.py`). It is off by default. The Planner turns a finding that is still there after a recent retest into a review, so retests no longer loop.
 
 This folder is the health monitor's data service. The `DataService` takes in everything the sources on board produce (instrument readings and crew context: where each astronaut is and what they are doing), cleans it, keeps it, answers queries for it over Python or HTTP, and announces what it stored on the team's event queue. See `docs/architecture.md` for where it sits: Sources → DataService ↔ Database.
@@ -284,7 +286,7 @@ Custom missions: `gs.Mission([gs.Phase("flight", 0, 120, 0.0), ...])`. Partial g
 | Broken instrument | `Fault("offset", start, end, pct=-1.1)`, `"drift"`, `"dropout"`, `"spike"`, `"stuck"` on the instrument; after a dropout, later faults have nothing to act on |
 | Outside on a spacewalk | `crew.add_eva(day, start_hour=12, hours=6.5)` (see "Crew context") |
 
-Measure groups for events and queries: `legs`, `trunk`, `arms`, `bone`, `cardio`, `strength`.
+Measure groups for events and queries: `legs`, `trunk`, `arms`, `bone`, `cardio`, `strength`, `eyes`, `veins`.
 
 **Instruments.** `measure(crew, day, measure)` returns one `Reading`, `measure_all(crew, day)` one per measure, and `session(crew, day)` the whole session as the device records it.
 
@@ -302,6 +304,8 @@ r.truth                           # {'value': 53.927, 'change_pct': -27.917, 'fa
 | `Wearable` | resting heart rate, systolic and diastolic pressure, SpO2, HRV | 24 hours of minute-by-minute heart rate, following the day's routine |
 | `Spacesuit` | heart rate during a spacewalk (bpm), every 5 minutes | (none; `measure_all()` returns the whole spacewalk) |
 | `Watch` | heart rate every 15 minutes (`watch_hr`, bpm), the night's sleep (`sleep_hours`, h; `sleep_quality`, 1–7) at 06:00 UTC | (none; `measure_all()` returns the whole day) |
+| `OcularExam` | [6012] per eye: OCT retina, nerve rim and choroid (µm), Frisén grade, folds, globe flattening, refraction (D), near vision (logMAR), eye pressure (mmHg), nerve sheath (mm), eye length (mm) | (none) |
+| `JugularUltrasound` | [6041] per vein: area (`ijv_csa`, mm²), flow grade 1–4, slow-blood echoes 0–2, collapses when pressed (flag), peak speed (cm/s) | (none) |
 
 `noise=0` on an instrument (or on `timeline()`) turns measurement noise off; `noise=0.5` halves it. Noise has two parts: the instrument's own (assumed from typical device accuracy) and the person's day-to-day variation (the rest of what repeat tests in the data show), which every reading of that measure on that day shares. Inside the data's coverage a reading without a fault is clipped to the data range (see "What the data checks guarantee"); faults may push it out. Every reading, faulty or not, stays inside the hard limits in `LIMITS`.
 

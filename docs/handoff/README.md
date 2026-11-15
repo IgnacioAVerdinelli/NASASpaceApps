@@ -16,7 +16,9 @@ Notas para los agentes y personas responsables de cada parte del sistema. Salen 
 | Aerobic capacity | VO₂pico (ml/kg/min) y % de cambio, mínimo NASA 32,9 | NLSP MR080G, CFT70 | `src/front/sketch/aerobica/` |
 | Vital signs | Signos del reloj (FC en reposo, presión, SpO₂, HRV, sueño) contra las dos últimas semanas de la persona | Banda personal; sueño en vuelo de Barger 2014 | `src/front/sketch/vitals/` |
 | Mission plan | Plan de controles de OCHMO-STD-100.1A (Tabla 8) | La norma, con cada cita verificada contra el PDF | `src/front/sketch/plan/` |
+| Eyes | Examen ocular [6012] (SANS): OCT, fondo de ojo, visión, presión y ecografía del ojo, por ojo; clases del consenso 2026 | Simulado a partir de promedios publicados ([investigacion-ojos.md](../investigacion-ojos.md)) | `src/front/sketch/ojos/` |
+| Neck veins | Ecografía de las yugulares [6041]: área, grado de flujo, ecos, compresión y velocidad, por vena; niveles normal / check / alarm | Simulado a partir de Marshall-Goebel 2019 y Pavela 2022 ([investigacion-yugular.md](../investigacion-yugular.md)) | `src/front/sketch/venas/` |
 
 Para verlo: `bash scripts/demo.sh` ([guía](../guia-demo.md)), o levantar cada servicio como dice el [README](../../README.md) y abrir `/vuelo.html?crew=CM-1` (`#fuerza` o `#aerobica`), o el link "Flight measurements" de la página principal. Sin backend: `VITE_DASHBOARD_MODE=example npm run dev`. La página está en inglés, como Trama.
 
-Se actualiza a medida que se suman análisis (próximos de la lista "a bordo": masa corporal, examen ocular, ecografía venosa, sangre y orina, sueño).
+Se actualiza a medida que se suman análisis (próximos de la lista "a bordo": masa corporal, sangre y orina).

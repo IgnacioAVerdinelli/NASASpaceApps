@@ -30,13 +30,15 @@ import json
 import time
 import threading
 import logging
+import zlib
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
 from .core import PRESETS, Mission
-from .measures import TIME_FORMAT
+from .instruments import INSTRUMENTS
+from .measures import MEASURES, TIME_FORMAT
 from .dataservice import DataService
 from .pipeline import utc_iso
 from .queue import Queue
@@ -195,20 +197,51 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
             ("GET", "/api/v1/results"): results, ("POST", "/api/v1/results"): save_result}
 
 
+def run_booked_studies(mission: Mission, data: DataService, day: float, done: set[str]) -> int:
+    """Stand in for the crew running the extra tests the analysis scheduler books: each retest (a study booked
+    with reason "finding") whose day has come is measured on its measure's instrument, at the booked time,
+    and ingested like any other reading. Routine studies are left alone, since the generator's own timeline
+    already holds them. `done` keeps the studies run so far; readings already stored at the booked time (from
+    before a restart) count as run. Returns how many studies it ran."""
+    ran = 0
+    for crew in mission.crew:
+        for record in data.results(crew.id, kind="study", end=mission.timestamp(day)):
+            for study in record.payload.get("studies", []):
+                key = f"{crew.id}:{study.get('id')}"
+                measure = study.get("measure")
+                if study.get("reason") != "finding" or key in done or measure not in MEASURES:
+                    continue
+                done.add(key)
+                instrument = INSTRUMENTS[MEASURES[measure]["instrument"]](seed=zlib.crc32(key.encode()))
+                if data.readings(crew.id, instrument.measures, start=record.timestamp, end=record.timestamp):
+                    continue
+                data.ingest(instrument.measure_all(crew, mission.day_of(record.timestamp)))
+                ran += 1
+    return ran
+
+
 def main(argv=None):
     parser = mission_parser(__doc__, port=8000)
     parser.add_argument('--db', default=':memory:', help='SQLite data file')
     parser.add_argument('--queue', help='SQLite message queue file for the local demo')
+    parser.add_argument('--run-booked', action='store_true',
+                        help="run the retests the analysis scheduler books (off until it books them only for suspected findings)")
     args = parser.parse_args(argv)
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
     clock = mission_clock(mission, args.day, args.speed)
     pending = iter(mission.timeline(seed=args.seed))
     next_reading = next(pending, None)
+    booked_done: set[str] = set()
     def advance():
         nonlocal next_reading
         while True:
             day = clock()
+            if args.run_booked:
+                try:
+                    run_booked_studies(mission, data, day, booked_done)
+                except Exception:
+                    logging.exception('Could not run the booked studies; retrying')
             batch = []
             while next_reading is not None and next_reading.mission_day <= day:
                 batch.append(next_reading)

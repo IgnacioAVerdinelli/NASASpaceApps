@@ -196,7 +196,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
     const { layer, isolated, scores, selected, checkpointItems } = values;
     const width = container.clientWidth, height = container.clientHeight;
     const changed = !lastValues || lastValues.layer !== layer || lastValues.isolated !== isolated || lastValues.scores !== scores || lastValues.selected !== selected || lastValues.checkpointItems !== checkpointItems || lastValues.width !== width || lastValues.height !== height;
-    if (layer !== 'surface' && layer !== 'muscles' || width < 60 || height < 60) {
+    if (!['surface', 'muscles', 'organs'].includes(layer) || width < 60 || height < 60) {
       for (const entry of entries.values()) entry.style.display = 'none';
       display.clear(); previousAnchors.clear(); previousPlacements.clear();
       job = null; lastValues = { layer, isolated, scores, selected, width, height };

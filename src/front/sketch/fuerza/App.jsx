@@ -8,7 +8,7 @@ import './style.css';
 
 const tick = { fill: '#4f5874', fontSize: 13 };
 // Identity colours (not status): they are not confused with the green-to-red scale.
-const CREW = '#2f2850';
+const CREW = '#4057c9';
 const THRESHOLD = '#a4242f';
 const REF_COLORS = { CONTROL: '#6d5fb8', EXERCISE: '#0e7490', FLY: '#9096ad' };
 

@@ -41,6 +41,7 @@ function surfaceMaterial() {
 }
 
 function updateView(view, values) {
+  view.invalidate();
   const { layer, isolated, selected, scores } = values;
   // Optional caller-defined scale (score -> THREE.Color); defaults to the intensity palette.
   const colorOf = values.colorScale ?? intensityColor;
@@ -198,7 +199,12 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     keyLight.position.set(3, 4, 5); scene.add(keyLight);
     const fillLight = new THREE.DirectionalLight(0xe1edff, 1.2);
     fillLight.position.set(-3, 2, -4); scene.add(fillLight);
+    let needsRender = true;
+    const invalidate = () => { needsRender = true; };
+    controls.addEventListener('change', invalidate);
+    renderer.domElement.addEventListener('webglcontextrestored', invalidate);
     const resize = () => {
+      invalidate();
       const width = Math.max(1, container.clientWidth), height = Math.max(1, container.clientHeight);
       renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
       // The model may load while the container is still being laid out (0 wide, or about to grow): until the
@@ -306,7 +312,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
             structureMeshes.push({ mesh, key: node.name, material });
           });
         }
-        const view = { root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, structureGroups, structureMeshes, regions: data.regions, surfaceWeights, camera, controls };
+        const view = { invalidate, root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, structureGroups, structureMeshes, regions: data.regions, surfaceWeights, camera, controls };
         view.moveCamera = (target, position) => {
           controls.autoRotate = false;
           controls.enableDamping = false;
@@ -404,13 +410,23 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         camera.position.lerpVectors(transition.fromPosition, transition.position, eased);
         if (progress === 1) transition = null;
       }
-      if (visible) { controls.update(delta); indicators?.update(valuesRef.current, now, motion.matches); checkpoints?.update(valuesRef.current, now, motion.matches); renderer.render(scene, camera); }
+      if (visible) {
+        controls.update(delta);
+        indicators?.update(valuesRef.current, now, motion.matches);
+        checkpoints?.update(valuesRef.current, now, motion.matches);
+        if (needsRender) {
+          renderer.render(scene, camera);
+          needsRender = false;
+        }
+      }
       frame = requestAnimationFrame(animate);
     };
     animate();
     return () => {
       active = false; cancelAnimationFrame(frame); observer.disconnect();
       visibility?.disconnect();
+      controls.removeEventListener('change', invalidate);
+      renderer.domElement.removeEventListener('webglcontextrestored', invalidate);
       controls.removeEventListener('start', stopAutoFit);
       controls.removeEventListener('start', cancelTransition);
       controls.removeEventListener('end', endInteraction);

@@ -1,5 +1,7 @@
+import '../fonts/typography.css';
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Brand } from '../vuelo/Icons.jsx';
 import './style.css';
 
 const alerts = [
@@ -25,25 +27,25 @@ function App() {
 
   return <main className="page">
     <header className="header">
-      <a className="brand" href="../">HBARAI<span>.</span></a>
-      <span className="header-title">Wearable experience</span>
-      <a className="back-link" href="../"><Arrow back /> Body overview</a>
+      <a className="alert-brand" href={'../' + window.location.search + '#summary'} aria-label="Trama health overview"><Brand/></a>
+
+      <a className="back-link" href={'../' + window.location.search + '#vitales'}><Arrow back /> Vital signs</a>
     </header>
 
     <section className="experience" aria-label="Wearable alerts demonstration">
       <div className="overview">
         <div className="intro">
-          <div className="status"><span /> SIMULATED EXPERIENCE</div>
-          <h1>Clarity when<br /><em>it matters.</em></h1>
-          <p>Important updates, thoughtfully delivered to your wrist. Select an example to explore the alert.</p>
+          <div className="status"><span /> SIMULATED DEMO</div>
+          <h1>Wearable alert simulator</h1>
+          <p>Select a fictional alert to see how it appears on the wearable.</p>
         </div>
 
         <div className="alert-list" role="group" aria-label="Choose an example alert">
-          <div className="list-heading"><h2>Example alerts</h2><span>{alerts.length} SCENARIOS</span></div>
-          {alerts.map((alert, index) => <button key={alert.id} type="button" className={'alert-row' + (selected === alert.id ? ' selected' : '')} aria-pressed={selected === alert.id} onClick={() => choose(alert.id)}>
+          <div className="list-heading"><h2>Example alerts</h2><span>{alerts.length} EXAMPLES</span></div>
+          {alerts.map((alert) => <button key={alert.id} type="button" className={'alert-row' + (selected === alert.id ? ' selected' : '')} aria-pressed={selected === alert.id} onClick={() => choose(alert.id)}>
             <span className={'row-icon ' + alert.level}><Icon type={alert.level}/></span>
             <span className="row-copy"><strong>{alert.title}</strong><span>{alert.priority} <span aria-hidden="true">·</span> {alert.time}</span></span>
-            <span className="row-number">0{index + 1}</span><Arrow />
+            <Arrow />
           </button>)}
         </div>
         <p className="disclaimer">For demonstration only. These fictional alerts are not health assessments.</p>
@@ -62,10 +64,10 @@ function App() {
             </div>
           </div></div>
         </div>
-        <div className="preview-footer"><span>DESIGNED FOR A QUICK GLANCE</span><span>SELECT AN ALERT TO PREVIEW <Arrow /></span></div>
+
       </div>
     </section>
-    <footer><span>HBARAI <span className="brand-dot">·</span> WEARABLE CONCEPT</span><span>SIMULATED DATA</span></footer>
+
   </main>;
 }
 

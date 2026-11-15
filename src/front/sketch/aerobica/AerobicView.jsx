@@ -9,7 +9,7 @@ import { components, maxCriteria, reference } from './data.js';
 import './style.css';
 
 const tick = { fill: '#4f5874', fontSize: 13 };
-const CREW = '#2f2850';
+const CREW = '#4057c9';
 const THRESHOLD = '#a4242f';
 const FLOOR_COLOR = '#7d1a23';
 const REF_COLORS = { CONTROL: '#6d5fb8', EXERCISE: '#0e7490', FLY: '#9096ad' };
@@ -171,7 +171,7 @@ export function AerobicView({ data }) {
       <div className="panel validity">
         <h3>Each test</h3>
         <p className="validity-sub">A test counts as maximal when the respiratory exchange ratio (RER) reaches 1.1 and perceived effort (Borg) reaches 17; otherwise the true VO₂peak may be higher than recorded.{!recorded && ' The DataService records only the VO₂peak value for now, so these checks are not available yet.'}</p>
-        <div className="table-scroll"><table>
+        <div className="table-scroll" tabIndex="0" role="region" aria-label="Test validity table"><table>
           <thead><tr><th scope="col">Test</th><th scope="col">VO₂peak</th><th scope="col">Change</th><th scope="col">Level</th>{maxCriteria.map(c => <th scope="col" key={c.id}>{c.label}</th>)}<th scope="col">Why it stopped</th><th scope="col">Method</th></tr></thead>
           <tbody>{evaluations.slice(0, evalIndex + 1).map(e => <tr key={e.id} className={e.id === current.id ? 'is-current' : ''}>
             <th scope="row">{e.label}</th><td>{fmtNum(e.value)}</td><td>{fmtPct(e.changePct)}</td><td><LevelBadge point={e} levels={levels}/></td>

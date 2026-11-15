@@ -52,12 +52,14 @@ function VitalCard({ vital }) {
 export function VitalsView({ vitals, error }) {
   if (!vitals) return <div className="connection-notice" role={error ? 'alert' : 'status'}>{error ? 'Unable to load your watch data. Retrying automatically…' : 'Loading your watch data…'}</div>;
   return <div className="vitals-view">
-    <div className="vitals-intro">
-      <div><h2>Vital signs</h2>
-        <p>Your watch is the first line of monitoring: it checks every day how you compare with your own last two weeks. A change that lasts three days books a review by the flight surgeon. Slow changes over the mission are judged by the periodic tests (strength, aerobic capacity, bone).</p></div>
-      {vitals.simulated && <span className="demo-label">SIMULATED DATA</span>}
-    </div>
+    {error && <div className="flight-notice" role="status">Connection lost. Showing the last available watch readings.</div>}
     <WatchPanel vitals={vitals}/>
+    <div className="watch-reference">
+      <details><summary>How the watch compares readings</summary>
+        <p>The watch compares each day with the crew member’s previous two weeks. A change lasting three days schedules a flight surgeon review. Periodic strength, aerobic and bone tests track longer-term changes.</p>
+      </details>
+      <a href={'./alerts/' + window.location.search}>Open wearable alert simulator ↗</a>
+    </div>
     <div className="vital-cards">{vitals.vitals.map(v => <VitalCard key={v.measure} vital={v}/>)}</div>
     <p className="summary-foot">{vitals.notice} The usual range and every threshold are ours (docs/wearable.md), not NASA limits.</p>
   </div>;

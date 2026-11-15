@@ -1,3 +1,4 @@
+import '../fonts/typography.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Shell } from './Shell.jsx';

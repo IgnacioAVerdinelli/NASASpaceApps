@@ -106,7 +106,7 @@ function Steps({ steps }) {
   const [ticked, setTicked] = useState(() => new Set());
   const toggle = i => setTicked(t => { const n = new Set(t); n.has(i) ? n.delete(i) : n.add(i); return n; });
   return <>
-    <div className="plan-steps-head"><h4>How to do it</h4><span>{ticked.size} of {steps.length} steps ticked</span></div>
+    <div className="plan-steps-head"><h3>How to do it</h3><span>{ticked.size} of {steps.length} steps ticked</span></div>
     <ol className="plan-steps">{steps.map((s, i) => <li key={s}><label data-ticked={ticked.has(i) || undefined}>
       <input type="checkbox" checked={ticked.has(i)} onChange={() => toggle(i)}/><span className="step-n">{i + 1}</span><span>{s}</span></label></li>)}</ol>
     <p className="plan-hint">Ticks are a checklist for you only; they are not saved.</p>
@@ -187,7 +187,7 @@ function Detail({ item, today, crew, onChanged }) {
     <header className="plan-detail-head">
       <div>
         <Tag item={item}/>
-        <h3 id="plan-detail-title">{plainTitle(item)}</h3>
+        <h2 id="plan-detail-title">{plainTitle(item)}</h2>
         <p className="plan-when" data-status={s}>{timing(item, today)}</p>
         <p className="plan-window">Window {date(item.window.from)} to {date(item.window.to)} · NASA schedule: {plain}</p>
       </div>
@@ -265,34 +265,33 @@ export function PlanView({ crew }) {
   };
   const rows = (list, opts) => list.map(({ item, more }) => <ItemRow key={item.id} item={item} today={today} more={more} selected={selected?.id === item.id} onSelect={select} {...opts}/>);
 
-  return <section className="plan" aria-labelledby="plan-title">
+  return <section className="plan" aria-label="Mission plan">
     {error && <div className="connection-notice" role="status">Planner connection lost. Showing the last plan; changes can't be saved until it is back.</div>}
     <div className="recommendations-header">
-      <div><h2 id="plan-title">Mission plan</h2>
-        <p>What {crew} has to do and when, from NASA's mission medical standard ({data.source.document}).</p></div>
+      <p>Schedule based on NASA's mission medical standard ({data.source.document}).</p>
       <span className="demo-label">EXAMPLE SCHEDULE · {data.source.profile?.toUpperCase().replace('_', ' ')} · NOT CLINICAL GUIDANCE</span>
     </div>
 
     <NowBand c={c} mission={data.mission} items={items} selectedId={selected?.id} onSelect={id => { if (view === 'missed') setView('mission'); select(id); }}/>
 
-    <div className="plan-switch" role="radiogroup" aria-label="Plan view">
-      {VIEWS.map(v => <button key={v.id} type="button" role="radio" aria-checked={view === v.id} onClick={() => { setView(v.id); setSelectedId(null); }}>
+    <div className="plan-switch" role="group" aria-label="Plan view">
+      {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => { setView(v.id); setSelectedId(null); }}>
         {v.label}{v.id === 'missed' && c.missed > 0 && <span className="plan-switch-count">{c.missed}</span>}</button>)}
     </div>
 
     <div className="decision-layout plan-layout">
       <div className="plan-list" ref={listRef} aria-label={VIEWS.find(v => v.id === view).label}>
         {view === 'next' && <>
-          <h3 className="plan-group" data-tone="open">Open now <span>{open.length ? 'do these first' : ''}</span></h3>
+          <h2 className="plan-group" data-tone="open">Open now <span>{open.length ? 'do these first' : ''}</span></h2>
           {open.length ? rows(open) : <p className="plan-empty">Nothing is open right now.</p>}
-          <h3 className="plan-group">Coming up this week</h3>
+          <h2 className="plan-group">Coming up this week</h2>
           {later.length ? rows(later) : <p className="plan-empty">Nothing else opens in the next 7 days.</p>}
         </>}
         {view === 'missed' && (missed.length ? rows(missed.map(item => ({ item, more: 0 })), { showStatus: true })
           : <div className="plan-empty"><strong>Nothing missed.</strong><p>When a window closes before an item is done, it shows here so you can log it or tell the ground.</p></div>)}
         {view === 'mission' && phases.map(phase => {
           const groups = byRoutine(items.filter(i => phaseOf(i, data.mission.landing) === phase));
-          return groups.length > 0 && <div key={phase} className="plan-phase"><h3 className="plan-group">{phase}</h3>{groups.map(g => <RoutineRow key={g.key} group={g} today={today} landing={data.mission.landing} selectedId={selected?.id} onSelect={select}/>)}</div>;
+          return groups.length > 0 && <div key={phase} className="plan-phase"><h2 className="plan-group">{phase}</h2>{groups.map(g => <RoutineRow key={g.key} group={g} today={today} landing={data.mission.landing} selectedId={selected?.id} onSelect={select}/>)}</div>;
         })}
       </div>
       <div ref={detailRef} className="plan-detail-wrap">

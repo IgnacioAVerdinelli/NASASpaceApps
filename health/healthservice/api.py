@@ -6,6 +6,10 @@ GET /api/v1/analyses     strength and aerobic capacity test by test, for the fli
                          ?crew and ?day as /dashboard
 GET /api/v1/vitals       the watch (layer 1): each vital against the person's own last two weeks, and the day of
                          heart rate; same ?crew and ?day (docs/wearable.md)
+GET /api/v1/eyes         the eye exam (SANS): each exam against the pre-flight one, classed with the 2026 expert
+                         consensus; same ?crew and ?day (docs/investigacion-ojos.md)
+GET /api/v1/veins        the jugular vein ultrasound: each scan of both veins against the pre-flight one, with a
+                         level (normal, check, alarm); same ?crew and ?day (docs/investigacion-yugular.md)
 GET /api/v1/alerts       alerts published so far (until the notification system defines its queue)
 GET /api/v1/health       service status
 
@@ -57,6 +61,24 @@ def create_app(service: HealthService, allow_origin: str = "*", delivery_queue=N
     def vitals(response: Response, crew: str | None = None, day: float | None = None):
         try:
             data = service.vitals(crew, day)
+        except KeyError:
+            return unknown_crew(crew)
+        response.headers["Cache-Control"] = "no-store"
+        return data
+
+    @app.get("/api/v1/eyes")
+    def eyes(response: Response, crew: str | None = None, day: float | None = None):
+        try:
+            data = service.eyes(crew, day)
+        except KeyError:
+            return unknown_crew(crew)
+        response.headers["Cache-Control"] = "no-store"
+        return data
+
+    @app.get("/api/v1/veins")
+    def veins(response: Response, crew: str | None = None, day: float | None = None):
+        try:
+            data = service.veins(crew, day)
         except KeyError:
             return unknown_crew(crew)
         response.headers["Cache-Control"] = "no-store"

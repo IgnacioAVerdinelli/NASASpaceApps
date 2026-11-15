@@ -43,6 +43,7 @@ Opciones, todas por variables de entorno:
 |---|---|---|
 | `DAY` | 130 | Día de misión al arrancar (0 = lanzamiento, 180 = aterrizaje) |
 | `SPEED` | 0 | Días de misión por minuto real; 0 deja los cinco casos en el momento preparado |
+| `SANS`, `THROMBUS` | vacías | Estudios por imagen, apagados para no cambiar los cinco casos. `SANS=CM-4:1.8:R` da SANS clase B en el ojo derecho; `THROMBUS=CM-5:45`, un coágulo en la yugular izquierda desde el día 45 |
 | `DEMO_DIR` | `.demo/` | Dónde guardar bases, logs y temporales |
 | `PORT` | 5190 | Puerto de la página |
 | `DATA_PORT`, `HEALTH_PORT`, `PLANNER_PORT` | 8000, 3000, 3001 | Puertos de los servicios; cambiarlos si ya están ocupados |
@@ -72,6 +73,10 @@ En Surface, las regiones con mediciones usan sus resultados; las demás muestran
    - Al abrir una tarea: pasos, qué hacer si algo sale anormal y la cita de la norma con su página.
    - "Mark as done" pide confirmación y lo guarda en el Planner.
 7. **Muscle strength y Aerobic capacity:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
+8. **Eyes y Neck veins: los estudios por imagen.** Con `SANS=CM-4:1.8:R THROMBUS=CM-5:45 bash scripts/demo.sh`:
+   - **Eyes, CM-4:** clase B en el ojo derecho (la retina alrededor del disco óptico subió más de 55 µm); el ojo cortado al medio cambia con cada examen ("▶ Play the mission").
+   - **Neck veins, CM-5:** alarma, la vena izquierda no colapsa al apretarla (un posible coágulo, como el que se encontró sin síntomas en la ISS); "Compress the vein" lo muestra y el Planner agenda la revisión del mismo día.
+   - Sin esas variables, las dos pestañas muestran lo que el simulador genera para cada tripulante.
 
 **Mensaje para cerrar:** el reloj mira todos los días cómo estás comparado con vos mismo; las pruebas periódicas miran si perdés más rápido de lo esperado; y el Planner convierte las dos cosas en tareas concretas, siguiendo la norma médica de la NASA (OCHMO-STD-100.1A).
 

@@ -10,6 +10,8 @@ from .models import CrewInfo, Reading
 from .processing import MeasureResult, compute_results
 from .reference import Reference
 from .sources import DataSource
+from . import eyes as eyes_mod
+from . import veins as veins_mod
 from . import vitals as vitals_mod
 
 
@@ -58,6 +60,22 @@ class HealthService:
         crew = self.crew(crew_id)
         mission = self.source.mission()
         return vitals_mod.build_vitals(mission, crew.id, day, *vitals_inputs(self.source, mission, crew.id, day))
+
+    def eyes(self, crew_id: str | None = None, day: float | None = None) -> dict:
+        """The eye exam (GET /api/v1/eyes, docs/investigacion-ojos.md): each exam against the pre-flight one and
+        the SANS class of the latest. Read-only."""
+        day = self.source.current_day() if day is None else float(day)
+        crew = self.crew(crew_id)
+        mission = self.source.mission()
+        return eyes_mod.build_eyes(mission, crew.id, day, self.source.records(crew.id, eyes_mod.MEASURES, until_day=day))
+
+    def veins(self, crew_id: str | None = None, day: float | None = None) -> dict:
+        """The jugular vein ultrasound (GET /api/v1/veins, docs/investigacion-yugular.md): each scan against the
+        pre-flight one and the level of the latest. Read-only."""
+        day = self.source.current_day() if day is None else float(day)
+        crew = self.crew(crew_id)
+        mission = self.source.mission()
+        return veins_mod.build_veins(mission, crew.id, day, self.source.records(crew.id, veins_mod.MEASURES, until_day=day))
 
     def _process(self, crew_id: str | None, day: float | None):
         live = day is None

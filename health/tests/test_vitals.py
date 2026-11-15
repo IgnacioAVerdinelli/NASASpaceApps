@@ -30,7 +30,7 @@ STEADY = [60, 61, 59, 60, 62, 60, 61, 59, 60, 61, 60, 62, 59, 60]       # 14 day
 def test_in_range_out_and_deviation():
     v = vitals.assess(MISSION, "resting_hr", series(STEADY + [61, 60, 62]))
     assert v["status"] == "in_range" and v["band"]["days"] == 14
-    assert v["band"]["low"] == pytest.approx(60.29 - 4, abs=0.02)            # SD floor of 2 bpm, +-2 SD
+    assert v["band"]["low"] == pytest.approx(60 - 4, abs=0.02)               # median 60, SD floor of 2 bpm, +-2 SD
     v = vitals.assess(MISSION, "resting_hr", series(STEADY + [60, 61, 70]))
     assert v["status"] == "out" and v["daysBeyond"] == 1 and v["text"] == "Above your usual range today"
     v = vitals.assess(MISSION, "resting_hr", series(STEADY + [69, 70, 71]))
@@ -74,7 +74,9 @@ def test_findings_open_once_and_clear():
     (f,) = vitals.findings("CM-1", [dev], {})
     assert (f["state"], f["source"], f["measure"], f["episode_day"]) == ("suspected", "watch", "resting_hr", 114)
     assert vitals.findings("CM-1", [dev], {"resting_hr": f}) == []           # still open: nothing new
-    back = vitals.assess(MISSION, "resting_hr", series(STEADY + [69, 70, 71, 60, 61]))
+    noisy = vitals.assess(MISSION, "resting_hr", series(STEADY + [69, 70, 71, 62, 63, 64]))
+    assert noisy["status"] != "deviation" and vitals.findings("CM-1", [noisy], {"resting_hr": f}) == []   # not settled yet
+    back = vitals.assess(MISSION, "resting_hr", series(STEADY + [69, 70, 71, 60, 61, 60]))
     (c,) = vitals.findings("CM-1", [back], {"resting_hr": f})
     assert c["state"] == "cleared" and c["episode_day"] == 114 and vitals.dedupe(c) != vitals.dedupe(f)
 

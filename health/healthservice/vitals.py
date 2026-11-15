@@ -3,8 +3,10 @@
 No I/O here. The inputs are DataService reading records (dicts, as GET /api/v1/readings sends them) and crew
 context records; the output is the JSON of GET /api/v1/vitals and the findings the watch raises.
 
-- Personal band: mean +- BAND_SD standard deviations of the person's own daily values over the WINDOW readings
-  before the last LAG ones (a floor on the SD keeps a steady fortnight from making a hair-trigger). A rolling band
+- Personal band: median +- BAND_SD robust standard deviations (1.4826 x the median absolute deviation) of the
+  person's own daily values over the WINDOW readings before the last LAG ones. Robust, so the first days of a long
+  episode do not widen the band and hide the rest of it; a floor on the SD keeps a steady fortnight from making
+  a hair-trigger. A rolling band
   follows slow change on its own: slow change is layer 2's job (alerts.py); this layer is about acute change.
 - Status: `in_range`, `out` (latest beyond the band either way), `deviation` (the mean of the last DEVIATION_DAYS
   values beyond mean +- SUSTAINED_SD standard deviations of a 3-day mean, the bad way: the watch's day-to-day noise
@@ -18,14 +20,14 @@ from __future__ import annotations
 
 import math
 from datetime import date, timedelta
-from statistics import fmean, pstdev
+from statistics import fmean, median
 
 from .models import MissionInfo
 
 WINDOW, LAG, MIN_BAND = 14, 3, 10          # band from the 14 daily values before the last 3; needs at least 10
 BAND_SD = 2.0                               # the daily band shown on the page
 SUSTAINED_SD = 2.5                          # deviation: the 3-day mean beyond 2.5 SD of a 3-day mean
-DEVIATION_DAYS, CLEAR_DAYS = 3, 2
+DEVIATION_DAYS, CLEAR_DAYS = 3, 3
 SPO2_FLOOR = 92.0                           # usual target floor for adult pulse oximetry; ours, not a NASA limit
 SERIES_DAYS = 30
 TOPIC, SOURCE = "health.finding", "watch"
@@ -85,10 +87,13 @@ def assess(mission: MissionInfo, measure: str, records: list[dict]) -> dict:
     if len(window) < MIN_BAND:
         out.update(status="no_band", text=TEXT["no_band"])
     else:
-        mean, sd = fmean(window), max(pstdev(window), floor)
+        mean = median(window)
+        sd = max(1.4826 * median(abs(v - mean) for v in window), floor)
         limit = SUSTAINED_SD * sd / math.sqrt(DEVIATION_DAYS)
         band = {"low": round(mean - BAND_SD * sd, 2), "high": round(mean + BAND_SD * sd, 2), "mean": round(mean, 2),
                 "days": len(window), "sustainedLow": round(mean - limit, 2), "sustainedHigh": round(mean + limit, 2)}
+        if measure == "spo2":                                      # a saturation never passes 100 %
+            band["high"], band["sustainedHigh"] = min(band["high"], 100.0), min(band["sustainedHigh"], 100.0)
         out["band"] = band
         out["changePct"] = round((values[-1] - mean) / mean * 100, 1) if mean else None
         beyond = 0
@@ -198,9 +203,20 @@ def findings(crew_id: str, vitals: list[dict], previous: dict[str, dict]) -> lis
             start = v["series"][-days]["day"] if len(v["series"]) >= days else v["latest"]["day"]
             out.append(_finding(crew_id, v, "suspected", start))
         elif open_ and v["status"] not in ("deviation", "low_now") and v["band"] and len(v["series"]) >= CLEAR_DAYS and all(
-                not _beyond(p["value"], v["band"], v["direction"]) for p in v["series"][-CLEAR_DAYS:]):
+                not _beyond(p["value"], v["band"], v["direction"]) for p in v["series"][-CLEAR_DAYS:]) and _settled(v):
             out.append(_finding(crew_id, v, "cleared", last.get("episode_day", v["latest"]["day"])))
     return out
+
+
+def _settled(v: dict) -> bool:
+    """The mean of the last days is back on the usual side of the sustained limit, by half of it: a noisy day in
+    the middle of an episode must not clear it."""
+    b, recent = v["band"], v.get("recentMean")
+    if recent is None:
+        return True
+    if v["direction"] == "up":
+        return recent <= b["mean"] + (b["sustainedHigh"] - b["mean"]) / 2
+    return recent >= b["mean"] - (b["mean"] - b["sustainedLow"]) / 2
 
 
 def _finding(crew_id: str, v: dict, state: str, episode_day: float) -> dict:

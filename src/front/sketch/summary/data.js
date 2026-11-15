@@ -5,6 +5,7 @@
 export const STATUS = {
   critical: { tone: 'critical', title: 'Action needed', detail: 'A NASA standard was crossed. Tell the crew medical officer and the flight surgeon. The follow-up booked for it is in your To do list.' },
   warning: { tone: 'warning', title: 'Check needed', detail: 'A loss is faster than expected. A retest or a review has been booked.' },
+  watch: { tone: 'warning', title: 'Check needed', detail: 'Your watch shows a change that has lasted a few days. A review by the flight surgeon has been booked; rest if you can and mention it at your next medical conference.' },
   ok: { tone: 'ok', title: 'No alerts', detail: 'Nothing needs action now. Keep following the exercise and measurement routine. The colours below show change since before flight, not alarms.' },
 };
 
@@ -21,9 +22,11 @@ export function alertsOf(analyses) {
   return out.sort((x, y) => (y.severity === 'critical') - (x.severity === 'critical'));
 }
 
-export function overallStatus(alerts) {
-  if (alerts.some(a => a.severity === 'critical')) return STATUS.critical;
+// alerts: from the periodic tests (layer 2); notices: from the watch (layer 1, data/vitals.js watchNotices).
+export function overallStatus(alerts, notices = []) {
+  if (alerts.some(a => a.severity === 'critical') || notices.some(n => n.severity === 'critical')) return STATUS.critical;
   if (alerts.length) return STATUS.warning;
+  if (notices.length) return STATUS.watch;
   return STATUS.ok;
 }
 

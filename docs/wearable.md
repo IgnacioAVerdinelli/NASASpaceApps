@@ -2,7 +2,7 @@
 
 Design and contract for the crew's first line of monitoring, the watch, and how it sits next to the historical analysis we already have. Other people and agents build against this page; change it in the same PR as the code.
 
-- **Owner:** Tomás. **State (15/11/2026):** built in four branches, merged in this order:
+- **Owner:** Tomás. **State (15/11/2026):** built and merged in four branches, in this order:
 
 | Branch | Part | What |
 |---|---|---|
@@ -45,7 +45,7 @@ New instrument `watch` in gravsim (`instruments.Watch`). The daily resting value
 
 ### Personal band
 
-For each vital and each day: the mean and SD of the person's own daily values over the **14 days before the last 3** (days d−17 to d−4). The band is mean ± 2 SD, with a floor on the SD so a very steady fortnight does not make a hair-trigger:
+For each vital and each day: the median and a robust SD (1.4826 × the median absolute deviation) of the person's own daily values over the **14 days before the last 3** (days d−17 to d−4). The band is median ± 2 SD, with a floor on the SD so a very steady fortnight does not make a hair-trigger. Robust statistics matter: with mean and SD, the first days of a week-long episode entered the window, widened the band and hid the rest of the episode.
 
 | Vital | Bad direction | SD floor |
 |---|---|---|
@@ -62,7 +62,7 @@ A rolling band follows slow changes on its own (they are layer 2's job) and make
 
 - `in_range`: the latest value is inside the band.
 - `out`: outside, in either direction. The page shows which side; it is not a deviation yet.
-- `deviation`: the **mean of the last 3 days** is beyond 2.5 SD of a 3-day mean (mean ± 2.5·SD/√3) in the bad direction, and each of those 3 days is on the worse side of the usual mean. This is the watch's notice. Why the 3-day mean: a watch's daily resting heart rate moves about ±6 % from one day to the next, so a single day says little; three days together have √3 times less noise. One big day alone is not enough.
+- `deviation`: the **mean of the last 3 days** is beyond 2.5 SD of a 3-day mean (median ± 2.5·SD/√3) in the bad direction, and each of those 3 days is on the worse side of the usual median. This is the watch's notice. Why the 3-day mean: a watch's daily resting heart rate moves about ±6 % from one day to the next, so a single day says little; three days together have √3 times less noise. One big day alone is not enough.
 - `no_band` / `no_data`.
 
 SpO2 has one absolute rule on top: under **92 %** is `low_now` at once, without waiting three days. 92 % is the usual target floor for pulse oximetry in adults; it is not a NASA threshold and is documented as ours.
@@ -80,7 +80,7 @@ When a vital enters `deviation`, the demo worker publishes on the event queue:
  "basis": "3 days beyond the personal band", "change_pct": 11.8, "mission_day": 134.0, "synthetic": true}
 ```
 
-When the vital is no longer in deviation and its last 2 days are back in the daily band: the same with `"state": "cleared"`. Dedupe: one `suspected` per crew member, vital and episode.
+When the vital is no longer in deviation, its last 3 days are back in the daily band and their mean is back within half of the sustained limit: the same with `"state": "cleared"`. The extra conditions keep one quiet day in the middle of an episode from clearing it. Dedupe: one `suspected` per crew member, vital and episode.
 
 ### `GET /api/v1/vitals?crew=CM-3&day=`
 
@@ -124,4 +124,4 @@ When the vital is no longer in deviation and its last 2 days are back in the dai
 
 ## 6. Assumptions (ours, not NASA's)
 
-The 14-day window, the 3-day lag, ±2 SD for the daily band, 2.5 SD of a 3-day mean for a deviation, the SD floors, 2 days to clear it, SpO2 92 % and every number of the fatigue spell. SpO2 and HRV values in the simulator have no data behind them.
+The 14-day window, the 3-day lag, ±2 SD for the daily band, 2.5 SD of a 3-day mean for a deviation, the SD floors, 3 days and half the sustained limit to clear it, SpO2 92 % and every number of the fatigue spell. SpO2 and HRV values in the simulator have no data behind them.

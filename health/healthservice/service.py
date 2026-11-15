@@ -97,5 +97,5 @@ def vitals_inputs(source, mission, crew_id: str, day: float, curves: bool = True
     midnight = mission.day_of(f"{today}T00:00:00Z")
     watch = source.records(crew_id, [vitals_mod.WATCH_HR], start=mission.timestamp(midnight - 7), until_day=day)
     pre = source.records(crew_id, [vitals_mod.WATCH_HR], start=mission.timestamp(-14), until_day=min(0.0, day))
-    context = source.context(crew_id, f"{today}T00:00:00Z", mission.timestamp(day))
+    context = source.context(crew_id, f"{today}T00:00:00Z", f"{today}T23:59:59Z")   # the day's plan, so the page can shade it all
     return daily, watch, pre, context

@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { clock, dayRows, loadVitals, side, tiles, validateVitals, vitalsUrl, watchNotices } from '../src/front/sketch/data/vitals.js';
+import { clock, dayRows, loadVitals, side, simulatedHeartRate, tiles, validateVitals, vitalsUrl, watchNotices } from '../src/front/sketch/data/vitals.js';
+
+test('simulated heart rate stays near the latest recorded value', () => {
+  const day = { curves: { today: [{ value: 70 }, { value: 80 }, { value: null }] } };
+  const values = Array.from({ length: 60 }, (_, second) => simulatedHeartRate(day, second));
+  assert.ok(new Set(values).size > 1);
+  assert.ok(values.every(value => value >= 77 && value <= 83));
+  assert.equal(simulatedHeartRate({ curves: { today: [] } }, 0), null);
+});
 
 const vital = (measure, status, extra = {}) => ({ measure, name: measure, unit: 'u', decimals: 0, direction: 'up', status, text: `${measure} ${status}`,
   latest: { value: 70, day: 10, at: 'x' }, band: { low: 55, high: 65, mean: 60 }, series: [], weekly: [], ...extra });

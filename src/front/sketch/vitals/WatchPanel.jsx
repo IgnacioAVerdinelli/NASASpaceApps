@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CartesianGrid, ComposedChart, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertIcon } from '../fuerza/App.jsx';
-import { ACTIVITY, COMPARISONS, clock, dayRows, fmtValue, side, tiles } from '../data/vitals.js';
+import { ACTIVITY, COMPARISONS, clock, dayRows, fmtValue, side, simulatedHeartRate, tiles } from '../data/vitals.js';
 import './style.css';
 
 // Layer 1, the watch (docs/wearable.md): one tile per vital and the day of heart rate. Every status, band and
@@ -106,6 +106,18 @@ function freshness(latest) {
   return Number.isNaN(date.getTime()) ? 'Latest reading' : `Recorded ${date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' })}`;
 }
 
+function LiveHeartRate({ day, error }) {
+  const [seconds, setSeconds] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    if (error) return;
+    const timer = setInterval(() => setSeconds(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [error]);
+  const value = simulatedHeartRate(day, seconds);
+  if (value == null || error) return null;
+  return <p className="compact-watch-caption">Simulated live heart rate: <strong className="num">{value}</strong> bpm · updates every second</p>;
+}
+
 // Today's heart rate on a 24 h axis, with the sleep / exercise bands and a marker at the latest reading.
 function CompactTrace({ day, stale }) {
   const points = (day?.curves?.today || []).filter(p => Number.isFinite(p.minute) && Number.isFinite(p.value));
@@ -161,6 +173,7 @@ function CompactWatch({ vitals, onOpen, error, trace = true }) {
         <p className="compact-watch-value"><span className="num">{fmtValue(heart?.main.latest?.value, heart?.main.decimals)}</span> <small>{heart?.main.unit || 'bpm'} resting</small></p>
         {heart && <StatusPill status={heart.status.status}/>}
       </div>
+      <LiveHeartRate day={vitals.day} error={error}/>
       {trace && <CompactTrace day={vitals.day} stale={Boolean(error)}/>}
       {secondary.length ? <dl className="compact-watch-secondary">{secondary.map(t => <div key={t.id}>
         <dt>{t.title}</dt>
@@ -178,6 +191,7 @@ export function WatchPanel({ vitals, onOpen, compact = false, error, trace = tru
   if (!vitals) return <section className="watch-now glass"><p className="vitals-empty">Loading your watch…</p></section>;
   return <section className="watch-now glass" aria-labelledby="watch-title">
     <header className="watch-now-head"><h2 id="watch-title">Now · from your watch</h2><span>Compared with your own last two weeks (shaded band)</span></header>
+    <LiveHeartRate day={vitals.day} error={error}/>
     <div className="vital-tiles">{tiles(vitals).map(t => <Tile key={t.id} tile={t} onOpen={onOpen}/>)}</div>
     <Patterns patterns={vitals.patterns}/>
     <DayChart day={vitals.day}/>

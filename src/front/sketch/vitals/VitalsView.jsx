@@ -65,7 +65,7 @@ export function VitalsView({ vitals, error }) {
   if (!vitals) return <div className="connection-notice" role={error ? 'alert' : 'status'}>{error ? 'Unable to load your watch data. Retrying automatically…' : 'Loading your watch data…'}</div>;
   return <div className="vitals-view">
     {error && <div className="flight-notice" role="status">Connection lost. Showing the last available watch readings.</div>}
-    <WatchPanel vitals={vitals}/>
+    <WatchPanel vitals={vitals} error={error}/>
     <div className="watch-reference glass-sm">
       <details><summary>How the watch compares readings</summary>
         <p>The watch compares each day with the crew member’s previous two weeks. A change lasting three days schedules a flight surgeon review. Periodic strength, aerobic and bone tests track longer-term changes.</p>

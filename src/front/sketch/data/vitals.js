@@ -36,6 +36,13 @@ export function watchNotices(data) {
 
 export const fmtValue = (value, decimals = 0) => value == null ? '—' : Number(value).toFixed(decimals);
 
+// A small, smooth simulated fluctuation around the latest recorded heart rate.
+export function simulatedHeartRate(day, seconds) {
+  const points = day?.curves?.today || [];
+  const latest = [...points].reverse().find(p => Number.isFinite(p.value));
+  return latest ? Math.round(latest.value + 2 * Math.sin(seconds / 5) + Math.sin(seconds / 2)) : null;
+}
+
 // The tiles of "Now · watch": blood pressure is one tile (systolic / diastolic), sleep shows hours and the score.
 export function tiles(data) {
   const v = byMeasure(data);

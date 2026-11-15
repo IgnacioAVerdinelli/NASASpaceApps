@@ -1,0 +1,31 @@
+/* Indicator cards of the overview (design-system §6): Aerobic capacity and Strength · largest loss. */
+.ov-metric {
+  /* Strength's icon tint: the peach of the loss tone. Not a theme token yet. */
+  --ov-tint-strength: rgba(255,211,191,.9);
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+  width: 100%; min-width: 0; padding: 18px 20px;
+  border: 0; text-align: left; font: inherit; cursor: pointer;
+  transition: filter .16s;
+}
+.ov-metric:hover { filter: brightness(1.03); }
+.ov-metric:hover .ov-metric-arrow { color: var(--link); }
+.ov-metric:active { filter: brightness(.99); }
+.ov-metric-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ov-metric-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ov-metric-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-sm); }
+.ov-metric-aerobica .ov-metric-icon { background: var(--info-bg); color: var(--link); }
+.ov-metric-fuerza .ov-metric-icon { background: var(--ov-tint-strength); color: var(--loss-ink); }
+.ov-metric-arrow { flex: none; display: grid; color: var(--muted); }
+.ov-metric-reading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 10px; }
+.ov-metric-figure { flex: none; max-width: 100%; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 4px; color: var(--ink); }
+.ov-metric-value { font-size: 42px; line-height: 1; white-space: nowrap; }
+.ov-metric-unit { font-size: 12px; color: var(--muted); }
+.ov-metric-pct { font-size: 20px; color: var(--muted); margin-left: -3px; }
+.ov-metric-name { margin-left: 4px; font-size: 13px; font-weight: 600; }
+.ov-metric-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.ov-trend { flex: 1 1 64px; display: block; max-width: 100px; height: 40px; margin-left: auto; }
+.ov-trend-empty { flex: 1 1 64px; max-width: 110px; margin-left: auto; font-size: 11px; line-height: 1.25; color: var(--muted); text-align: right; }
+@media (max-width: 760px) {
+  .ov-metric-value { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) { .ov-metric { transition: none; } }

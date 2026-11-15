@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { StrengthView } from '../fuerza/App.jsx';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
@@ -6,98 +6,177 @@ import { SummaryView } from '../summary/SummaryView.jsx';
 import { VitalsView } from '../vitals/VitalsView.jsx';
 import { loadVitals, vitalsUrl } from '../data/vitals.js';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
-import { loadCrew } from '../data/dashboard.js';
+import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
+import { Brand, Icon } from './Icons.jsx';
+import { Backdrop } from './Backdrop.jsx';
 import '../style.css';
 import '../fuerza/style.css';
 import './style.css';
 
-// Same data source as the body overview (src.jsx): the HealthService through Vite's /api proxy, another server
-// with VITE_DASHBOARD_URL, or the example file with VITE_DASHBOARD_MODE=example.
-const exampleMode = import.meta.env.VITE_DASHBOARD_MODE === 'example';
+const exampleMode = import.meta.env.VITE_DASHBOARD_MODE === 'example' || new URLSearchParams(window.location.search).get('source') === 'example';
 const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
 
-// Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
-  { id: 'summary', label: 'Health summary' },
-  { id: 'vitales', label: 'Vital signs' },
-  { id: 'plan', label: 'Mission plan' },
-  { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
-  { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
+  { id: 'summary', label: 'Overview', title: 'Health overview' },
+  { id: 'fuerza', label: 'Muscles', title: 'Muscle strength' },
+  { id: 'aerobica', label: 'Aerobic', title: 'Aerobic capacity' },
+  { id: 'vitales', label: 'Wearable', title: 'Vital signs' },
+  { id: 'plan', label: 'Mission plan', title: 'Mission plan' },
 ];
-const fromHash = () => TABS.some(t => `#${t.id}` === window.location.hash) ? window.location.hash.slice(1) : TABS[0].id;
-const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew') || '';
+
+function tabFromUrl() {
+  const hash = window.location.hash.slice(1);
+  if (TABS.some(t => t.id === hash)) return hash;
+  return hash === 'body' || hash === 'trends' || hash === 'hip-bone' || window.location.pathname.endsWith('/overview.html') ? 'fuerza' : 'summary';
+}
+
+function DataNotice({ error, subject = 'health data' }) {
+  const preview = new URL(window.location.href);
+  preview.searchParams.set('source', 'example');
+  return <div className="flight-notice glass" role={error ? 'alert' : 'status'}>
+    <Icon name="pulse" size={24}/>
+    <div><strong>{error ? 'Connection unavailable' : 'Loading ' + subject + '…'}</strong>
+      {error && <p>Reconnecting to the {subject} service…</p>}</div>
+    {error && !exampleMode && <a href={preview.href}>Open example data</a>}
+  </div>;
+}
+
+// Preserve the model camera and form inputs on tab changes. Hidden charts
+// receive the latest readings when opened, without rendering on every poll.
+const FlightPanel = memo(function FlightPanel({ id, hidden, children }) {
+  return <section className="flight-view" id={'panel-' + id} role="tabpanel" aria-labelledby={'tab-' + id} hidden={hidden}>{children}</section>;
+}, (previous, next) => previous.hidden && next.hidden);
 
 export function Shell() {
-  const [tab, setTab] = useState(fromHash);
+  const [tab, setTab] = useState(tabFromUrl);
+  const [visited, setVisited] = useState(() => new Set([tab]));
   const [focusRequest, setFocusRequest] = useState(null);
-  const [selectedCrew, setSelectedCrew] = useState(crewFromUrl);
+  const [trendTarget, setTrendTarget] = useState(() => window.location.hash);
+  const [selectedCrew, setSelectedCrew] = useState(() => new URLSearchParams(window.location.search).get('crew') || '');
   const tabRefs = useRef({});
-  useEffect(() => {
-    const onHash = () => setTab(fromHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
   const crewState = useDashboard(exampleMode ? null : apiUrl, loadCrew);
   const crewList = crewState.data || [];
   const selected = crewList.includes(selectedCrew) ? selectedCrew : crewList[0];
-  const { data, error } = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
-  const crewId = data?.crew.id ?? selected;
-  // The watch (layer 1): read once here, shown on the summary and on its own tab.
+  const analyses = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
+  const data = analyses.data;
+  const crewId = selected ?? data?.crew.id;
   const vitalsState = useDashboard(exampleMode || !crewId ? null : vitalsUrl(apiUrl, crewId), loadVitals);
   const vitals = vitalsState.data?.crew.id === crewId ? vitalsState.data : null;
-  const today = data?.mission.today ?? null;
+  const needsBodyData = visited.has('fuerza') || visited.has('summary');
+  const bodyUrl = exampleMode ? '' : crewId ? dashboardUrl(apiUrl, crewId) : null;
+  const bodyState = useDashboard(needsBodyData ? bodyUrl : null, loadDashboard);
+  const active = TABS.find(item => item.id === tab);
+  const error = analyses.error || crewState.error;
+
+  function activate(id) {
+    setVisited(previous => previous.has(id) ? previous : new Set([...previous, id]));
+    setTab(id);
+  }
+
+  useEffect(() => {
+    const restore = () => {
+      activate(tabFromUrl());
+      setSelectedCrew(new URLSearchParams(window.location.search).get('crew') || '');
+      setTrendTarget(window.location.hash);
+    };
+    window.addEventListener('hashchange', restore);
+    window.addEventListener('popstate', restore);
+    return () => {
+      window.removeEventListener('hashchange', restore);
+      window.removeEventListener('popstate', restore);
+    };
+  }, []);
+
+  useEffect(() => { document.title = active.title + ' · Trama'; }, [active]);
   useEffect(() => {
     if (!crewId || exampleMode) return;
     const url = new URL(window.location.href);
     url.searchParams.set('crew', crewId);
     window.history.replaceState(null, '', url);
   }, [crewId]);
+  useEffect(() => {
+    if (tab === 'fuerza' && bodyState.data && (trendTarget === '#trends' || trendTarget === '#hip-bone')) {
+      const target = (trendTarget === '#hip-bone' && document.getElementById('chart-hip_bmd-trend')) || document.getElementById('trends');
+      target?.scrollIntoView();
+    }
+  }, [tab, Boolean(bodyState.data), Boolean(data), trendTarget]);
 
-  const select = (id, focus = false) => {
-    if (id !== tab) { window.history.replaceState(null, '', `${window.location.search}#${id}`); window.scrollTo({ top: 0 }); }
-    setTab(id);
-    if (focus) tabRefs.current[id]?.focus();
-  };
-  const onKeyDown = event => {
-    const i = TABS.findIndex(t => t.id === tab);
-    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 }[event.key];
+  function select(id, focus = false) {
+    if (id !== tab) {
+      const url = new URL(window.location.href);
+      url.hash = id;
+      window.history.pushState(null, '', url);
+      activate(id);
+      setTrendTarget('');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    if (focus) tabRefs.current[id]?.focus({ preventScroll: true });
+  }
+
+  function navigateTabs(event) {
+    const index = TABS.findIndex(item => item.id === tab);
+    const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: TABS.length - 1 }[event.key];
     if (next === undefined) return;
     event.preventDefault();
     select(TABS[(next + TABS.length) % TABS.length].id, true);
-  };
-  const overviewHref = `./overview.html${crewId && !exampleMode ? `?crew=${encodeURIComponent(crewId)}` : ''}`;
+  }
 
-  // Inactive tabs stay mounted (hidden): the 3D model is not reloaded and each tab keeps its state.
-  return <main className="vuelo">
-    <header className="page-head vuelo-head">
-      <h1>Flight measurements</h1>
-      <dl className="mission">
-        <div><dt>Crew member</dt><dd>{!exampleMode && crewList.length > 0
-          ? <select aria-label="Crew member" value={selected} onChange={event => setSelectedCrew(event.target.value)}>{crewList.map(id => <option key={id} value={id}>{id}</option>)}</select>
-          : crewId ?? '—'}{data?.simulated && <small> (simulated)</small>}</dd></div>
-        {data && <div><dt>Today</dt><dd>{data.mission.todayLabel}</dd></div>}
-        {data && <div><dt>Flight length</dt><dd>{data.mission.landing} days</dd></div>}
-      </dl>
-      <a className="page-link" href={overviewHref}>← Body overview</a>
-      <div className="tabs" role="tablist" aria-label="Analyses" onKeyDown={onKeyDown}>
-        {TABS.map(t => <button key={t.id} ref={el => { tabRefs.current[t.id] = el; }} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}>{t.label}</button>)}
+  function renderView(id) {
+    if (!visited.has(id)) return null;
+    if (id === 'vitales' || id === 'plan') {
+      if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
+      if (!crewId) return <DataNotice error={crewState.error}/>;
+      return id === 'plan' ? <PlanView crew={crewId}/> : <VitalsView vitals={vitals} error={vitalsState.error}/>;
+    }
+    if (!data) return <DataNotice error={error}/>;
+    if (id === 'summary') return <SummaryView key={crewId} data={data} crewId={crewId} bodyState={bodyState} exampleMode={exampleMode} vitals={vitals} vitalsError={vitalsState.error}
+      onOpen={(destination, key) => {
+        if (key) setFocusRequest({ key, request: Date.now() });
+        if (destination === 'body') {
+          setTrendTarget('#hip-bone');
+          window.location.hash = 'hip-bone';
+          activate('fuerza');
+          tabRefs.current.fuerza?.focus({ preventScroll: true });
+        } else select(destination, true);
+      }}/>;
+    return id === 'fuerza'
+      ? <StrengthView key={crewId} data={data} focusRequest={focusRequest} bodyState={bodyState} trendTarget={trendTarget}/>
+      : <AerobicView key={crewId} data={data}/>;
+  }
+
+  return <div className="vuelo">
+    <Backdrop/>
+    <a className="flight-skip" href="#flight-content" onClick={event => { event.preventDefault(); document.getElementById('flight-content').focus(); }}>Skip to content</a>
+    <header className="flight-bar glass-bar">
+      <div className="flight-bar-inner">
+        <a className="flight-home" href="#summary" aria-label="Trama health overview"><Brand/></a>
+        <nav className="flight-navigation" aria-label="Crew health">
+          <div className="flight-tabs glass-tabs" role="tablist" aria-label="Health views" onKeyDown={navigateTabs}>
+            {TABS.map(t => <button key={t.id} ref={el => { tabRefs.current[t.id] = el; }}
+              type="button" role="tab" id={'tab-' + t.id} aria-selected={tab === t.id} aria-controls={'panel-' + t.id}
+              tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}><Icon name={t.id}/>{t.label}</button>)}
+          </div>
+        </nav>
+        <div className="flight-crew glass-sm">
+          <span className="flight-avatar"><Icon name="crew" size={19}/></span>
+          <div><span className="flight-crew-label">Crew member</span>
+            {!exampleMode && crewList.length > 0
+              ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id}>{id}</option>)}</select>
+              : <strong>{crewId ?? '—'}</strong>}
+          </div>
+        </div>
       </div>
     </header>
-    {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
-    {!data ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div> : <>
-    <section id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" hidden={tab !== 'summary'}>
-      <SummaryView data={data} crewId={crewId} apiUrl={apiUrl} exampleMode={exampleMode} vitals={vitals}
-        onOpen={(id, focusKey) => { if (focusKey) setFocusRequest({ key: focusKey, request: Date.now() }); select(id, true); }}/>
-    </section>
-    <section id="panel-vitales" role="tabpanel" aria-labelledby="tab-vitales" hidden={tab !== 'vitales'}>{exampleMode
-      ? <div className="connection-notice" role="status">Vital signs need the HealthService; they are not available in example mode.</div>
-      : <VitalsView vitals={vitals} error={vitalsState.error}/>}</section>
-    <section id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden={tab !== 'plan'}>{exampleMode
-      ? <div className="connection-notice" role="status">The mission plan needs the Planner service (port 3001); it is not available in example mode.</div>
-      : <PlanView crew={crewId}/>}</section>
-    {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
-    </>}
-  </main>;
+    <main className="flight-content" id="flight-content" tabIndex={-1}>
+      <div className="flight-heading">
+        <div className="flight-heading-main"><h1>{active.title}</h1>
+          {data && <span className="flight-source glass-sm"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>}
+        </div>
+        {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{data.mission.name.replaceAll('_',' ').toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></div>}
+      </div>
+      {error && data && <div className="flight-notice glass" role="status">Connection lost. Showing the last available measurements.</div>}
+      {TABS.map(item => <FlightPanel key={item.id} id={item.id} hidden={tab !== item.id}>{renderView(item.id)}</FlightPanel>)}
+    </main>
+  </div>;
 }

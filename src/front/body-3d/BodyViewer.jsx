@@ -42,30 +42,14 @@ function surfaceMaterial() {
 
 function updateView(view, values) {
   const { layer, isolated, selected, scores } = values;
-  // Optional caller-defined scale (score -> THREE.Color); defaults to the intensity palette.
-  const colorOf = values.colorScale ?? intensityColor;
   const visible = visibleSystems(layer, isolated);
   view.skinGroup.visible = visible.skin;
   view.muscleGroup.visible = visible.muscles;
   view.skeletonGroup.visible = visible.skeleton;
-  // Organs layer: the skin turns into a translucent shell and only the requested structures show inside.
-  const organsMode = layer === 'organs';
-  const structureColors = values.structureColors ?? {};
-  const shell = view.skin.material;
-  if (shell.transparent !== organsMode) {
-    shell.transparent = organsMode; shell.opacity = organsMode ? 0.16 : 1; shell.depthWrite = !organsMode; shell.needsUpdate = true;
-  }
-  for (const child of view.skinGroup.children) if (!child.getObjectById(view.skin.id)) child.visible = !organsMode;
-  for (const group of view.structureGroups) group.visible = organsMode;
-  for (const item of view.structureMeshes) {
-    const color = structureColors[item.key];
-    item.mesh.visible = organsMode && Boolean(color);
-    if (color) item.material.color.set(color);
-  }
   const colors = view.skin.geometry.attributes.color;
   const paint = view.skin.geometry.attributes.paintStrength;
   const active = [false, ...SURFACE_KEYS.map(key => scores[key] > 0)];
-  const palette = [neutral, ...SURFACE_KEYS.map(key => scores[key] > 0 ? colorOf(scores[key]) : neutral)];
+  const palette = [neutral, ...SURFACE_KEYS.map(key => scores[key] > 0 ? intensityColor(scores[key]) : neutral)];
   const { weights, stride, vertexCount } = view.surfaceWeights;
   for (let vertex = 0; vertex < vertexCount; vertex++) {
     let r = 0, g = 0, b = 0, strength = 0;
@@ -81,16 +65,9 @@ function updateView(view, values) {
   colors.needsUpdate = true;
   paint.needsUpdate = true;
   for (const item of view.muscleMeshes) {
-    if (organsMode) {
-      const color = structureColors[item.key];
-      item.mesh.visible = Boolean(color);
-      if (color) item.material.color.set(color);
-      item.outline.visible = false;
-      continue;
-    }
     item.mesh.visible = !isolated || item.key === selected;
     const score = scores[item.key];
-    item.material.color.copy(score > 0 ? colorOf(score) : item.originalColor);
+    item.material.color.copy(score > 0 ? intensityColor(score) : item.originalColor);
     item.outline.visible = layer === 'muscles' && item.key === selected && item.mesh.visible;
   }
 }
@@ -111,7 +88,6 @@ function focusSelection(view, selected, layer, animate = false) {
     }
   } else {
     for (const item of view.muscleMeshes) if (item.key === selected) box.expandByObject(item.mesh);
-    for (const item of view.structureMeshes ?? []) if (item.key === selected) box.expandByObject(item.mesh);
   }
   if (box.isEmpty()) return;
   const target = box.getCenter(new THREE.Vector3());
@@ -134,17 +110,17 @@ function orientCamera(view, direction) {
   view.controls.update();
 }
 
-export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0, viewRequest = null, framing = 1.15, showIndicators = false, checkpointItems = null, explorationRequest = null, colorScale = null, indicatorText = null, structureColors = null }) {
+export default function BodyViewer({ body = 'male', scores = {}, selected = null, onSelect, layer = 'surface', isolated = false, focusRequest = 0, viewRequest = null, framing = 1.15, showIndicators = false, checkpointItems = null, explorationRequest = null }) {
   const containerRef = useRef(null);
   const viewRef = useRef(null);
   const pendingFocusRef = useRef(false);
-  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, structureColors });
+  const valuesRef = useRef({ scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest });
   const [status, setStatus] = useState('loading');
-  valuesRef.current = { scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest, colorScale, indicatorText, structureColors };
+  valuesRef.current = { scores, selected, onSelect, layer, isolated, viewRequest, checkpointItems, explorationRequest };
 
   useEffect(() => {
     if (viewRef.current) updateView(viewRef.current, valuesRef.current);
-  }, [scores, selected, layer, isolated, structureColors]);
+  }, [scores, selected, layer, isolated]);
   useEffect(() => {
     if (!focusRequest) return;
     pendingFocusRef.current = true;
@@ -282,25 +258,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         for (const system of ['organs', 'vessels', 'nerves']) {
           const group = root.getObjectByName(system); if (group) group.visible = false;
         }
-        // Organs and vessels, keyed by their node name (heart, lung_l, aorta...), for the organs layer.
-        const structureGroups = [], structureMeshes = [];
-        for (const system of ['organs', 'vessels']) {
-          const group = root.getObjectByName(system);
-          if (!group) continue;
-          structureGroups.push(group);
-          for (const node of group.children) node.traverse(mesh => {
-            if (!mesh.isMesh) return;
-            const originals = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            originals.forEach(material => originalMaterials.add(material));
-            const material = originals[0].clone();
-            material.metalness = 0;
-            material.roughness = 0.6;
-            mesh.material = material;
-            mesh.visible = false;
-            structureMeshes.push({ mesh, key: node.name, material });
-          });
-        }
-        const view = { root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, structureGroups, structureMeshes, regions: data.regions, surfaceWeights, camera, controls };
+        const view = { root, skin, skinGroup, muscleGroup, skeletonGroup, skeletonMeshes, muscleMeshes, regions: data.regions, surfaceWeights, camera, controls };
         view.moveCamera = (target, position) => {
           controls.autoRotate = false;
           controls.enableDamping = false;
@@ -358,13 +316,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
       const bounds = renderer.domElement.getBoundingClientRect();
       pointer.set((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1);
       raycaster.setFromCamera(pointer, camera);
-      if (values.layer === 'organs') {
-        const visibleStructures = view.structureMeshes.filter(item => item.mesh.visible);
-        const candidates = [...visibleStructures.map(item => item.mesh), ...view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh)];
-        const hit = raycaster.intersectObjects(candidates, false)[0];
-        const key = hit && (visibleStructures.find(item => item.mesh === hit.object)?.key ?? ancestorKey(hit.object, view.muscleGroup));
-        if (key) values.onSelect?.(key);
-      } else if (values.layer === 'surface') {
+      if (values.layer === 'surface') {
         const hit = raycaster.intersectObject(view.skin, false)[0];
         const id = hit ? pickSurfaceRegion(view.skin.geometry, view.surfaceWeights, hit.faceIndex, view.skin.worldToLocal(hit.point.clone())) : 0;
         const key = SURFACE_KEYS[id - 1];
@@ -421,7 +373,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     'model-error': 'El modelo 3D no contiene las capas esperadas.',
   }[status];
   return <div ref={containerRef} aria-label="Modelo 3D interactivo de grupos musculares" style={{ width: '100%', height: '100%', minHeight: 360, position: 'relative' }}>
-    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Intensidades musculares">{orderedIndicators(scores, selected).map(item => { const custom = indicatorText?.(item.key, item.value); return <li key={item.key}>{custom?.name ?? item.label}: {custom?.value ?? `${Math.round(item.value)}%`}</li>; })}</ul>}
+    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Intensidades musculares">{orderedIndicators(scores, selected).map(item => <li key={item.key}>{item.label}: {Math.round(item.value)}%</li>)}</ul>}
     {message && <div role={status === 'loading' ? 'status' : 'alert'} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', pointerEvents: 'none' }}>{message}</div>}
   </div>;
 }

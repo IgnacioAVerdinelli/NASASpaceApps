@@ -24,15 +24,22 @@ function Spark({ values, color = '#6258a0', reference = null, minimum = null }) 
   </ResponsiveContainer></div>;
 }
 
-function Tile({ title, value, unit, change, level, levels, note, alert, spark, onOpen }) {
-  return <button type="button" className="tile" data-alert={alert ? alert.severity : undefined} onClick={onOpen}>
-    <span className="tile-title">{title}{alert && <span className={`tile-flag tile-flag-${alert.severity}`}><AlertIcon/>{alert.severity === 'critical' ? 'Standard crossed' : 'Faster than expected'}</span>}</span>
-    <span className="tile-value">{value}<small>{unit}</small></span>
-    <span className="tile-change"><i style={{ background: levelColor(level) }} aria-hidden="true"/>{change}<span>{level ? levels.find(l => l.level === level)?.label : 'No data'}</span></span>
+// One key number. `point` is a HealthService point ({ level, belowMinimum, quality }); its words come from levelText.
+function Tile({ title, value, unit, change, point, levels, note, alert, spark, muted = false, onOpen }) {
+  return <button type="button" className="tile" data-alert={alert ? alert.severity : undefined} data-muted={muted || undefined} onClick={onOpen}>
+    <span className="tile-title">{title}</span>
+    {alert && <span className={`tile-flag tile-flag-${alert.severity}`}><AlertIcon/>{alert.severity === 'critical' ? 'NASA standard crossed' : 'Faster than expected'}</span>}
+    <span className="tile-value">{value}{unit && <small>{unit}</small>}</span>
+    {change && <span className="tile-change"><b>{point && <i style={{ background: levelColor(point.level) }} aria-hidden="true"/>}{change}</b>{point && <span>{levelText(point, levels)}</span>}</span>}
     {spark}
     {note && <span className="tile-note">{note}</span>}
   </button>;
 }
+
+const inDays = (day, today) => {
+  const d = Math.round(day - today);
+  return d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+};
 
 export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
   const { data: dashboard } = useDashboard(exampleMode ? '' : dashboardUrl(apiUrl, crewId), loadDashboard);
@@ -51,12 +58,16 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
 
   const levelKey = rows.map(r => `${r.group.key}:${r.point?.level}`).join();
   const scores = useMemo(() => Object.fromEntries(rows.flatMap(r => r.group.muscleKeys.map(k => [k, r.point?.level ?? 0]))), [levelKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const highlight = selectedKey ?? rows.find(r => alerted.has(r.group.key))?.group.muscleKeys[0] ?? null;
+  // Point at the group with an alert; with no alert, at the largest loss the HealthService reported (rows come sorted).
+  const focusRow = rows.find(r => alerted.has(r.group.key)) ?? (rows[0]?.point?.level > 1 ? rows[0] : null);
+  const highlight = selectedKey ?? focusRow?.group.muscleKeys[0] ?? null;
+  // Label only the group in focus (and any with an alert): the bars beside the body list every group.
+  const labelled = new Set(rows.filter(r => alerted.has(r.group.key) || r.group.muscleKeys.includes(highlight)).flatMap(r => r.group.muscleKeys));
+  const indicatorFilter = key => labelled.has(key);
   const indicatorText = useMemo(() => key => {
     const r = rows.find(row => row.group.muscleKeys.includes(key));
     return r ? { name: r.group.name, value: fmtPct(r.point?.changePct) } : null;
   }, [rows]);
-  const checkpointItems = useMemo(() => rows.map(r => ({ id: r.group.key, title: r.group.name, muscleKeys: r.group.muscleKeys })), [rows]);
   const tasks = today ? upcoming(today.items, today.mission.today).slice(0, 6) : [];
 
   return <div className="health-summary">
@@ -71,7 +82,7 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
       {alerts.length > 0 && <ul className="status-alerts">
         {alerts.map(a => <li key={a.id}><button type="button" onClick={() => onOpen(a.tab, a.focus)}>
           <span className={`sev sev-${a.severity}`}><AlertIcon/>{a.severity === 'critical' ? 'Critical' : 'Warning'}</span>
-          <strong>{a.system}</strong><span className="status-msg">{a.message}</span><span className="go" aria-hidden="true">→</span>
+          <strong>{a.system}</strong><span className="status-msg">{a.message}</span><span className="go">Details <span aria-hidden="true">→</span></span>
         </button></li>)}
       </ul>}
       <div className="status-mission">
@@ -82,33 +93,38 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
 
     <div className="summary-grid">
       <section className="panel body-card" aria-labelledby="body-title">
-        <header className="panel-head"><h3 id="body-title">Body</h3><span>Muscle strength, latest test vs pre-flight</span></header>
+        <header className="panel-head"><h3 id="body-title">Muscle strength</h3><span>Latest test vs pre-flight</span></header>
         <div className="body-card-stage">
-          <BodyViewer body={data.crew.body} layer="surface" scores={scores} selected={highlight} onSelect={key => setSelectedKey(key)} framing={1.08} showIndicators checkpointItems={checkpointItems} colorScale={colorScale} indicatorText={indicatorText}/>
+          <BodyViewer body={data.crew.body} layer="surface" scores={scores} selected={highlight} onSelect={key => setSelectedKey(key)} framing={1.08} showIndicators indicatorFilter={indicatorFilter} colorScale={colorScale} indicatorText={indicatorText}/>
         </div>
         <ul className="mini-legend" aria-label="Colour scale">
           {levels.map(l => <li key={l.level}><i style={{ background: LEVEL_COLORS[l.level] }}/>{l.label}</li>)}
         </ul>
-        {alerted.size > 0 && <p className="body-note"><AlertIcon/> Highlighted: losing strength faster than expected.</p>}
+        <p className="body-help">Colour shows how much strength each group has lost since before flight. {alerted.size > 0
+          ? <b className="body-alert"><AlertIcon/> Marked: losing strength faster than expected.</b>
+          : 'No group is losing strength faster than expected.'}</p>
       </section>
 
       <section className="panel indicators" aria-labelledby="ind-title">
-        <header className="panel-head"><h3 id="ind-title">Key indicators</h3><span>Change since pre-flight</span></header>
+        <header className="panel-head"><h3 id="ind-title">Key indicators</h3><span>Select one for details</span></header>
         <div className="tiles">
-          <Tile title="Aerobic capacity" value={vo2 ? fmtNum(vo2.value) : '—'} unit={` ${aero.unit}`} change={vo2 ? fmtPct(vo2.changePct) : '—'} level={vo2?.level} levels={levels}
-            note={`NASA minimum ${aero.minimum} ${aero.unit}`} alert={aero.alert}
+          <Tile title="Aerobic capacity" value={vo2 ? fmtNum(vo2.value) : '—'} unit={` ${aero.unit}`} change={vo2 ? `${fmtPct(vo2.changePct)} vs pre-flight` : 'No test yet'} point={vo2} levels={levels}
+            note={vo2?.belowMinimum && !aero.alert
+              ? `Latest test is below the NASA minimum (${aero.minimum}); the alert uses the average of the last two tests.`
+              : `NASA minimum: ${aero.minimum} ${aero.unit} (red dashed line)`} alert={aero.alert}
             spark={<Spark values={aero.evaluations.map(e => e.value)} reference={aero.baseline} minimum={aero.minimum}/>} onOpen={() => onOpen('aerobica')}/>
-          <Tile title="Weakest muscle group" value={worst ? fmtPct(worst.point?.changePct) : '—'} unit={worst ? ` ${worst.group.name}` : ''} change={worst ? `${fmtNum(worst.point?.value)} ${worst.group.unit}` : '—'} level={worst?.point?.level} levels={levels}
+          <Tile title={worst ? `Largest strength loss: ${worst.group.name}` : 'Largest strength loss'} value={worst ? fmtPct(worst.point?.changePct) : '—'} unit="" change={worst?.point ? `${fmtNum(worst.point.value)} ${worst.group.unit}` : 'No test yet'} point={worst?.point} levels={levels}
             note={worst ? worst.group.test : null} alert={worst?.group.alert}
             spark={worst && <Spark values={worst.group.points.map(p => p.value)} reference={worst.group.baseline}/>} onOpen={() => onOpen('fuerza', worst?.group.muscleKeys[0])}/>
-          {/* Bone level uses the same 5/10/20% bands as the HealthService levels (data.levels). */}
-          <Tile title="Hip bone density" value={bone?.scanned ? fmtPct(bone.changePct) : '—'} unit="" change={bone?.scanned ? `${(100 + bone.changePct).toFixed(1)}% of pre-flight` : 'No scan since launch'} level={!bone?.scanned ? null : bone.changePct > -5 ? 1 : bone.changePct > -10 ? 2 : bone.changePct > -20 ? 3 : 4} levels={levels}
-            note={bone?.scanned ? 'DXA scan' : 'There is no DXA on board: bone is scanned before and after flight.'} spark={bone?.scanned && <Spark values={bone.points.map(p => p.value)} reference={100}/>} onOpen={() => onOpen('plan')}/>
+          {/* No level: the dashboard chart carries none, and the frontend does not classify bone loss itself. */}
+          <Tile title="Hip bone density" value={bone?.scanned ? fmtPct(bone.changePct) : 'Not scanned in flight'} unit="" muted={!bone?.scanned}
+            change={bone?.scanned ? `${(100 + bone.changePct).toFixed(1)}% of pre-flight` : null}
+            note={bone?.scanned ? (bone.insight || 'DXA scan') : 'There is no bone scanner (DXA) on board: hips are scanned before and after flight.'} spark={bone?.scanned && <Spark values={bone.points.map(p => p.value)} reference={100}/>} onOpen={() => onOpen('plan')}/>
         </div>
         <div className="muscle-bars" role="list" aria-label="Muscle groups, largest loss first">
           {rows.map(({ group: g, point: p }) => {
             const loss = Math.min(30, Math.max(0, -(p?.changePct ?? 0)));
-            return <button type="button" role="listitem" key={g.key} className="muscle-bar" data-alert={g.alert ? 'yes' : undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
+            return <button type="button" role="listitem" key={g.key} className="muscle-bar" data-alert={g.alert ? 'yes' : undefined} data-selected={g.muscleKeys.includes(highlight) || undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
               <span className="mb-name">{g.alert && <AlertIcon/>}{g.name}</span>
               <span className="mb-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
               <span className="mb-value">{fmtPct(p?.changePct)}</span>
@@ -119,7 +135,7 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
       </section>
 
       <section className="panel todo" aria-labelledby="todo-title">
-        <header className="panel-head"><h3 id="todo-title">To do</h3><span>{exampleMode ? 'Needs the Planner' : 'Open now and next 7 days'}</span></header>
+        <header className="panel-head"><h3 id="todo-title">To do</h3><span>{exampleMode ? 'Needs the Planner' : 'Now and the next 7 days'}</span></header>
         {tasks.length ? <ol className="todo-list">
           {tasks.map(({ item: i, more }) => <li key={i.id}><button type="button" onClick={() => onOpen('plan')}>
             <span className="todo-kind" data-status={displayStatus(i, today.mission.today)}>{TYPE_LABEL[i.type]}</span>
@@ -129,8 +145,8 @@ export function SummaryView({ data, crewId, apiUrl, exampleMode, onOpen }) {
         <button type="button" className="link-btn" onClick={() => onOpen('plan')}>Open the mission plan →</button>
         {(data.strength.upcoming[0] || aero.upcoming[0]) && <div className="next-tests">
           <h4>Next tests</h4>
-          {data.strength.upcoming[0] && <p><b>Strength</b> {data.strength.upcoming[0].label}{data.strength.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
-          {aero.upcoming[0] && <p><b>Aerobic</b> {aero.upcoming[0].label}{aero.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
+          {data.strength.upcoming[0] && <p><b>Strength</b> {data.strength.upcoming[0].label} · {inDays(data.strength.upcoming[0].day, data.mission.today)}{data.strength.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
+          {aero.upcoming[0] && <p><b>Aerobic</b> {aero.upcoming[0].label} · {inDays(aero.upcoming[0].day, data.mission.today)}{aero.upcoming[0].reason === 'retest' ? ' · retest' : ''}</p>}
         </div>}
       </section>
     </div>

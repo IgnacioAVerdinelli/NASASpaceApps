@@ -3,9 +3,9 @@
 // values come straight from GET /api/v1/analyses and /dashboard.
 
 export const STATUS = {
-  critical: { tone: 'critical', title: 'Action needed', detail: 'A NASA standard was crossed. Tell the crew medical officer and the flight surgeon.' },
+  critical: { tone: 'critical', title: 'Action needed', detail: 'A NASA standard was crossed. Tell the crew medical officer and the flight surgeon. The follow-up booked for it is in your To do list.' },
   warning: { tone: 'warning', title: 'Check needed', detail: 'A loss is faster than expected. A retest or a review has been booked.' },
-  ok: { tone: 'ok', title: 'All indicators as expected', detail: 'No alerts. Keep following the exercise and measurement routine.' },
+  ok: { tone: 'ok', title: 'No alerts', detail: 'Nothing needs action now. Keep following the exercise and measurement routine. The colours below show change since before flight, not alarms.' },
 };
 
 const latest = points => [...(points || [])].reverse().find(p => p.value != null && p.level != null) || null;

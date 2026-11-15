@@ -44,6 +44,8 @@ Opciones, todas por variables de entorno:
 | `DAY` | 130 | Día de misión al arrancar (0 = lanzamiento, 180 = aterrizaje) |
 | `SPEED` | 0.5 | Días de misión por minuto real; 0 deja el reloj quieto |
 | `FATIGUE` | `CM-3:126:7` | Episodio de fatiga que solo ve el reloj: tripulante, día de inicio y duración en días |
+| `SANS` | `CM-1:1.8:R` | SANS para el examen ocular: tripulante, susceptibilidad en desvíos estándar y el ojo que lo lleva (R o L) |
+| `THROMBUS` | `CM-2:45` | Trombo en la yugular izquierda: tripulante y día de vuelo en que se forma (`:R` para la derecha) |
 | `DEMO_DIR` | `.demo/` | Dónde guardar bases, logs y temporales |
 | `PORT` | 5190 | Puerto de la página |
 
@@ -70,6 +72,13 @@ La página es `/vuelo.html`. El selector de tripulante está arriba.
    - Al abrir una tarea: pasos, qué hacer si algo sale anormal y la cita de la norma con su página.
    - "Mark as done" pide confirmación y lo guarda en el Planner.
 5. **Muscle strength y Aerobic capacity:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
+6. **Eyes, CM-1: la ecografía y el OCT del ojo (SANS).**
+   - Clase B en el ojo derecho: la retina alrededor del disco óptico subió más de 55 µm desde antes del vuelo.
+   - El ojo cortado al medio cambia con cada examen ("▶ Play the mission"); el cuerpo 3D colorea cada ojo por su clase.
+7. **Neck veins, CM-2: la ecografía de las yugulares.**
+   - Alarma roja: la vena izquierda no colapsa al apretarla, un posible coágulo (el primero se encontró así, sin síntomas, en la ISS).
+   - En la vena en 3D la sangre fluye, se detiene o vuelve según el grado; "Press the probe" muestra que la vena sana se aplasta y la del coágulo no.
+   - En "To do", el Planner agendó la revisión del médico de vuelo para el mismo día.
 
 **Mensaje para cerrar:** el reloj mira todos los días cómo estás comparado con vos mismo; las pruebas periódicas miran si perdés más rápido de lo esperado; y el Planner convierte las dos cosas en tareas concretas, siguiendo la norma médica de la NASA (OCHMO-STD-100.1A).
 

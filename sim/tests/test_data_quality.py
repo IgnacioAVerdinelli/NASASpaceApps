@@ -69,6 +69,11 @@ def readings_everywhere(n_crew=6, faults=None, noise=1.0):
 
 # --------------------------------------------------------------------------- sanity: finite, units, physiology
 
+# Measures whose scale has a sign: refraction in dioptres (myopia below 0), near vision in logMAR (better than
+# 20/20 below 0) and the jugular blood speed (below 0 when it flows back toward the head).
+SIGNED = {"refraction_se", "near_va", "ijv_peak_velocity"}
+
+
 @pytest.mark.slow
 def test_values_are_finite_non_negative_and_single_unit():
     units = collections.defaultdict(set)
@@ -76,7 +81,7 @@ def test_values_are_finite_non_negative_and_single_unit():
         units[r.measure].add(r.unit)
         if r.value is not None:
             assert math.isfinite(r.value), (r.measure, r.value)
-            assert r.value >= 0, (r.measure, r.value, r.day_label)
+            assert r.value >= 0 or r.measure in SIGNED, (r.measure, r.value, r.day_label)
     assert all(len(u) == 1 for u in units.values()), {k: v for k, v in units.items() if len(v) > 1}
 
 

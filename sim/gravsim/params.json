@@ -1,6 +1,6 @@
 {
  "model_version": "0.2.0",
- "fitted_at": "2026-11-14T21:09:42Z",
+ "fitted_at": "2026-11-15T15:15:33Z",
  "data": "data/nlsp (NASA Life Sciences Portal: MR079G, MR035G, MR080G), head-down bed rest",
  "max_unloading_days_in_data": 90,
  "bed_days_used": {
@@ -2599,6 +2599,337 @@
    "source": "scale from OCHMO-STD-100.1A [6039] (1 very poor to 7 excellent)",
    "assumed": [
     "the score follows the hours slept: 4.8 at 6.1 h, about +0.9 per extra hour, 1.5 lower in a fatigue spell"
+   ]
+  },
+  "oct_trt": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Retinal thickness around the optic disc (OCT)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.012,
+   "device_cv": 0.012,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±5 um (assumed)",
+   "source": "consensus 2026 (Eye): +20 um earliest indication, +55 um clinically concerning; 66-69 % pass +20 um",
+   "assumed": [
+    "pre-flight 430 ± 30 um",
+    "+30 ± 24 um on flight day 150, so the published shares hold"
+   ]
+  },
+  "oct_mrw": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic nerve rim width (OCT, BMO-MRW)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.015,
+   "device_cv": 0.015,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±6 um (assumed)",
+   "source": "Macias 2020 (JAMA Ophthalmol): +35.7 um on flight day 150, 11 astronauts",
+   "assumed": [
+    "pre-flight 400 ± 50 um",
+    "follows retinal thickness, 1.19 times its change"
+   ]
+  },
+  "oct_choroid": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Choroid thickness (OCT)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.047,
+   "device_cv": 0.047,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±8 um (assumed)",
+   "source": "Macias 2020: +43 um on flight day 150",
+   "assumed": [
+    "pre-flight 170 ± 40 um",
+    "spread between people ± 15 um"
+   ]
+  },
+  "frisen_grade": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic disc edema (Frisén grade)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded from the fundus image",
+   "source": "Frisén scale 0-5; ~15 % of long-duration crew reach grade 1 (Lee 2020)",
+   "assumed": [
+    "grade 1 from +55 um retinal thickness, 2 from +90 um, 3 from +130 um"
+   ]
+  },
+  "choroidal_folds": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Chorioretinal folds",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "seen or not on OCT",
+   "source": "consensus 2026: 25 % of 64 astronauts",
+   "assumed": [
+    "in the people with the most choroid swelling"
+   ]
+  },
+  "globe_flattening": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Flattening of the back of the eye",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "seen or not on ultrasound",
+   "source": "consensus 2026: 37 % of 43 astronauts",
+   "assumed": [
+    "seen on ultrasound in flight; MRI confirms it on the ground"
+   ]
+  },
+  "refraction_se": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Refraction (spherical equivalent)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "D",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "refraction, ±0.25 D steps (assumed)",
+   "source": "consensus 2026: a shift over +0.50 D in 20 %; Mader 2011: +0.50 to +1.75 D",
+   "assumed": [
+    "pre-flight -0.5 ± 1.5 D",
+    "shift +0.2 ± 0.36 D, partly kept after landing"
+   ]
+  },
+  "near_va": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Near vision without glasses (logMAR)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "logMAR",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "near chart, about ±0.04 logMAR (assumed)",
+   "source": "Mader 2011: about 60 % report worse near vision on long missions",
+   "assumed": [
+    "about one chart line (0.1 logMAR) per +0.5 D of shift"
+   ]
+  },
+  "iop": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Eye pressure (tonometry)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mmHg",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.11,
+   "device_cv": 0.11,
+   "bio_cv": 0.0,
+   "noise_source": "tonometer, about ±1.5 mmHg (assumed)",
+   "source": "no public flight values; bed rest 12.9 to 13.9 mmHg (NTRS 2014)",
+   "assumed": [
+    "pre-flight 14 ± 2.5 mmHg",
+    "+1 mmHg in flight"
+   ]
+  },
+  "onsd": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic nerve sheath diameter (ultrasound)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mm",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.033,
+   "device_cv": 0.033,
+   "bio_cv": 0.0,
+   "noise_source": "ultrasound, about ±0.2 mm (assumed)",
+   "source": "ONSD review 2022: 5.98 mm pre-flight, +0.91 mm in flight against post-flight",
+   "assumed": [
+    "+0.9 ± 0.35 mm in flight, within about 10 days",
+    "back within a week after landing"
+   ]
+  },
+  "axial_length": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Length of the eye",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mm",
+   "decimals": 2,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.001,
+   "device_cv": 0.001,
+   "bio_cv": 0.0,
+   "noise_source": "biometry, about ±0.02 mm (assumed)",
+   "source": "Macias 2020: -0.08 mm after flight, -0.05 mm a year later",
+   "assumed": [
+    "pre-flight 24.0 ± 0.9 mm"
+   ]
+  },
+  "ijv_csa": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Area of the internal jugular vein",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "mm²",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.08,
+   "device_cv": 0.08,
+   "bio_cv": 0.0,
+   "noise_source": "ultrasound area, about ±8 % (assumed; the study accepted 10 % between sonographers)",
+   "source": "Marshall-Goebel 2019 (JAMA Netw Open), left vein: 80.7 mm2 supine pre-flight, 70.3 on flight day ~50, 60.0 on day ~150; Arbeille 2015: back to baseline 4 days after landing",
+   "assumed": [
+    "pre-flight read supine: left 80 ± 22, right 100 ± 28 mm2",
+    "in flight 0.72 + 0.27·exp(-day/80) of it, ± 12 % between people"
+   ]
+  },
+  "ijv_flow_grade": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Blood flow in the vein (grade 1-4)",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded 1-4 from the Doppler waveform",
+   "source": "Marshall-Goebel 2019: grade 3 in 5 of 11 and grade 4 in 1 on flight day 50; grade 3 in 2 of 10 on day 150, one more grade 4",
+   "assumed": [
+    "left: P(grade >= 3) 55 % on day 50, 30 % on day 150; P(grade 4) 10 %",
+    "right: 3 % and 1 %",
+    "exam-to-exam correlation 0.75"
+   ]
+  },
+  "ijv_echogenicity": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Slow-blood echoes in the vein (0-2)",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded none, mild, moderate",
+   "source": "Pavela 2022 (Vasc Med): mild-moderate in the left vein of 6 of 11, never more than mild in the right",
+   "assumed": [
+    "follows the stagnant flow score"
+   ]
+  },
+  "ijv_compressible": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "The vein collapses when pressed",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "collapses or not when pressed",
+   "source": "OCHMO-STD-100.1A [6041] compression manoeuvre; a vein that does not collapse suggests a clot",
+   "assumed": [
+    "1 in 14 crew members get a left thrombus between flight days 35 and 70",
+    "the clot lies flat 30 days after landing"
+   ]
+  },
+  "ijv_peak_velocity": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Peak blood speed toward the heart",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "cm/s",
+   "decimals": 1,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.08,
+   "device_cv": 0.08,
+   "bio_cv": 0.0,
+   "noise_source": "pulsed Doppler, about ±2.5 cm/s (assumed)",
+   "source": "Pavela 2022: lower in flight, lowest in the left vein (no values published)",
+   "assumed": [
+    "pre-flight supine left 32 ± 9, right 40 ± 10 cm/s",
+    "in flight × 0.55 left, × 0.75 right; negative when retrograde"
    ]
   }
  }

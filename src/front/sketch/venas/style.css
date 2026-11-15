@@ -1,0 +1,86 @@
+/* Jugular duplex study: one selected record, three complementary imaging views. */
+.veins-view{--v-ink:#213d36;--v-muted:#65776f;--v-line:#dce5df;--v-green:#2b7966;padding:28px 24px 36px;display:grid;gap:22px;color:var(--v-ink)}
+.veins-view *{box-sizing:border-box}
+.veins-view figure{margin:0;min-width:0}
+.veins-view button{font:inherit;cursor:pointer}
+.veins-view button:focus-visible,.veins-view summary:focus-visible,.veins-view a:focus-visible{outline:3px solid #3e9c83;outline-offset:3px}
+.veins-view button:disabled{cursor:wait;opacity:.75}
+.vein-eyebrow{font-size:10px!important;font-weight:800;letter-spacing:.14em;line-height:1.5;text-transform:uppercase;color:#6c857a!important;margin:0 0 5px!important}
+.veins-intro{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.veins-intro h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;line-height:1.25;letter-spacing:-.045em;color:#24483c;margin:0}
+.veins-intro>div>p:last-child{font-size:15px;line-height:1.6;color:var(--v-muted);margin:8px 0 0}
+.veins-intro .demo-label{color:#526d62;background:#eaf1eb;border:1px solid #d8e4db;white-space:nowrap;font-size:10px;letter-spacing:.08em;padding:7px 10px}
+.vein-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;border-radius:20px;padding:5px 9px;white-space:nowrap;background:#e5f1e9;color:#286b49}
+.vein-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.vein-pill[data-level=check]{background:#fff0d6;color:#955a16}.vein-pill[data-level=alarm]{background:#fbe5e4;color:#a1393d}
+.vein-status{display:grid;gap:10px;border:1px solid #d7e6dc;border-left:4px solid #5b9c75;background:#f5faf5;border-radius:12px;padding:15px 20px}
+.vein-status[data-level=check]{border-color:#eddac0;border-left-color:#bc8744;background:#fffaf2}.vein-status[data-level=alarm]{border-color:#edd3d2;border-left-color:#c65a5c;background:#fff7f6}
+.vein-status-main{display:flex;align-items:center;gap:12px}
+.vein-status-main>div{flex:1}.vein-status-main h3{font-size:17px;line-height:1.4;margin:0;color:inherit}.vein-status-main p{font-size:13px;line-height:1.6;color:#5e7568;margin:1px 0 0}
+.vein-status[data-level=alarm] .vein-status-main p{color:#82625f}
+.vein-status-icon{width:29px;height:29px;border:1px solid #aac8b3;border-radius:50%;display:grid;place-items:center;font-size:17px;color:#4a815a;flex:none}
+.vein-status[data-level=alarm] .vein-status-icon{color:#ac454b;border-color:#d9a7aa}.vein-status[data-level=check] .vein-status-icon{color:#ac7b37;border-color:#dfc393}
+.vein-status-meta{display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:11px;color:#718075;padding-left:41px}
+.vein-status-meta>span{display:flex;gap:7px;align-items:center}.vein-status-meta .vein-pill{font-size:10px;padding:2px 7px}
+.vein-signs{margin:0 0 0 41px;padding-left:16px;font-size:12px;color:#9a4745;display:grid;gap:4px;line-height:1.6}
+
+.vein-study{border:1px solid var(--v-line);border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 4px 24px #294a3e04}
+.vein-study-head{display:flex;align-items:center;gap:16px;padding:20px 24px;border-bottom:1px solid #e5ebe6}
+.vein-study-head h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;line-height:1.3;letter-spacing:-.03em;margin:0}.vein-study-head h3>span{font-family:Manrope,sans-serif;font-weight:500;font-size:16px;color:#819086;margin-left:8px}
+.vein-side-picker{display:flex;padding:3px;background:#f1f4ef;border:1px solid #e2e8df;border-radius:8px;margin-left:auto;gap:3px}
+.vein-side-picker button{border:0;background:transparent;padding:8px 14px;border-radius:5px;font-size:12px;font-weight:700;color:#738276;display:flex;align-items:center;gap:9px}
+.vein-side-picker button[aria-checked=true]{background:#fff;color:#24483c;box-shadow:0 1px 4px #294a3e15}
+.vein-side-picker i,.vein-scans i{width:6px;height:6px;border-radius:50%;background:#78a184;flex:none}.vein-side-picker i[data-level=check],.vein-scans i[data-level=check]{background:#ce9745}.vein-side-picker i[data-level=alarm],.vein-scans i[data-level=alarm]{background:#c96365}
+.vein-study-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 24px;background:#f9fbf8}
+.vein-study-hint{display:flex;align-items:center;gap:7px;font-size:11px;color:#7c8b80}.vein-study-hint i{width:6px;height:6px;border:1.5px solid #8aab9a;border-radius:50%}
+.vein-tool-buttons{display:flex;gap:6px;flex-wrap:wrap}.vein-tool-buttons button{background:white;border:1px solid #dbe4db;border-radius:6px;color:#60766a;padding:7px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.vein-tool-buttons .vein-compare[aria-pressed=true]{background:#eef5ed;border-color:#c7d9c9;color:#3b6b4e}
+.vein-tool-buttons .vein-press{background:#2e6854;border-color:#2e6854;color:#fff;padding-left:14px;padding-right:14px}.vein-tool-buttons .vein-press:hover{background:#245440}
+.vein-imaging-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:2px;background:#16292c;padding:2px}
+.vein-anatomy{display:grid;grid-template-rows:minmax(350px,1fr) auto auto;background:#10212a;min-width:0}
+.vein-3d{position:relative;isolation:isolate;overflow:hidden;min-height:350px;width:100%;height:100%;background:#0c1b23}
+.vein-3d-caption{position:absolute;top:18px;left:20px;font-size:10px;line-height:1.6;font-weight:700;letter-spacing:.12em;color:#b7d0cd;pointer-events:none}.vein-3d-caption small{display:block;font-size:10px;font-weight:400;color:#67888c;letter-spacing:.03em;text-transform:none}
+.vein-3d-label{position:absolute;top:0;left:0;pointer-events:none;display:grid;gap:2px;color:#e5cfcb;font-size:10px;line-height:1.5;font-weight:600;border-left:1px solid #899998;padding-left:10px;max-width:130px;text-shadow:0 1px 3px #0009}
+.vein-3d-label[hidden]{display:none}.vein-3d-label[data-anchor=artery]{color:#e6b9af}.vein-clot-label{color:#f0ce99;border-left-color:#cba874}.vein-clot-label small{color:#c3b29a;font-size:9px;font-weight:400}
+.vein-3d-footer{position:absolute;bottom:15px;left:20px;right:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#718e91;font:9px ui-monospace,Consolas,monospace;pointer-events:none}.vein-3d-footer span:last-child{color:#b0c8c5}
+.vein-3d-message{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#c4dbd8;font-size:13px;background:#10212a}
+.vein-anatomy>figcaption{display:flex;justify-content:space-between;gap:8px;padding:10px 16px;font-size:9px;color:#809b9c;border-top:1px solid #203439;line-height:1.5}.vein-anatomy>figcaption span:first-child{display:flex;align-items:center;gap:6px}.vein-plane-key{display:inline-block;width:10px;height:6px;background:#6cb6aa44;border:1px solid #62b7a5}
+.vein-compression-result{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#152b31;border-top:1px solid #203a3c;transition:background .2s}.vein-compression-result[data-active=true]{background:#1c3a3c}
+.vein-compression-mark{width:28px;height:28px;border:1px solid #456864;border-radius:50%;display:grid;place-items:center;color:#acd1bb;font-size:16px;flex:none}
+.vein-compression-result b{font-size:11px;font-weight:600;color:#bed5c7}.vein-compression-result p{font-size:10px;line-height:1.6;color:#7d9a92;margin:3px 0 0;max-width:58ch}
+.vein-ultrasound{display:grid;align-content:start;gap:2px;background:#152c31;min-width:0}
+.ultrasound-frame{margin:0;background:#080f13;overflow:hidden;color:#b8ceca;min-width:0}
+.ultrasound-frame>figcaption{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;color:#8aa5a6;min-height:34px;background:#0c1b20;border-bottom:1px solid #183034;line-height:1.4}
+.ultrasound-frame figcaption b{color:#c7dfd5;font-size:9px;font-weight:700;letter-spacing:.12em;margin-right:10px}.ultrasound-frame figcaption small{font:9px ui-monospace,Consolas,monospace;color:#688b8d;text-align:right}
+.vein-scan-canvas{display:block;width:100%;height:auto;aspect-ratio:740/246;background:#070f13}
+.vein-colour-key{display:flex;align-items:center;gap:14px;padding:8px 14px;font-size:9px;color:#96aaaa;border-top:1px solid #183034;flex-wrap:wrap}.vein-colour-key>span{display:flex;align-items:center;gap:5px}.vein-colour-key i{width:7px;height:7px;border-radius:2px}.vein-colour-key .away{background:#2577d8}.vein-colour-key .toward{background:#d64e40}.vein-colour-key small{font-size:9px;color:#658181;margin-left:auto}
+.vein-spectral{border-top:2px solid #20363a}.vein-spectral>figcaption{padding-left:20px;padding-right:20px}.vein-scan-spectral{height:156px;aspect-ratio:auto}
+.vein-flow-patterns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #e3e9e1;background:#fbfcf9;padding:9px 20px;gap:8px}
+.vein-flow-patterns>div{display:flex;align-items:center;justify-content:center;gap:10px;padding:5px 10px;color:#99a49a;border-radius:6px}.vein-flow-patterns>div[data-selected=true]{color:#3b8062;background:#e9f2e7}.vein-flow-patterns svg{width:76px;height:26px;flex:none}.vein-flow-patterns span{font-size:10px;white-space:nowrap}.vein-flow-patterns b{font-family:ui-monospace,Consolas,monospace;margin-right:6px;font-weight:500;opacity:.7}
+.vein-study-timeline{display:flex;align-items:center;gap:20px;padding:20px 24px;border-bottom:1px solid #e7ece4}.vein-study-timeline>div:first-child{flex:none}.vein-study-timeline>div:first-child>span{font-size:10px;color:#8c998e}
+.vein-scans{display:flex;gap:6px;flex:1;overflow-x:auto;padding:2px}.vein-scans button{position:relative;display:grid;grid-template-columns:8px 1fr;gap:3px 7px;text-align:left;border:1px solid transparent;border-radius:7px;background:transparent;color:#8d998d;padding:9px 12px;flex:none}.vein-scans button i{align-self:center}.vein-scans button strong{font-size:12px;font-weight:700}.vein-scans button small{grid-column:2;font-size:9px}.vein-scans button[aria-checked=true]{border-color:#cbdccb;background:#f1f6ed;color:#386049}.vein-play{border:1px solid #d5dfd3;border-radius:6px;background:white;color:#4b7158;font-size:11px!important;font-weight:700;padding:9px 12px;white-space:nowrap}
+.vein-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0;padding:20px 24px;gap:20px}.vein-facts>div+div{padding-left:20px;border-left:1px solid #e4eae1}.vein-facts dt{font-size:10px;line-height:1.5;color:#8b998b;font-weight:500}.vein-facts dd{font-size:17px;letter-spacing:-.02em;font-weight:600;color:#3e5f49;margin:6px 0 4px;line-height:1.4;font-variant-numeric:tabular-nums}.vein-facts dd small{font-size:11px;font-weight:400;color:#83917f}.vein-facts>div>span{font-size:9px;color:#929e8e;line-height:1.5;display:block}
+.vein-imaging-note{margin:0;padding:0 24px 18px;color:#929d90;font-size:10px;line-height:1.7;max-width:125ch}
+
+.vein-bottom-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px}.vein-bottom-grid .panel{border:1px solid var(--v-line);border-radius:12px;padding:22px;background:#fff;min-width:0}
+.vein-bottom-grid h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;letter-spacing:-.025em;margin:0;color:#3d614e}.vein-bottom-grid figcaption>p:last-child{font-size:11px;line-height:1.7;color:#879482;margin-top:7px;max-width:70ch}
+.vein-body{height:235px;background:#f6f7f1;border-radius:8px;overflow:hidden;margin-top:14px}.vein-plot{height:250px;margin-top:12px}.vein-chart-key{display:flex;gap:16px;font-size:10px;color:#889581;justify-content:center}.vein-chart-key span{display:flex;align-items:center;gap:6px}.vein-chart-key i{width:14px;height:2px;background:#257a69}.vein-chart-key span+span i{background:#9e7691}
+.vein-measurements{border:1px solid var(--v-line);border-radius:10px;background:#fff;padding:0 20px}.vein-measurements summary{font-size:12px;font-weight:700;padding:15px 0;cursor:pointer;color:#60765d}.vein-measurements summary>span{font-size:10px;font-weight:400;color:#99a38e;margin-left:10px}.vein-table-scroll{overflow-x:auto}.vein-measurements table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:15px}.vein-measurements th,.vein-measurements td{text-align:left;padding:12px 8px;border-top:1px solid #edf0e8;vertical-align:top}.vein-measurements thead th{font-size:10px;font-weight:700;color:#84917b}.vein-measurements small{display:block;font-size:10px;font-weight:400;color:#939e89;margin-top:4px;line-height:1.6}.vein-measurements tbody th{font-weight:500}
+.vein-evidence{display:grid;grid-template-columns:1.15fr 1fr;gap:50px;padding:2px 0 0}.vein-evidence p{font-size:10px;line-height:1.8;color:#929b87;margin:0}.vein-evidence a{color:#64826a;text-decoration:underline;text-underline-offset:3px}.vein-evidence>p{font-size:9px}
+@media(min-width:1700px){.vein-imaging-grid{grid-template-columns:minmax(0,.94fr) minmax(0,1fr)}.vein-3d{min-height:450px}}
+@media(max-width:1100px){.vein-study-tools{align-items:flex-start;flex-wrap:wrap}.vein-imaging-grid{grid-template-columns:1fr 1fr}.vein-anatomy{grid-template-rows:minmax(300px,1fr) auto auto}.vein-3d{min-height:300px}.vein-colour-key small{margin-left:0;flex-basis:100%}.vein-flow-patterns>div{gap:5px;padding-left:3px;padding-right:3px}.vein-flow-patterns svg{width:50px}.vein-study-timeline{gap:12px;flex-wrap:wrap}.vein-study-timeline>div:first-child{display:none}.vein-facts{gap:12px}.vein-facts>div+div{padding-left:12px}.vein-facts dd{font-size:14px}}
+@media(max-width:760px){.veins-view{padding:22px 12px 30px;gap:16px}.veins-intro{align-items:flex-start}.veins-intro h2{font-size:26px}.veins-intro .demo-label{font-size:8px;padding:5px}.veins-intro>div>p:last-child{font-size:13px}.vein-status{padding:14px}.vein-status-main h3{font-size:15px}.vein-status-main p{font-size:12px}.vein-status-main>.vein-pill{display:none}.vein-status-meta{gap:8px 14px;padding-left:0}.vein-signs{margin-left:0}.vein-study-head{padding:17px 14px;flex-wrap:wrap;gap:9px}.vein-study-head h3{font-size:18px}.vein-side-picker{margin-left:0;flex-basis:100%;margin-top:5px}.vein-side-picker button{flex:1;justify-content:center}.vein-study-tools{padding:12px 14px}.vein-study-hint{font-size:10px}.vein-tool-buttons{width:100%}.vein-tool-buttons button{padding:8px;font-size:10px;flex:1}.vein-imaging-grid{grid-template-columns:1fr}.vein-anatomy{grid-template-rows:350px auto auto}.vein-3d{height:350px}.vein-ultrasound{grid-template-columns:1fr}.vein-colour-key small{margin-left:auto;flex-basis:auto}.vein-flow-patterns{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.vein-flow-patterns>div{justify-content:flex-start;padding-left:8px}.vein-flow-patterns svg{width:65px}.vein-facts{grid-template-columns:repeat(2,minmax(0,1fr));padding:18px 14px;gap:20px}.vein-facts>div+div{border:0;padding-left:0}.vein-facts dd{font-size:17px}.vein-imaging-note{padding:0 14px 16px}.vein-study-timeline{padding:14px;gap:10px}.vein-scans{flex-basis:100%;order:1}.vein-play{margin-left:auto;order:0}.vein-scans button{padding:8px}.vein-bottom-grid{grid-template-columns:1fr}.vein-evidence{grid-template-columns:1fr;gap:12px}.vein-body{height:230px}}
+.vein-study{scroll-margin-top:112px}
+.vein-study-hint{font-size:12px}.vein-tool-buttons button{font-size:12px}
+.vein-3d-caption{font-size:11px}.vein-3d-caption small{font-size:11px}.vein-3d-label{font-size:12px;max-width:155px}.vein-clot-label small{font-size:10px}
+.vein-3d-footer{font-size:10px}.vein-anatomy>figcaption{font-size:10px}
+.vein-compression-result b{font-size:13px}.vein-compression-result p{font-size:11.5px}
+.ultrasound-frame>figcaption{font-size:11px}.ultrasound-frame figcaption b{font-size:10px}.ultrasound-frame figcaption small{font-size:10px}
+.vein-colour-key{font-size:10px}.vein-colour-key small{font-size:10px}
+.vein-flow-patterns span{font-size:11px}.vein-study-timeline>div:first-child>span{font-size:11px}
+.vein-scans button strong{font-size:13px}.vein-scans button small{font-size:10px}
+.vein-facts dt{font-size:12px}.vein-facts dd{font-size:19px}.vein-facts dd small{font-size:12px}.vein-facts>div>span{font-size:11px}
+.vein-imaging-note{font-size:11.5px}.vein-bottom-grid figcaption>p:last-child{font-size:12px}.vein-chart-key{font-size:12px}
+.vein-evidence p{font-size:12px}.vein-evidence>p{font-size:11px}
+@media(max-width:760px){.vein-study{scroll-margin-top:190px}.vein-tool-buttons button{font-size:11px}.ultrasound-frame>figcaption{font-size:10px}.ultrasound-frame figcaption small{font-size:9px}.vein-flow-patterns span{font-size:10px}.vein-facts dd{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.vein-compression-result{transition:none}}

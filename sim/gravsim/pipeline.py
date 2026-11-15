@@ -60,6 +60,24 @@ LIMITS = {
     "watch_hr": (30, 220),       # bpm, the watch's heart rate every 15 minutes
     "sleep_hours": (0, 16),      # h of sleep in a night
     "sleep_quality": (1, 7),     # self-rated score, 1 very poor to 7 excellent (OCHMO-STD-100.1A [6039])
+    # the eye exam (gravsim.ocular, docs/investigacion-ojos.md)
+    "oct_trt": (150, 900),       # µm, retinal thickness around the optic disc
+    "oct_mrw": (100, 900),       # µm, optic nerve rim width
+    "oct_choroid": (20, 600),    # µm
+    "frisen_grade": (0, 5),      # Frisén scale
+    "choroidal_folds": (0, 1),   # 1 = folds seen
+    "globe_flattening": (0, 1),  # 1 = flattening seen
+    "refraction_se": (-20, 20),  # D, spherical equivalent
+    "near_va": (-0.3, 1.0),      # logMAR, 0 = 20/20
+    "iop": (5, 40),              # mmHg
+    "onsd": (3, 10),             # mm
+    "axial_length": (18, 32),    # mm
+    # the jugular vein ultrasound (gravsim.vascular, docs/investigacion-yugular.md)
+    "ijv_csa": (1, 400),         # mm², area of the internal jugular vein
+    "ijv_flow_grade": (1, 4),    # 1 continuous, 2 pulsatile, 3 stagnant, 4 retrograde (Marshall-Goebel 2019)
+    "ijv_echogenicity": (0, 2),  # 0 none, 1 mild, 2 moderate
+    "ijv_compressible": (0, 1),  # 1 = the vein collapses when pressed
+    "ijv_peak_velocity": (-80, 150),  # cm/s, toward the heart; negative = toward the head
 }
 
 

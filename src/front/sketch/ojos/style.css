@@ -1,0 +1,90 @@
+/* Eyes (SANS): status, the eye drawing, the OCT chart and one card per test. Readable at arm's length: body 15px+. */
+.eyes-view{padding:16px 24px 28px;display:grid;gap:16px;color:#2f2850}
+.eyes-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.eyes-intro h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:30px;letter-spacing:-.02em}
+.eyes-intro p{font-size:16px;line-height:1.6;color:#3d4462;margin-top:6px;max-width:105ch}
+
+.eye-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;border-radius:999px;padding:5px 11px;white-space:nowrap;background:#e9f5ee;color:#1c633c}
+.eye-pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.eye-pill[data-class="A"]{background:#c98a0b;color:#fff}
+.eye-pill[data-class="B"]{background:#a4242f;color:#fff}
+
+.eye-status{display:grid;gap:10px;border-left:6px solid #3f9a68}
+.eye-status[data-class="A"]{border-left-color:#c98a0b;background:#fffaf0}
+.eye-status[data-class="B"]{border-left-color:#a4242f;background:#fff6f6}
+.eye-status-main{display:flex;gap:14px;align-items:center}
+.eye-status-main h3{font-size:21px}
+.eye-status-main p{font-size:16px;color:#3d4462;margin-top:2px}
+.eye-signs{margin:0;padding-left:22px;display:grid;gap:4px;font-size:15.5px;color:#2f2850}
+.eye-signs li[data-class="B"]{font-weight:700;color:#7d1a23}
+.eye-status-meta{font-size:14px;color:#59617b}
+
+.eye-main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.eye-figure,.eye-oct{margin:0;display:grid;gap:10px}
+.eye-figure figcaption,.eye-oct figcaption,.eye-where figcaption{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eye-figure figcaption>div,.eye-oct figcaption>div,.eye-where figcaption>div{display:grid;gap:3px}
+.eye-figure figcaption strong,.eye-oct figcaption strong,.eye-where figcaption strong{font-size:18px}
+.eye-figure figcaption span,.eye-oct figcaption span,.eye-where figcaption span{font-size:14px;color:#59617b;line-height:1.45}
+.eye-diagram{width:100%;height:auto;max-height:380px;display:block}
+.eye-labels text{font-family:Manrope,Arial,sans-serif}
+
+.exam-picker{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.exam-play{font:inherit;font-size:14px;font-weight:800;color:#fff;background:#4b3f8f;border:0;border-radius:9px;padding:9px 14px;cursor:pointer}
+.exam-play[aria-pressed="true"]{background:#2f2850}
+.exam-steps{display:flex;flex-wrap:wrap;gap:4px;padding:3px;background:#ecebf5;border-radius:10px}
+.exam-steps button{display:flex;align-items:center;gap:6px;font:inherit;font-size:14px;font-weight:700;color:#4f5874;background:none;border:0;border-radius:8px;padding:7px 11px;cursor:pointer}
+.exam-steps button i{width:9px;height:9px;border-radius:50%;background:#3f9a68}
+.exam-steps button[data-class="A"] i{background:#c98a0b}
+.exam-steps button[data-class="B"] i{background:#a4242f}
+.exam-steps button[aria-checked="true"]{background:#fff;color:#2f2850;box-shadow:0 1px 3px #2f285022}
+
+.eye-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0}
+.eye-facts div{background:#f6f5fc;border:1px solid #e2e1ee;border-radius:10px;padding:9px 11px}
+.eye-facts dt{font-size:12.5px;font-weight:700;color:#59617b}
+.eye-facts dd{margin:3px 0 0;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+
+.oct-plot{height:320px}
+.oct-legend{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 0 44px;padding:0;font-size:14px;font-weight:600;color:#3d4462}
+.oct-legend li{display:flex;align-items:center;gap:7px}
+.oct-legend i{width:18px;height:4px;border-radius:2px}
+
+.eye-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px}
+.eye-card{display:grid;gap:8px;align-content:start}
+.eye-card header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.eye-card h3{font-size:19px}
+.eye-card header span{font-size:13px;font-weight:700;color:#625992}
+.eye-card>p{font-size:15px;line-height:1.5;color:#3d4462}
+.eye-card table{width:100%;border-collapse:collapse;font-size:15px}
+.eye-card th,.eye-card td{text-align:left;padding:8px 6px;border-top:1px solid #e7e6f1;vertical-align:top}
+.eye-card thead th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#625992;border-top:0}
+.eye-card tbody th{font-weight:700}
+.eye-card small{display:block;font-size:12.5px;font-weight:500;color:#6a7088;margin-top:2px}
+.eye-card td{font-variant-numeric:tabular-nums;white-space:nowrap}
+.eye-notice{font-size:13.5px;color:#59617b}
+
+@media(max-width:1180px){.eye-main{grid-template-columns:1fr}.eye-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.eyes-view{padding:14px 12px 24px}.eye-cards{grid-template-columns:1fr}.eye-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.eyes-intro{flex-direction:column}}
+
+/* 3D eye and body context */
+.eye-main{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+.eye-side{display:grid;gap:16px;align-content:start}
+.eye-3d{position:relative;height:460px;border-radius:12px;background:radial-gradient(ellipse at 50% 45%,#f7f6fd 0%,#eeedf7 70%,#e8e7f3 100%);overflow:hidden}
+.eye-3d-label{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#2f2850;white-space:nowrap;pointer-events:none;will-change:transform}
+.eye-3d-label i{width:7px;height:7px;border-radius:50%;background:#2f2850;box-shadow:0 0 0 2px #fff;margin-left:-3.5px}
+.eye-3d-label{text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
+.eye-3d-message{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
+.eye-where{margin:0;display:grid;gap:8px}
+.eye-body{height:260px;border-radius:12px;background:#f3f2fa;overflow:hidden}
+@media(max-width:1180px){.eye-3d{height:380px}}
+
+/* each eye on its own */
+.eye-picker{display:flex;gap:4px;padding:3px;background:#ecebf5;border-radius:10px;width:max-content}
+.eye-picker button{display:flex;align-items:center;gap:7px;font:inherit;font-size:14.5px;font-weight:800;color:#4f5874;background:none;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+.eye-picker button i{width:9px;height:9px;border-radius:50%;background:#3f9a68}
+.eye-picker button[data-class="A"] i{background:#c98a0b}
+.eye-picker button[data-class="B"] i{background:#a4242f}
+.eye-picker button[aria-checked="true"]{background:#fff;color:#2f2850;box-shadow:0 1px 3px #2f285022}
+.eye-status-eyes{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:15px;font-weight:700;color:#3d4462}
+.eye-status-eyes span{display:inline-flex;align-items:center;gap:8px}
+.oct-legend i.dashed{height:0;border-top:2px dashed #9b97b8;background:none}
+.eye-card .eye-change{font-size:13.5px;font-weight:700;color:#625992}

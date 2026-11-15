@@ -9,6 +9,7 @@ import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { Brand, Icon } from './Icons.jsx';
+import { MISSION, person } from '../data/roster.js';
 import { Backdrop } from './Backdrop.jsx';
 import '../style.css';
 import '../fuerza/style.css';
@@ -158,12 +159,13 @@ export function Shell() {
               tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}><Icon name={t.id}/>{t.label}</button>)}
           </div>
         </nav>
+        {!exampleMode && <a className="flight-back glass-sm" href={`./crew.html${crewId ? `?crew=${encodeURIComponent(crewId)}` : ''}`}><span aria-hidden="true">←</span>All crew</a>}
         <div className="flight-crew glass-sm">
-          <span className="flight-avatar"><Icon name="crew" size={19}/></span>
+          <span className="flight-avatar">{person(crewId).photo ? <img src={person(crewId).photo} alt=""/> : <Icon name="crew" size={19}/>}</span>
           <div><span className="flight-crew-label">Crew member</span>
             {!exampleMode && crewList.length > 0
-              ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id}>{id}</option>)}</select>
-              : <strong>{crewId ?? '—'}</strong>}
+              ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id} value={id}>{person(id).name}</option>)}</select>
+              : <strong>{crewId ? person(crewId).name : '—'}</strong>}
           </div>
         </div>
       </div>
@@ -173,7 +175,7 @@ export function Shell() {
         <div className="flight-heading-main"><h1>{active.title}</h1>
           {data && <span className="flight-source glass-sm"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>}
         </div>
-        {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{data.mission.name.replaceAll('_',' ').toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></div>}
+        {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{MISSION.name.toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></div>}
       </div>
       {error && data && <div className="flight-notice glass" role="status">Connection lost. Showing the last available measurements.</div>}
       {TABS.map(item => <FlightPanel key={item.id} id={item.id} hidden={tab !== item.id}>{renderView(item.id)}</FlightPanel>)}

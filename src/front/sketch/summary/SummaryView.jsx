@@ -8,6 +8,7 @@ import { TYPE_LABEL, displayStatus, loadPlan, plainTitle, timing } from '../data
 import { AlertIcon } from '../fuerza/App.jsx';
 import { LEVEL_COLORS, colorScale, fmtPct, levelColor, levelText } from '../fuerza/data.js';
 import { watchNotices } from '../data/vitals.js';
+import { person } from '../data/roster.js';
 import { WatchPanel } from '../vitals/WatchPanel.jsx';
 import { SEVERITY_TEXT, aerobicLatest, alertsOf, muscleRows, overallStatus, scheduleDays, scheduleRows } from './data.js';
 import { Indicators } from './Indicators.jsx';
@@ -22,7 +23,7 @@ const COUNT = ['No', 'One', 'Two', 'Three', 'Four', 'Five'];
 
 // The sentence under "Mission status": what is going on, in the crew member's terms.
 function statusLead(status, alerts, crew, hasVitals) {
-  const who = crew ? `${crew}, ` : '';
+  const who = crew ? `${person(crew).name.split(' ')[0]}, ` : '';
   const lower = text => crew ? text[0].toLowerCase() + text.slice(1) : text;
   if (status.chip === 'crit') return who + lower('A NASA standard was crossed.');
   if (alerts.length) {

@@ -118,6 +118,8 @@ def mission_parser(description: str, port: int) -> argparse.ArgumentParser:
     ap.add_argument("--origin", default="*", help="value for Access-Control-Allow-Origin")
     ap.add_argument("--fatigue", action="append", default=[], metavar="CREW:DAY[:DAYS]",
                     help="a fatigue spell the watch should catch, e.g. CM-3:132:6 (repeatable; CrewMember.add_fatigue)")
+    ap.add_argument("--sans", action="append", default=[], metavar="CREW:Z",
+                    help="a crew member's SANS susceptibility in SD, e.g. CM-1:1.5 (repeatable; gravsim.ocular.set_sans)")
     return ap
 
 
@@ -129,6 +131,17 @@ def apply_fatigue(mission: Mission, specs: list[str]) -> None:
         if len(parts) not in (2, 3) or parts[0] not in crew:
             raise SystemExit(f"--fatigue {spec!r}: expected CREW:DAY[:DAYS] with CREW one of {sorted(crew)}")
         crew[parts[0]].add_fatigue(float(parts[1]), float(parts[2]) if len(parts) == 3 else 6.0)
+
+
+def apply_sans(mission: Mission, specs: list[str]) -> None:
+    """--sans CREW:Z options onto the mission's crew (the eye exam, gravsim.ocular)."""
+    from .ocular import set_sans
+    crew = {c.id: c for c in mission.crew}
+    for spec in specs:
+        parts = spec.split(":")
+        if len(parts) != 2 or parts[0] not in crew:
+            raise SystemExit(f"--sans {spec!r}: expected CREW:Z with CREW one of {sorted(crew)}")
+        set_sans(crew[parts[0]], float(parts[1]))
 
 
 def mission_clock(mission: Mission, day: float, speed: float) -> Callable[[], float]:
@@ -247,6 +260,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     apply_fatigue(mission, args.fatigue)
+    apply_sans(mission, args.sans)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
     clock = mission_clock(mission, args.day, args.speed)
     pending = iter(mission.timeline(seed=args.seed))

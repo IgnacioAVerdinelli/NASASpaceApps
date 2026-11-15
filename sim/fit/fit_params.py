@@ -49,6 +49,9 @@ DIRECTION = {
     "vo2peak": -1, "resting_hr": 1, "resting_sbp": 1, "resting_dbp": 1,
     "spo2": -1, "hrv_rmssd": -1, "heart_rate": 1,
     "watch_hr": 1, "sleep_hours": -1, "sleep_quality": -1,
+    # the eye exam (SANS): thicker, more swollen, more hyperopic, a wider nerve sheath and a shorter eye are worse
+    "oct_trt": 1, "oct_mrw": 1, "oct_choroid": 1, "frisen_grade": 1, "choroidal_folds": 1, "globe_flattening": 1,
+    "refraction_se": 1, "near_va": 1, "iop": 1, "onsd": 1, "axial_length": -1,
 }
 
 # Generator-wide settings. Fitted where the data allows, otherwise assumed and listed here.
@@ -98,6 +101,18 @@ DEVICE = {
     "watch_hr": (0.03, "wrist optical heart rate, about ±3 % (assumed)"),
     "sleep_hours": (0.05, "actigraphy sleep estimate, about ±5 % (assumed)"),
     "sleep_quality": (0.08, "self-rated score (assumed spread)"),
+    # the eye exam keeps its own noise in absolute units (gravsim.ocular.NOISE); these CVs are only for the record
+    "oct_trt": (0.012, "Spectralis OCT, about ±5 um (assumed)"),
+    "oct_mrw": (0.015, "Spectralis OCT, about ±6 um (assumed)"),
+    "oct_choroid": (0.047, "Spectralis OCT, about ±8 um (assumed)"),
+    "refraction_se": (0.0, "refraction, ±0.25 D steps (assumed)"),
+    "near_va": (0.0, "near chart, about ±0.04 logMAR (assumed)"),
+    "iop": (0.11, "tonometer, about ±1.5 mmHg (assumed)"),
+    "onsd": (0.033, "ultrasound, about ±0.2 mm (assumed)"),
+    "axial_length": (0.001, "biometry, about ±0.02 mm (assumed)"),
+    "frisen_grade": (0.0, "graded from the fundus image"),
+    "choroidal_folds": (0.0, "seen or not on OCT"),
+    "globe_flattening": (0.0, "seen or not on ultrasound"),
 }
 
 QUANTILES = list(range(0, 101, 5))     # percentiles stored for sampling baselines (0 = min, 100 = max)
@@ -866,6 +881,48 @@ ASSUMED_WATCH = {
 }
 
 
+# The eye exam ([6012], gravsim.ocular): every number comes from published group results or is assumed, as
+# docs/investigacion-ojos.md lists. "derived": gravsim.ocular computes them from each person's SANS profile.
+def _eye(label, unit, decimals, source, assumed):
+    return {"instrument": "ocular", "code": None, "label": label, "region": "Eyes", "muscle_keys": [], "unit": unit,
+            "decimals": decimals, "model": "derived", "noise_cv": 0.0, "responder_sd": 0.0,
+            "source": source, "assumed": assumed}
+
+
+ASSUMED_OCULAR = {
+    "oct_trt": _eye("Retinal thickness around the optic disc (OCT)", "µm", 0,
+                    "consensus 2026 (Eye): +20 um earliest indication, +55 um clinically concerning; 66-69 % pass +20 um",
+                    ["pre-flight 430 ± 30 um", "+30 ± 24 um on flight day 150, so the published shares hold"]),
+    "oct_mrw": _eye("Optic nerve rim width (OCT, BMO-MRW)", "µm", 0,
+                    "Macias 2020 (JAMA Ophthalmol): +35.7 um on flight day 150, 11 astronauts",
+                    ["pre-flight 400 ± 50 um", "follows retinal thickness, 1.19 times its change"]),
+    "oct_choroid": _eye("Choroid thickness (OCT)", "µm", 0,
+                        "Macias 2020: +43 um on flight day 150",
+                        ["pre-flight 170 ± 40 um", "spread between people ± 15 um"]),
+    "frisen_grade": _eye("Optic disc edema (Frisén grade)", "grade", 0,
+                         "Frisén scale 0-5; ~15 % of long-duration crew reach grade 1 (Lee 2020)",
+                         ["grade 1 from +55 um retinal thickness, 2 from +90 um, 3 from +130 um"]),
+    "choroidal_folds": _eye("Chorioretinal folds", "flag", 0, "consensus 2026: 25 % of 64 astronauts",
+                            ["in the people with the most choroid swelling"]),
+    "globe_flattening": _eye("Flattening of the back of the eye", "flag", 0, "consensus 2026: 37 % of 43 astronauts",
+                             ["seen on ultrasound in flight; MRI confirms it on the ground"]),
+    "refraction_se": _eye("Refraction (spherical equivalent)", "D", 2,
+                          "consensus 2026: a shift over +0.50 D in 20 %; Mader 2011: +0.50 to +1.75 D",
+                          ["pre-flight -0.5 ± 1.5 D", "shift +0.2 ± 0.36 D, partly kept after landing"]),
+    "near_va": _eye("Near vision without glasses (logMAR)", "logMAR", 2,
+                    "Mader 2011: about 60 % report worse near vision on long missions",
+                    ["about one chart line (0.1 logMAR) per +0.5 D of shift"]),
+    "iop": _eye("Eye pressure (tonometry)", "mmHg", 0, "no public flight values; bed rest 12.9 to 13.9 mmHg (NTRS 2014)",
+                ["pre-flight 14 ± 2.5 mmHg", "+1 mmHg in flight"]),
+    "onsd": _eye("Optic nerve sheath diameter (ultrasound)", "mm", 2,
+                 "ONSD review 2022: 5.98 mm pre-flight, +0.91 mm in flight against post-flight",
+                 ["+0.9 ± 0.35 mm in flight, within about 10 days", "back within a week after landing"]),
+    "axial_length": _eye("Length of the eye", "mm", 2, "Macias 2020: -0.08 mm after flight, -0.05 mm a year later",
+                         ["pre-flight 24.0 ± 0.9 mm"]),
+}
+for _mid, _m in ASSUMED_OCULAR.items():
+    _m["noise_cv"] = DEVICE[_mid][0]
+
 def finish(mid, m):
     """Rules every measure gets after its fit: direction, the exercise cap, no improvement while unloaded,
     and the noise split."""
@@ -900,6 +957,7 @@ def main():
     measures.update(ASSUMED_WEARABLE)
     measures.update(ASSUMED_SUIT)
     measures.update(ASSUMED_WATCH)
+    measures.update(ASSUMED_OCULAR)
     measures = {mid: finish(mid, m) for mid, m in measures.items()}
     lean = {k: v for k, v in lean_subj.items() if k.startswith("lean_")}
     params = {

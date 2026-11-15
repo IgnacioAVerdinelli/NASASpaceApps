@@ -21,6 +21,8 @@ GROUPS = {
     "arms": ["lean_arms"],
     "bone": ["hip_bmd", "spine_bmd", "heel_bmd"],
     "cardio": ["vo2peak", "resting_hr", "resting_sbp", "resting_dbp"],
+    "eyes": ["oct_trt", "oct_mrw", "oct_choroid", "frisen_grade", "choroidal_folds", "globe_flattening",
+             "refraction_se", "near_va", "iop", "onsd", "axial_length"],
     "strength": ["knee_extension_60", "knee_flexion_60", "ankle_plantarflexion_30", "ankle_dorsiflexion_30",
                  "trunk_extension_60", "trunk_flexion_60"],
 }

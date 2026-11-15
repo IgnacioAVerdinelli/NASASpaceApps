@@ -2600,6 +2600,232 @@
    "assumed": [
     "the score follows the hours slept: 4.8 at 6.1 h, about +0.9 per extra hour, 1.5 lower in a fatigue spell"
    ]
+  },
+  "oct_trt": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Retinal thickness around the optic disc (OCT)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.012,
+   "device_cv": 0.012,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±5 um (assumed)",
+   "source": "consensus 2026 (Eye): +20 um earliest indication, +55 um clinically concerning; 66-69 % pass +20 um",
+   "assumed": [
+    "pre-flight 430 ± 30 um",
+    "+30 ± 24 um on flight day 150, so the published shares hold"
+   ]
+  },
+  "oct_mrw": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic nerve rim width (OCT, BMO-MRW)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.015,
+   "device_cv": 0.015,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±6 um (assumed)",
+   "source": "Macias 2020 (JAMA Ophthalmol): +35.7 um on flight day 150, 11 astronauts",
+   "assumed": [
+    "pre-flight 400 ± 50 um",
+    "follows retinal thickness, 1.19 times its change"
+   ]
+  },
+  "oct_choroid": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Choroid thickness (OCT)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "µm",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.047,
+   "device_cv": 0.047,
+   "bio_cv": 0.0,
+   "noise_source": "Spectralis OCT, about ±8 um (assumed)",
+   "source": "Macias 2020: +43 um on flight day 150",
+   "assumed": [
+    "pre-flight 170 ± 40 um",
+    "spread between people ± 15 um"
+   ]
+  },
+  "frisen_grade": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic disc edema (Frisén grade)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded from the fundus image",
+   "source": "Frisén scale 0-5; ~15 % of long-duration crew reach grade 1 (Lee 2020)",
+   "assumed": [
+    "grade 1 from +55 um retinal thickness, 2 from +90 um, 3 from +130 um"
+   ]
+  },
+  "choroidal_folds": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Chorioretinal folds",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "seen or not on OCT",
+   "source": "consensus 2026: 25 % of 64 astronauts",
+   "assumed": [
+    "in the people with the most choroid swelling"
+   ]
+  },
+  "globe_flattening": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Flattening of the back of the eye",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "seen or not on ultrasound",
+   "source": "consensus 2026: 37 % of 43 astronauts",
+   "assumed": [
+    "seen on ultrasound in flight; MRI confirms it on the ground"
+   ]
+  },
+  "refraction_se": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Refraction (spherical equivalent)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "D",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "refraction, ±0.25 D steps (assumed)",
+   "source": "consensus 2026: a shift over +0.50 D in 20 %; Mader 2011: +0.50 to +1.75 D",
+   "assumed": [
+    "pre-flight -0.5 ± 1.5 D",
+    "shift +0.2 ± 0.36 D, partly kept after landing"
+   ]
+  },
+  "near_va": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Near vision without glasses (logMAR)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "logMAR",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "near chart, about ±0.04 logMAR (assumed)",
+   "source": "Mader 2011: about 60 % report worse near vision on long missions",
+   "assumed": [
+    "about one chart line (0.1 logMAR) per +0.5 D of shift"
+   ]
+  },
+  "iop": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Eye pressure (tonometry)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mmHg",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.11,
+   "device_cv": 0.11,
+   "bio_cv": 0.0,
+   "noise_source": "tonometer, about ±1.5 mmHg (assumed)",
+   "source": "no public flight values; bed rest 12.9 to 13.9 mmHg (NTRS 2014)",
+   "assumed": [
+    "pre-flight 14 ± 2.5 mmHg",
+    "+1 mmHg in flight"
+   ]
+  },
+  "onsd": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Optic nerve sheath diameter (ultrasound)",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mm",
+   "decimals": 2,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.033,
+   "device_cv": 0.033,
+   "bio_cv": 0.0,
+   "noise_source": "ultrasound, about ±0.2 mm (assumed)",
+   "source": "ONSD review 2022: 5.98 mm pre-flight, +0.91 mm in flight against post-flight",
+   "assumed": [
+    "+0.9 ± 0.35 mm in flight, within about 10 days",
+    "back within a week after landing"
+   ]
+  },
+  "axial_length": {
+   "instrument": "ocular",
+   "code": null,
+   "label": "Length of the eye",
+   "region": "Eyes",
+   "muscle_keys": [],
+   "unit": "mm",
+   "decimals": 2,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.001,
+   "device_cv": 0.001,
+   "bio_cv": 0.0,
+   "noise_source": "biometry, about ±0.02 mm (assumed)",
+   "source": "Macias 2020: -0.08 mm after flight, -0.05 mm a year later",
+   "assumed": [
+    "pre-flight 24.0 ± 0.9 mm"
+   ]
   }
  }
 }

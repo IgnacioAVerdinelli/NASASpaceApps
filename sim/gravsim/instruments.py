@@ -384,3 +384,6 @@ class Spacesuit(Instrument):
 
 
 INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit, Watch)}
+
+from .ocular import OcularExam  # noqa: E402  (ocular builds on Instrument, defined above)
+INSTRUMENTS[OcularExam.name] = OcularExam

@@ -60,6 +60,18 @@ LIMITS = {
     "watch_hr": (30, 220),       # bpm, the watch's heart rate every 15 minutes
     "sleep_hours": (0, 16),      # h of sleep in a night
     "sleep_quality": (1, 7),     # self-rated score, 1 very poor to 7 excellent (OCHMO-STD-100.1A [6039])
+    # the eye exam (gravsim.ocular, docs/investigacion-ojos.md)
+    "oct_trt": (150, 900),       # µm, retinal thickness around the optic disc
+    "oct_mrw": (100, 900),       # µm, optic nerve rim width
+    "oct_choroid": (20, 600),    # µm
+    "frisen_grade": (0, 5),      # Frisén scale
+    "choroidal_folds": (0, 1),   # 1 = folds seen
+    "globe_flattening": (0, 1),  # 1 = flattening seen
+    "refraction_se": (-20, 20),  # D, spherical equivalent
+    "near_va": (-0.3, 1.0),      # logMAR, 0 = 20/20
+    "iop": (5, 40),              # mmHg
+    "onsd": (3, 10),             # mm
+    "axial_length": (18, 32),    # mm
 }
 
 

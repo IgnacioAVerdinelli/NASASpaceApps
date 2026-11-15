@@ -359,11 +359,11 @@ def main(argv=None):
     pub = sub.add_parser("publish", help="publish a synthetic fixture notice")
     pub.add_argument("--example", choices=list(FIXTURES), required=True)
     pub.add_argument("--crew", default="CM-1")
-    pub.add_argument("--data-url", default="http://localhost:8000")
+    pub.add_argument("--data-url", default="http://127.0.0.1:8000")
     st = sub.add_parser("state", help="publish a notice's next revision as resolved or cancelled")
     st.add_argument("--id", required=True, help="notification_id")
     st.add_argument("--to", choices=["resolved", "cancelled"], required=True)
-    st.add_argument("--data-url", default="http://localhost:8000")
+    st.add_argument("--data-url", default="http://127.0.0.1:8000")
     con = sub.add_parser("consume", help="print the notices on the queue, as JSON lines, and acknowledge them")
     con.add_argument("--consumer", default="notification-center",
                      help="cursor name: each name gets every message once; do not reuse the demo's 'notifications'")

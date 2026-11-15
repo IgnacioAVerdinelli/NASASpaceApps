@@ -118,3 +118,13 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 ## Recomendaciones y alertas
 
 La página principal muestra las alertas de ambos análisis y los estudios próximos del planificador desde `/api/v1/analyses`. Los retests se distinguen de las evaluaciones de rutina; el contrato agrupa los estudios por análisis y no identifica el músculo concreto de cada retest. Los cambios de estado son locales a la demo y no se envían al planificador.
+
+## Signos vitales del reloj: `GET /api/v1/vitals`
+
+La capa "Ahora" del Health summary y la pestaña "Vital signs" leen un tercer JSON del HealthService. Diseño, reglas y ejemplo completo en [wearable.md](wearable.md), sección 3.
+
+- **Transporte:** el mismo que `/analyses` (sondeo, sin caché, `?crew=` y `?day=`, `404` con la lista de tripulantes).
+- **`vitals[]`:** uno por signo (`resting_hr`, `resting_sbp`, `resting_dbp`, `spo2`, `hrv_rmssd`, `sleep_hours`, `sleep_quality`) con `name`, `unit`, `decimals`, `direction` (`up` o `down`: hacia dónde es peor), `latest` `{value, day, at}`, `band` `{low, high, mean, days, sustainedLow, sustainedHigh}` o `null`, `status` (`in_range`, `out`, `deviation`, `low_now`, `no_band`, `no_data`), `daysBeyond`, `recentMean`, `changePct`, `text` (frase lista para mostrar), `series` (últimos 30 días `{day, value}`) y `weekly` (promedios semanales de toda la misión `{week, day, mean}`).
+- **`patterns[]`:** `{id, text}`; hoy solo `fatigue`.
+- **`day`:** `curves.today`, `yesterday`, `week_ago` y `preflight`, cada una `[{minute, value}]` en minutos desde las 00:00 UTC; `context` `[{start, end, activity}]` con `sleep`, `exercise` o `eva` de hoy.
+- El frontend no calcula nada: estado, banda y texto vienen del HealthService.

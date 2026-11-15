@@ -24,7 +24,7 @@ from .sources import DataServiceError, DataServiceSource, GravsimSource
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data-url", default="http://localhost:8000", help="DataService API (default %(default)s)")
+    ap.add_argument("--data-url", default="http://127.0.0.1:8000", help="DataService API (default %(default)s)")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=3000)
     ap.add_argument("--origin", default="*", help="origin allowed by CORS")

@@ -8,7 +8,8 @@ import gravsim as gs
 from gravsim.queue import Queue
 from gravsim.serve import data_routes
 from healthservice.alerts import Alert
-from healthservice.demo import DemoWorker, recipients
+from healthservice import notices
+from healthservice.demo import DemoWorker
 from healthservice.sources import DataServiceSource, mission_info
 
 
@@ -68,9 +69,10 @@ class DemoTests(unittest.TestCase):
             self.assertTrue(data.results('CM-1', 'study'))
             self.assertTrue(queue.deliveries())
             before = len(queue.deliveries())
-            worker.process_readings({'crew_id': 'CM-1'})
-            for _ in range(20):
-                worker.step()
+            with patch('healthservice.demo.check', return_value={'knee_extension_60': alert}):
+                worker.process_readings({'crew_id': 'CM-1'})     # the same event again: nothing new to send
+                for _ in range(20):
+                    worker.step()
             self.assertEqual(len(queue.deliveries()), before)
             worker.schedule_routine()
             self.assertTrue(any(s['study'] == 'strength' for r in data.results('CM-1', 'study') for s in r.payload['studies']))
@@ -79,7 +81,8 @@ class DemoTests(unittest.TestCase):
             self.assertEqual([r.to_dict() for r in data.results('CM-1', 'study')], studies)
             data.store.close()
 
-    def test_alert_carries_where_the_crew_is_and_the_phase(self):
+    def test_readings_event_publishes_a_notice(self):
+        """Processing the readings event, not opening the dashboard, is what publishes the notice."""
         for eva in (False, True):
             with self.subTest(eva=eva), tempfile.TemporaryDirectory() as tmp:
                 queue = Queue(str(Path(tmp) / 'queue.sqlite'))
@@ -94,38 +97,36 @@ class DemoTests(unittest.TestCase):
                 worker = DemoWorker(LocalSource(mission, data, 95), queue)
                 alert = Alert('CM-1', 'knee_extension_60', 'warning', 'Test', 95, now, True)
                 with patch('healthservice.demo.check', return_value={'knee_extension_60': alert}):
-                    worker.process_readings({'crew_id': 'CM-1'})
+                    for _ in range(20):
+                        worker.step()       # the DataService's data.readings_stored events
                 published = []
-                while item := queue.next('t', 'notifications'):
+                while item := queue.next('t', notices.CHANNEL):
                     queue.ack('t', item[0])
                     published.append(item)
-                body = next(b for _, topic, b in published if topic == 'health.alert')
-                crew = [c for c in body['notify'] if c != 'ship_center']
-                self.assertEqual(set(body['context']), {'CM-1', *crew})
-                for crew_id, where in body['context'].items():
-                    expected = data.current_context(crew_id, now).to_dict()
-                    del expected['crew_id']
-                    self.assertEqual(where, expected)
-                self.assertEqual(body['phase'], {'name': 'flight', 'gravity_g': 0.0})
+                body = next(b for _, topic, b in published if topic == notices.TOPIC and b['crew_id'] == 'CM-1')
+                self.assertEqual(notices.validate(body), [])
+                context = data.current_context('CM-1', now)
+                self.assertEqual((body['activity'], body['crew_location']), (context.activity, context.location))
+                self.assertEqual((body['priority'], body['state'], body['revision'], body['requires_ack']),
+                                 ('warning', 'active', 1, True))
+                self.assertEqual(body['mission_location']['body_id'], '399')    # ISS preset: low Earth orbit
+                self.assertEqual(body['mission_location']['epoch'], now)
+                pairs = [(d['channel'], d['recipient_id']) for d in body['deliveries']]
+                self.assertIn(('earth', 'mission-control'), pairs)
                 if eva:
-                    self.assertEqual((body['context']['CM-1']['activity'], body['context']['CM-1']['location']),
-                                     ('eva', 'outside'))
-                    self.assertEqual(body['notify'], ['CM-2', 'ship_center'])
+                    self.assertEqual((body['activity'], body['crew_location']), ('eva', 'outside'))
+                    self.assertNotIn(('wearable', 'CM-1'), pairs)    # held until CM-1 is back inside
+                    self.assertIn(('wearable', 'CM-2'), pairs)       # the crew member who checks in
+                self.assertTrue(any(d['recipient'] == 'earth:mission-control' for d in queue.deliveries()))
                 data.store.close()
 
     def test_routing_unavailable_and_unknown(self):
-        class Source:
-            def __init__(self, contexts): self.contexts = contexts
-            def crew(self):
-                from healthservice.models import CrewInfo
-                return [CrewInfo('CM-1', 'F'), CrewInfo('CM-2', 'M')]
-            def _request(self, method, path, query): return self.contexts[query['crew']]
         for activity in ('eva', 'sleep', 'hygiene'):
-            people, _ = recipients(Source({'CM-1': {'activity': activity}, 'CM-2': {'activity': 'work'}}), 'CM-1')
-            self.assertEqual(people, ['CM-2', 'ship_center'])
-        people, _ = recipients(Source({'CM-1': None, 'CM-2': {'activity': 'sleep'}}), 'CM-1')
-        self.assertEqual(people, ['ship_center'])
-
+            routes, _ = notices.route('warning', 'CM-1', {'CM-1': {'activity': activity}, 'CM-2': {'activity': 'work'}},
+                                      ['CM-1', 'CM-2'])
+            self.assertEqual([(c, r) for c, r, _ in routes], [('earth', 'mission-control'), ('wearable', 'CM-2')])
+        routes, _ = notices.route('warning', 'CM-1', {'CM-1': None, 'CM-2': {'activity': 'sleep'}}, ['CM-1', 'CM-2'])
+        self.assertEqual([(c, r) for c, r, _ in routes], [('earth', 'mission-control'), ('ship_center', 'operations')])
 
 if __name__ == '__main__':
     unittest.main()

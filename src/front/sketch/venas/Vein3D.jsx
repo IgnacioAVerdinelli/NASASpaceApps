@@ -132,7 +132,11 @@ export function Vein3D({ shape, level = 'normal', compress = 0, preArea = null, 
         probe.visible = elapsed != null && elapsed < PRESS_SECONDS; probe.position.set(VEIN_X, 0.55, rz + 0.8 - flat * 0.5);
         const anchors = { vein: new THREE.Vector3(VEIN_X + rx * 0.8, -2.25, z), artery: new THREE.Vector3(ARTERY_X - 0.5, 1.7, 0), clot: s.clot ? new THREE.Vector3(VEIN_X, 0.1, z + thickness) : null };
         controls.update(); renderer.render(scene, camera);
-        for (const [name, label] of Object.entries(labels)) { label.hidden = !anchors[name]; if (!anchors[name]) continue; project.copy(anchors[name]).project(camera); label.style.transform = `translate(${(project.x + 1) / 2 * container.clientWidth}px,${(1 - project.y) / 2 * container.clientHeight}px)`; }
+        for (const [name, label] of Object.entries(labels)) { label.hidden = !anchors[name]; if (!anchors[name]) continue; project.copy(anchors[name]).project(camera);
+          // Near the right edge (narrow screens) the label wraps inside the picture instead of being cut off.
+          const x = (project.x + 1) / 2 * container.clientWidth;
+          label.style.maxWidth = `${Math.max(64, Math.min(155, container.clientWidth - x - 8))}px`;
+          label.style.transform = `translate(${x}px,${(1 - project.y) / 2 * container.clientHeight}px)`; }
       }
       frame = requestAnimationFrame(animate);
     }

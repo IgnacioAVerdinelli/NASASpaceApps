@@ -243,7 +243,10 @@ export function Eye3D({ shape, cls = 'none', title }) {
           const a = view.anchors[id];
           if (!a) continue;
           p.copy(a).project(camera);
-          el.style.transform = `translate(${(p.x + 1) / 2 * w}px, ${(1 - p.y) / 2 * h}px)`;
+          // A label that would run past the right edge (narrow screens) is drawn to the left of its dot instead.
+          const x = (p.x + 1) / 2 * w, flip = x + el.offsetWidth > w - 4;
+          if (flip !== el.classList.contains('is-flipped')) el.classList.toggle('is-flipped', flip);
+          el.style.transform = `translate(${x}px, ${(1 - p.y) / 2 * h}px)${flip ? ' translateX(-100%)' : ''}`;
         }
       }
       frame = requestAnimationFrame(animate);

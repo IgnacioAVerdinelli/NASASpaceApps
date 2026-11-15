@@ -113,7 +113,7 @@ La demora (600 s reales = 1 s de sistema) y la consulta a Horizons las hace el N
 Hoy **no hay un broker compartido**. La demo usa la cola SQLite de gravsim ([`sim/gravsim/queue.py`](../sim/gravsim/queue.py)).
 
 - **Archivo:** `--queue PATH` o la variable `NASA_QUEUE`. Tiene que ser el mismo para el DataService, el worker y el Notification Center. No tiene secretos.
-- **Canal y topic:** canal `notifications`, topic `health.notice`. En ese mismo canal va `study.due` del planificador, que se puede ignorar.
+- **Canal y topic:** canal `notifications`, topic `health.notice`. En ese mismo canal van `plan.reminder` y `plan.missed` del Planner ([planner.md](planner.md#reminders)).
 - **Suscripción:** cada consumidor tiene su propio cursor, por nombre. Usar `notification-center` y no `notifications`, que es el que usa el sustituto de la demo. Así los dos reciben todos los mensajes y no compiten.
 - **Entrega:** al menos una vez. El consumidor confirma (`ack`) **después de guardar** el mensaje. Si se cae antes, lo recibe de nuevo y lo deduplica por `notification_id` y `revision`.
 

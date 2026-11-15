@@ -12,7 +12,7 @@ from healthservice.analyses import build_analyses
 from healthservice.api import create_app
 from healthservice.contract import validate_analyses
 from healthservice.levels import LEVELS, level_of, noise_band, within_noise
-from healthservice.sources import STUDY_KIND, DataServiceSource, GravsimSource
+from healthservice.sources import PLAN_KIND, PLAN_VERSION, DataServiceSource, GravsimSource
 
 MISSION = MissionInfo(launch_date=datetime(2027, 1, 1, 12, tzinfo=timezone.utc), name="iss_180",
                       phases=[Phase("preflight", -180, 0, 1.0), Phase("flight", 0, 180, 0.0),
@@ -135,16 +135,21 @@ def test_api(source):
     assert missing.status_code == 404 and "CM-1" in missing.json()["crew"]
 
 
-def test_upcoming_tests_come_from_the_scheduler_over_http():
+def test_upcoming_tests_come_from_the_planner_over_http():
     from gravsim.serve import data_routes, make_server
 
     mission = gs.Mission.random("iss_180", n_crew=2, seed=7)
     data = gs.DataService()
     data.ingest(mission.timeline(seed=7))
-    data.save_result("CM-1", STUDY_KIND, mission.timestamp(134), {"studies": [
-        {"id": "strength:134", "study": "strength", "status": "scheduled", "reason": "routine"}]})
-    data.save_result("CM-1", STUDY_KIND, mission.timestamp(96), {"studies": [
-        {"id": "extra:vo2peak:95", "study": "retest", "measure": "vo2peak", "status": "scheduled", "reason": "finding"}]})
+    def item(iid, kind, routine, day, reason, status="booked", measure=None):
+        return {"id": iid, "type": kind, "routine_id": routine, "measure": measure, "reason": reason,
+                "status": status, "window": {"day_from": day - 3, "day_to": day + 3, "day": day}}
+    data.save_result("CM-1", PLAN_KIND, mission.timestamp(-180), {"items": [
+        item("6025:134", "study", "6025", 134.0, "routine"),
+        item("6025:104", "study", "6025", 104.0, "routine", status="done"),       # done: not upcoming
+        item("6012:150", "study", "6012", 150.0, "routine"),                      # not an instrument test
+        item("retest:vo2peak:95", "retest", "6028", 96.0, "finding", measure="vo2peak")]},
+        model_version=PLAN_VERSION)
     server = make_server(data_routes(mission, data, lambda: 95.0), port=0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:

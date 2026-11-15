@@ -2,7 +2,7 @@
 
 **Local demo update:** `SqliteStore` now persists readings, context and results. `gravsim.serve --db PATH --queue PATH` uses file-backed storage and publishes events to a SQLite queue while the mission clock advances. See the [root README](../README.md) for the full multi-process demo. The older descriptions of the store as inert and the queue as exclusively mocked below describe the original design; the mock remains the default without `--queue`.
 
-**Booked retests:** with `--run-booked`, the generator also runs each retest the analysis scheduler books (a study with reason `finding`): when its day comes, it measures the test on that measure's instrument at the booked time and ingests it like any reading (`run_booked_studies()` in `serve.py`). It is off by default. With today's scheduler every retest re-raises the alert it came from and books another one, so turn it on once retests are booked only for suspected findings (docs/architecture.md).
+**Booked retests:** with `--run-booked`, the generator also runs each retest the Planner books (a `retest` item of its plan, a result of kind `plan`; see docs/planner.md): when its window opens, it measures the test on that measure's instrument at the start of the window and ingests it like any reading (`run_booked_studies()` in `serve.py`). It is off by default. The Planner turns a finding that is still there after a recent retest into a review, so retests no longer loop.
 
 This folder is the health monitor's data service. The `DataService` takes in everything the sources on board produce (instrument readings and crew context: where each astronaut is and what they are doing), cleans it, keeps it, answers queries for it over Python or HTTP, and announces what it stored on the team's event queue. See `docs/architecture.md` for where it sits: Sources → DataService ↔ Database.
 
@@ -256,7 +256,7 @@ Messages say what changed, not the data itself; a subscriber asks the DataServic
 {"topic": "data.result_saved", "message": {"crew_id": "CM-2", "kind": "study", "timestamp": "2027-06-29T12:00:00Z", "computed_at": "2026-11-15T10:00:00Z", "model_version": "0.2.0"}}
 ```
 
-The scheduler records a study with `save_result(crew_id, "study", when, payload)`; a payload such as `{"study": "bone_densitometry", "status": "scheduled", "reason": "..."}` is a suggestion, not a contract. It reads past studies back with `results(crew_id, kind="study")`.
+The Planner keeps each crew member's plan with `save_result(crew_id, "plan", <mission start>, {"items": [...]}, model_version="planner-1")` and reads it back with `results(crew_id, kind="plan")`; the item contract is in docs/planner.md.
 
 ## The generator
 

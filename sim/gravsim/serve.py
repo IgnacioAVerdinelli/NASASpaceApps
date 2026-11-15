@@ -198,24 +198,29 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
 
 
 def run_booked_studies(mission: Mission, data: DataService, day: float, done: set[str]) -> int:
-    """Stand in for the crew running the extra tests the analysis scheduler books: each retest (a study booked
-    with reason "finding") whose day has come is measured on its measure's instrument, at the booked time,
-    and ingested like any other reading. Routine studies are left alone, since the generator's own timeline
-    already holds them. `done` keeps the studies run so far; readings already stored at the booked time (from
-    before a restart) count as run. Returns how many studies it ran."""
+    """Stand in for the crew running the retests the Planner books (docs/planner.md): each retest item of the
+    plan (a result of kind "plan") that is still booked and whose window has opened is measured on its
+    measure's instrument at the start of its window, and ingested like any other reading. Routine studies are
+    left alone, since the generator's own timeline already holds them. `done` keeps the retests run so far;
+    readings already stored at that time (from before a restart) count as run. Returns how many it ran."""
     ran = 0
     for crew in mission.crew:
-        for record in data.results(crew.id, kind="study", end=mission.timestamp(day)):
-            for study in record.payload.get("studies", []):
-                key = f"{crew.id}:{study.get('id')}"
-                measure = study.get("measure")
-                if study.get("reason") != "finding" or key in done or measure not in MEASURES:
+        for record in data.results(crew.id, kind="plan"):
+            for item in record.payload.get("items", []):
+                key = f"{crew.id}:{item.get('id')}"
+                measure = item.get("measure")
+                if (item.get("type") != "retest" or item.get("status") != "booked" or key in done
+                        or measure not in MEASURES):
+                    continue
+                at = float(item["window"]["day_from"])
+                if at > day:
                     continue
                 done.add(key)
                 instrument = INSTRUMENTS[MEASURES[measure]["instrument"]](seed=zlib.crc32(key.encode()))
-                if data.readings(crew.id, instrument.measures, start=record.timestamp, end=record.timestamp):
+                stamp = mission.timestamp(at)
+                if data.readings(crew.id, instrument.measures, start=stamp, end=stamp):
                     continue
-                data.ingest(instrument.measure_all(crew, mission.day_of(record.timestamp)))
+                data.ingest(instrument.measure_all(crew, at))
                 ran += 1
     return ran
 
@@ -225,7 +230,7 @@ def main(argv=None):
     parser.add_argument('--db', default=':memory:', help='SQLite data file')
     parser.add_argument('--queue', help='SQLite message queue file for the local demo')
     parser.add_argument('--run-booked', action='store_true',
-                        help="run the retests the analysis scheduler books (off until it books them only for suspected findings)")
+                        help="run the retests the Planner books (the Planner turns a repeated finding into a review, not another retest)")
     args = parser.parse_args(argv)
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)

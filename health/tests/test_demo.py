@@ -52,7 +52,7 @@ class DemoTests(unittest.TestCase):
             self.assertIsNone(q.next('a', 'events'))
             self.assertEqual(q.next('b', 'events'), first)
 
-    def test_event_to_results_study_and_delivery(self):
+    def test_event_to_results_finding_and_delivery(self):
         with tempfile.TemporaryDirectory() as tmp:
             queue = Queue(str(Path(tmp) / 'queue.sqlite'))
             mission = gs.Mission.random('iss_180', n_crew=2, seed=7)
@@ -66,7 +66,12 @@ class DemoTests(unittest.TestCase):
                 for _ in range(20):
                     worker.step()
             self.assertTrue(data.results('CM-1', 'measure_results'))
-            self.assertTrue(data.results('CM-1', 'study'))
+            findings = []
+            while item := queue.next('t', 'events'):
+                queue.ack('t', item[0])
+                if item[1] == 'health.finding':
+                    findings.append(item[2])
+            self.assertEqual({f['measure'] for f in findings}, {'knee_extension_60'})   # for the Planner
             self.assertTrue(queue.deliveries())
             before = len(queue.deliveries())
             with patch('healthservice.demo.check', return_value={'knee_extension_60': alert}):
@@ -74,11 +79,6 @@ class DemoTests(unittest.TestCase):
                 for _ in range(20):
                     worker.step()
             self.assertEqual(len(queue.deliveries()), before)
-            worker.schedule_routine()
-            self.assertTrue(any(s['study'] == 'strength' for r in data.results('CM-1', 'study') for s in r.payload['studies']))
-            studies = [r.to_dict() for r in data.results('CM-1', 'study')]
-            worker.schedule_routine()
-            self.assertEqual([r.to_dict() for r in data.results('CM-1', 'study')], studies)
             data.store.close()
 
     def test_readings_event_publishes_a_notice(self):

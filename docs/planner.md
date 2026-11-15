@@ -3,7 +3,7 @@
 The Planner of [architecture.md](architecture.md) ("analysis scheduler" in older notes). This page is the contract other people and agents build against. If something here changes, change this page in the same PR.
 
 - **Owner:** Tomás. **Branch:** `feat/planner`, from `main`.
-- **State (15/11/2026):** design agreed, code not merged yet. Until it is, `health/healthservice/demo.py` keeps booking the three studies it books today.
+- **State (15/11/2026):** built in `planner/` on `feat/planner`, with tests in `planner/tests/`. The HealthService and the generator read the plan (section 8).
 
 ## 1. What it does
 
@@ -63,6 +63,7 @@ Day numbers are mission days: launch is day 0 and landing is day 180. NASA's fli
 | 6037 | Vitamin D supplement | flight | daily or once a week | weekly, 7, 14, …, 175 | crew |
 | 6038 | Dietary questionnaire | flight | weekly | 7, 14, …, 175 | crew |
 | 6039 | Sleep log | pre, flight, post | L−7 d continuously until R+7 d | every day from −7 to 187 | crew |
+| 6041 | Jugular vein ultrasound (DVT screening) | flight | L+30, L+60, R−42 | 30, 60, 138 | crew |
 | 6014, 6016, 6019 (in flight) | Ultrasound, skin photos, in-flight labs | flight | ACI, or L+180 (= landing) | none | — |
 
 A point date (L+30) becomes a window of ± `tolerance_days`, 3 by default. A window written in the standard (L+14/21) is used as written. Both choices are recorded in the catalog.
@@ -137,7 +138,7 @@ A plan item is one thing one crew member has to do in one window. This extends t
   "title": "Specialized ocular assessment (SANS)", "category": "ocular",
   "measure": null, "measures": [], "instrument": null,
   "window": {"from": "2027-03-28T00:00:00Z", "to": "2027-04-03T00:00:00Z",
-             "day_from": 27.0, "day_to": 33.0, "label": "L+30"},
+             "day_from": 27.0, "day_to": 33.0, "day": 30.0, "label": "L+30"},
   "reason": "routine",
   "status": "booked",
   "completion": "crew",
@@ -149,13 +150,13 @@ A plan item is one thing one crew member has to do in one window. This extends t
 
 | Field | Values |
 |---|---|
-| `id` | Stable and unique per crew member. Routine items: `<routine>:<day_from>`. Retests: `retest:<measure>:<finding day>`. Reviews: `review:<measure>:<finding day>`. Spacewalk items: `<routine>:eva:<eva day>:<before\|after\|during>` |
+| `id` | Stable and unique per crew member. Routine items: `<routine>:<day>`, where `day` is the date the standard names (`6012:30`). Retests: `retest:<measure>:<finding day>`. Reviews: `review:<measure>:<finding day>`. Spacewalk items: `<routine>:eva:<eva day>:<before\|after\|during>` |
 | `type` | `study` (a test or exam), `routine` (a recurring task that is not a test: conference, sleep log, questionnaire), `treatment` (vitamin D), `retest`, `review`. `session` (exercise) is reserved for later (section 9) |
 | `measure` | The measure a retest is about (as in the architecture example). `measures` lists every measure the instrument reports |
 | `reason` | `routine` (it comes from the catalog), `finding` (retest or review) or `guidance` (reserved) |
 | `status` | `booked`, `done`, `missed` or `cancelled`. The four statuses of the architecture |
 | `completion` | How the item gets closed: `auto` (by readings), `crew` (by a POST), `simulated` (by `--simulate-crew`, demo only) |
-| `window.day_from`, `day_to` | Mission days, to save the frontend the conversion. `label` is the norm's own label (`L+30`, `FD14`, `R-14`, `L-90/30`, `EVA`) |
+| `window.day_from`, `day_to`, `day` | Mission days, to save the frontend the conversion. `day` is the date the standard names (L+30 → 30), or the window start. `label` is the standard's own label (`L+30`, `FD14`, `R-14`, `L-90/30`, `EVA before`); for recurrences it is the flight-day label (`FD45`) |
 | `finding` | For a retest or a review: the finding that caused it |
 | `eva` | For spacewalk items: `{"day", "start", "end"}` |
 
@@ -184,7 +185,7 @@ booked ──readings in window (auto) or POST done──▶ done
 | Input | From | The Planner |
 |---|---|---|
 | Start-up, then every few seconds | itself | Builds the routine items for each crew member and merges them with the stored plan. Existing ids keep their status; new routine ids are added as `booked`. |
-| `data.readings_stored` (channel `events`) | DataService | For each open or past `auto` item of that crew member, asks for the instrument's readings. If one falls inside the window, the item becomes `done` with `done_at` set to that reading's time. |
+| `data.readings_stored` (channel `events`) | DataService | When the readings come from an instrument the routine uses, asks for that instrument's readings. If a usable one (quality `ok`) falls inside an `auto` item's window, the item becomes `done` with `done_at` set to that reading's time. |
 | `health.finding` (channel `events`) | HealthService | Applies the finding rules below. |
 | Spacewalks | DataService context (`GET /api/v1/context`, activity `eva`) | Spacewalk items for every EVA in the timeline. A retest is never booked on a spacewalk day. |
 | The clock (`now_day` of `/api/v1/mission`) | DataService | `booked` items whose window has ended become `missed`; windows that open send a reminder. |

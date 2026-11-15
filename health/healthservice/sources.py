@@ -6,7 +6,7 @@
 - the mission day now, by the DataService's clock;
 - a crew member's readings up to a mission day;
 - somewhere to save what it computes;
-- the studies the analysis scheduler recorded for a crew member (results of kind "study").
+- the studies the Planner booked for a crew member (its plan: a result of kind "plan", docs/planner.md).
 
 `DataServiceSource` asks the DataService's HTTP API for them (`python -m gravsim.serve`, port 8000).
 `GravsimSource` runs gravsim's DataService in this process instead, for the tests, the evaluation and a demo
@@ -26,7 +26,10 @@ from .models import CrewInfo, MissionInfo, Phase, Reading, parse_time
 from .processing import MEASURES, MeasureResult
 
 RESULT_KIND = "measure_results"
-STUDY_KIND = "study"
+PLAN_KIND = "plan"
+PLAN_VERSION = "planner-1"
+# the Planner's routine (OCHMO-STD-100.1A requirement) -> the study names analyses.py knows
+ROUTINE_STUDY = {"6024": "strength", "6025": "strength", "6028": "aerobic_capacity", "6013": "bone_densitometry"}
 SHARED = ("crew_id", "measure", "mission_day", "model_version")     # fields every result of one save has in common
 
 
@@ -40,14 +43,22 @@ class DataSource(Protocol):
 
 
 def study_list(mission: MissionInfo, records: list[dict]) -> list[dict]:
-    """The scheduler's study records (each one {timestamp, payload: {studies: [...]}}) as a flat list, each study
-    with the mission day it is for: [{day, id, study, status, reason, measure?}]."""
+    """The tests still booked in the Planner's plan (results of kind "plan", one per crew member, whose payload
+    is {items: [...]}) as a flat list: [{day, id, study, status, reason, measure?}]. `day` is the date the
+    standard names (the window's "day"); routines that are not instrument tests are left out."""
     out = []
     for r in records:
-        day = mission.day_of(r["timestamp"])
-        for study in (r.get("payload") or {}).get("studies", []):
-            if isinstance(study, dict):
-                out.append({**study, "day": day})
+        if r.get("model_version") not in (None, PLAN_VERSION):
+            continue
+        for item in (r.get("payload") or {}).get("items", []):
+            if not isinstance(item, dict) or item.get("status") != "booked":
+                continue
+            study = "retest" if item.get("type") == "retest" else ROUTINE_STUDY.get(item.get("routine_id"))
+            if study is None:
+                continue
+            w = item["window"]
+            out.append({"id": item["id"], "study": study, "status": item["status"], "reason": item.get("reason"),
+                        "measure": item.get("measure"), "day": float(w.get("day", w["day_from"]))})
     return out
 
 
@@ -105,7 +116,7 @@ class DataServiceSource:
             self._request("POST", "/api/v1/results", body=result_record(self._mission, results))
 
     def studies(self, crew_id: str) -> list[dict]:
-        return study_list(self._mission, self._request("GET", "/api/v1/results", {"crew": crew_id, "kind": STUDY_KIND}))
+        return study_list(self._mission, self._request("GET", "/api/v1/results", {"crew": crew_id, "kind": PLAN_KIND}))
 
     def _request(self, method: str, path: str, query: dict | None = None, body: dict | None = None):
         url = self.url + path + (f"?{urlencode(query)}" if query else "")
@@ -172,7 +183,7 @@ class GravsimSource:
             self.data.save_result(**result_record(self._mission, results))
 
     def studies(self, crew_id: str) -> list[dict]:
-        return study_list(self._mission, [r.to_dict() for r in self.data.results(crew_id, STUDY_KIND)])
+        return study_list(self._mission, [r.to_dict() for r in self.data.results(crew_id, PLAN_KIND)])
 
     @property
     def saved_results(self) -> list:

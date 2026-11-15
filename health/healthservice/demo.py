@@ -1,4 +1,8 @@
-"""Local event workers: processing, health notices, study scheduling and simulated delivery."""
+"""Local event workers: processing, health notices and simulated delivery.
+
+Study scheduling moved to the Planner (planner/, docs/planner.md): it consumes the `health.finding` messages
+this worker publishes and books retests and reviews.
+"""
 from __future__ import annotations
 
 import argparse
@@ -7,7 +11,6 @@ import os
 import time
 
 from gravsim.queue import Queue
-from gravsim.schedule import nasa_days
 
 from . import notices
 from .alerts import check
@@ -16,8 +19,6 @@ from .reference import Reference
 from .sources import DataServiceSource
 
 log = logging.getLogger(__name__)
-VERSION = 'demo-scheduler-1'
-STUDIES = {'dxa': 'bone_densitometry', 'dynamometer': 'strength', 'cycle': 'aerobic_capacity'}
 PRIORITY = {'info': 'info', 'warning': 'warning', 'critical': 'critical'}   # alert severity -> notice priority
 
 
@@ -112,43 +113,6 @@ class DemoWorker:
             self.queue.publish('health.finding', finding, dedupe=f'finding:{key}')
         self.update_notices(crew.id, results, alerts, now)
 
-    def save_study(self, crew, day, study):
-        mission = self.source.mission()
-        stamp = mission.timestamp(day)
-        records = self.source._request('GET', '/api/v1/results', {'crew': crew, 'kind': 'study'})
-        previous = next((r for r in records if r['timestamp'] == stamp and r['model_version'] == VERSION), None)
-        studies = list(previous['payload']['studies']) if previous else []
-        if any(s['id'] == study['id'] for s in studies):
-            return
-        studies.append(study)
-        self.source._request('POST', '/api/v1/results', body={'crew_id': crew, 'kind': 'study',
-                             'timestamp': stamp, 'model_version': VERSION, 'payload': {'studies': studies}})
-
-    def schedule_routine(self):
-        mission, now = self.source.mission(), self.source.current_day()
-        for crew in self.source.crew():
-            records = self.source._request('GET', '/api/v1/results', {'crew': crew.id, 'kind': 'study'})
-            existing = {s['id'] for r in records if r['model_version'] == VERSION for s in r['payload']['studies']}
-            for instrument, name in STUDIES.items():
-                for day in nasa_days(mission, instrument):
-                    identifier = f'{name}:{day}'
-                    if day >= now and identifier not in existing:
-                        self.save_study(crew.id, day, {'id': identifier, 'study': name, 'status': 'scheduled', 'reason': 'routine'})
-            records = self.source._request('GET', '/api/v1/results', {'crew': crew.id, 'kind': 'study'})
-            for record in records:
-                if record['model_version'] != VERSION or mission.day_of(record['timestamp']) > now:
-                    continue
-                for study in record['payload']['studies']:
-                    payload = {'type': 'study_due', 'crew_id': crew.id, 'study': study,
-                               'timestamp': record['timestamp'], 'notify': [crew.id, 'ship_center'], 'synthetic': True}
-                    self.queue.publish('study.due', payload, channel='notifications', dedupe=f"study:{crew.id}:{study['id']}")
-
-    def handle_finding(self, finding):
-        day = min(self.source.mission().end, self.source.current_day() + 1)
-        identifier = f"extra:{finding['measure']}:{finding['mission_day']}"
-        self.save_study(finding['crew_id'], day, {'id': identifier, 'study': 'retest',
-                        'measure': finding['measure'], 'status': 'scheduled', 'reason': 'finding'})
-
     def consume(self, consumer, channel, handler):
         item = self.queue.next(consumer, channel)
         if not item:
@@ -160,7 +124,6 @@ class DemoWorker:
 
     def step(self):
         self.consume('health', 'events', lambda _, topic, body: self.process_readings(body) if topic == 'data.readings_stored' else None)
-        self.consume('scheduler', 'events', lambda _, topic, body: self.handle_finding(body) if topic == 'health.finding' else None)
         # Stand-in for the Notification Center, which is what sends the notices: here it only records a delivery.
         self.consume('notifications', notices.CHANNEL, self.deliver)
 
@@ -184,14 +147,13 @@ def main():
         parser.error('no queue: pass --queue PATH or set NASA_QUEUE')
     logging.basicConfig(level=logging.INFO)
     worker = DemoWorker(DataServiceSource(args.data_url), Queue(args.queue))
-    last_schedule = 0.0
+    last_refresh = 0.0
     while True:
         try:
             worker.step()
-            if time.monotonic() - last_schedule >= 5:
-                worker.schedule_routine()
+            if time.monotonic() - last_refresh >= 5:
                 worker.refresh_notices()
-                last_schedule = time.monotonic()
+                last_refresh = time.monotonic()
         except Exception:
             log.exception('Demo worker failed; retrying')
         time.sleep(0.25)

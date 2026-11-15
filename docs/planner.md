@@ -62,7 +62,7 @@ Day numbers are mission days: launch is day 0 and landing is day 180. NASA's fli
 | 6035 | Cognitive assessment | flight | in flight 1/month | 30, 60, 90, 120, 150 | crew |
 | 6037 | Vitamin D supplement | flight | daily or once a week | weekly, 7, 14, …, 175 | crew |
 | 6038 | Dietary questionnaire | flight | weekly | 7, 14, …, 175 | crew |
-| 6039 | Sleep log | pre, flight, post | L−7 d continuously until R+7 d | every day from −7 to 187 | crew |
+| 6039 | Sleep log | pre, flight, post | L−7 d continuously until R+7 d | every day from −7 to 187 | the watch's sleep report (`sleep_hours`) |
 | 6041 | Jugular vein ultrasound (DVT screening) | flight | L+30, L+60, R−42 | 30, 60, 138 | crew |
 | 6014, 6016, 6019 (in flight) | Ultrasound, skin photos, in-flight labs | flight | ACI, or L+180 (= landing) | none | — |
 
@@ -200,6 +200,7 @@ These are the architecture's rules, plus a cooldown so that a retest cannot loop
 | `suspected`, or no `state` (older HealthService versions) | If a retest for that crew member and measure is already open, nothing. If one was done in the last **14 days**, it books a `review` instead. Otherwise it books a `retest` in the first window of 7 days that starts tomorrow, has no spacewalk on its first day and ends by landing. |
 | `confirmed` | Books a `review` (flight surgeon or crew medical officer) for the next 7 days, unless one is already open for that measure. The architecture's exercise sessions wait for an adherence signal (section 9). |
 | `cleared` | Cancels the open retest or review for that measure. |
+| any state, `"source": "watch"` | A deviation of the watch ([wearable.md](wearable.md)): always a `review`, never a retest, since no test repeats a watch reading. Its `finding.why` is the watch's own sentence ("Higher than usual for the last 3 days"). `cleared` cancels it. |
 
 The 7 days and the 14 days are our assumptions, not NASA's, as are the architecture's 7 days and 70 %.
 

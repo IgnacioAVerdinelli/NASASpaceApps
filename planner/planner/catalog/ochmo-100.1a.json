@@ -383,12 +383,12 @@
       "schedule_page": 57,
       "schedule": [{"every": 1, "from": "L-7", "until": "R+7", "tolerance_days": 0.5}],
       "remind": false,
-      "completion": "crew", "instrument": null, "measures": [],
-      "performed_by": "Crew member, on waking",
+      "completion": "auto", "instrument": "watch", "measures": ["sleep_hours"],
+      "performed_by": "The watch logs the hours; the crew member rates the night on waking",
       "equipment": ["sleep log", "actigraphy watch (if available)"], "iss_hardware": ["Actiwatch"], "duration_min": 2,
       "steps": ["Hours slept", "Sleep quality from 1 (very poor) to 7 (excellent)"],
       "guide": {"how": "Rate the night on waking; an actigraphy watch can add the times actually asleep. The data is discussed at the weekly private medical conference.", "if_abnormal": "Repeated short or poor sleep is discussed with the crew surgeon; sleep medication must have been tested on the ground before flight."},
-      "assumptions": ["one daily item with half a day of tolerance"]
+      "assumptions": ["one daily item with half a day of tolerance", "closed by the watch's nightly sleep report (sleep_hours), docs/wearable.md"]
     }
   ]
 }

@@ -111,3 +111,11 @@ Pruebas incluyen cinco endpoints con demora, equivalencia 40 min → 4 s, ubicac
 ## Compatibilidad con main actual
 
 Notification Center usa puerto **3002**; Planner conserva **3001**, HealthService **3000** y DataService **8000**. Vite conserva los proxies del plan y agrega el de notificaciones. El bridge adapta los payloads actuales del Planner con el resolver de HealthService y completa geometría desde DataService. `plan.missed` respeta la salida Ship Center indicada por el productor; ambos tipos incluyen Tierra. Esta adaptación es transitoria hasta que Planner publique avisos v1 ya enrutados. No agrega un motor clínico.
+
+## Ciclo de vida de recordatorios y mensajes inválidos
+
+El bridge valida los payloads de Planner antes de acceder a sus campos o consultar DataService. Un objeto incompleto, un tipo incorrecto o una fecha inválida se conservan en `rejected_messages` y el cursor avanza para permitir procesar los siguientes avisos. Un fallo temporal de DataService o persistencia mantiene el cursor pendiente y reintenta.
+
+El estado persistido de `planner-1` en DataService es la autoridad para retirar recordatorios. Antes de aceptar uno, el bridge verifica si su actividad ya terminó. Además, un hilo independiente reconcilia cada 2 segundos los avisos activos con los resultados `kind=plan`: `done` los resuelve, `cancelled` los cancela y `missed` resuelve el recordatorio anterior. `plan.missed` retira de inmediato el recordatorio y crea un aviso de vencimiento separado. Ese aviso también se retira si luego la tarea se completa o cancela. Las transiciones son revisiones persistentes y se propagan a los destinos originales; sobreviven al reinicio.
+
+Esto no depende del ACK del reloj. Si DataService no está disponible, se conservan los avisos y se reintenta; no se interpreta un fallo como tarea completada. La bandeja se actualiza con el período de reconciliación más su sondeo habitual. La lectura periódica evita exigir nuevos eventos a la implementación actual del Planner.

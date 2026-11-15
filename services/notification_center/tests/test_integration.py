@@ -21,7 +21,7 @@ class DelayTests(unittest.TestCase):
         mission=mission_info(gs.Mission('mars'))
         source=SimpleNamespace(mission=lambda:mission, current_day=lambda:300,
             crew=lambda:[SimpleNamespace(id='CM-1')],
-            _request=lambda *args:{'activity':'work','location':'operations'})
+            _request=lambda *args: [] if args[1] == '/api/v1/results' else {'activity':'work','location':'operations'})
         with tempfile.TemporaryDirectory() as temp:
             center=NotificationCenter(Path(temp)/'local.db')
             queue=Queue(str(Path(temp)/'shared.db'))

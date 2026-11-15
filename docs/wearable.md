@@ -62,7 +62,7 @@ A rolling band follows slow changes on its own (they are layer 2's job) and make
 
 - `in_range`: the latest value is inside the band.
 - `out`: outside, in either direction. The page shows which side; it is not a deviation yet.
-- `deviation`: the **last 3 daily values** are all beyond the band **in the bad direction**. This is the watch's notice.
+- `deviation`: the **mean of the last 3 days** is beyond 2.5 SD of a 3-day mean (mean ± 2.5·SD/√3) in the bad direction, and each of those 3 days is on the worse side of the usual mean. This is the watch's notice. Why the 3-day mean: a watch's daily resting heart rate moves about ±6 % from one day to the next, so a single day says little; three days together have √3 times less noise. One big day alone is not enough.
 - `no_band` / `no_data`.
 
 SpO2 has one absolute rule on top: under **92 %** is `low_now` at once, without waiting three days. 92 % is the usual target floor for pulse oximetry in adults; it is not a NASA threshold and is documented as ours.
@@ -80,7 +80,7 @@ When a vital enters `deviation`, the demo worker publishes on the event queue:
  "basis": "3 days beyond the personal band", "change_pct": 11.8, "mission_day": 134.0, "synthetic": true}
 ```
 
-When the vital is back in the band for 2 days: the same with `"state": "cleared"`. Dedupe: one `suspected` per crew member, vital and episode.
+When the vital is no longer in deviation and its last 2 days are back in the daily band: the same with `"state": "cleared"`. Dedupe: one `suspected` per crew member, vital and episode.
 
 ### `GET /api/v1/vitals?crew=CM-3&day=`
 
@@ -91,9 +91,9 @@ When the vital is back in the band for 2 days: the same with `"state": "cleared"
   "vitals": [
     {"measure": "resting_hr", "name": "Resting heart rate", "unit": "bpm", "decimals": 0, "direction": "up",
      "latest": {"value": 74, "day": 134.5, "at": "2027-..."},
-     "band": {"low": 59.1, "high": 68.3, "mean": 63.7, "days": 14},
-     "status": "deviation", "daysBeyond": 3, "changePct": 16.2,
-     "text": "Above your usual range for 3 days",
+     "band": {"low": 59.1, "high": 68.3, "mean": 63.7, "days": 14, "sustainedLow": 60.9, "sustainedHigh": 66.5},
+     "status": "deviation", "daysBeyond": 2, "recentMean": 71.3, "changePct": 16.2,
+     "text": "Higher than usual for the last 3 days",
      "series": [{"day": 104.5, "value": 62}, "... last 30 days"],
      "weekly": [{"week": -2, "day": -10.5, "mean": 61.2}, "... whole mission, weekly means"]}
   ],
@@ -124,4 +124,4 @@ When the vital is back in the band for 2 days: the same with `"state": "cleared"
 
 ## 6. Assumptions (ours, not NASA's)
 
-The 14-day window, the 3-day lag, ±2 SD, the SD floors, 3 days for a deviation, 2 days to clear it, SpO2 92 % and every number of the fatigue spell. SpO2 and HRV values in the simulator have no data behind them.
+The 14-day window, the 3-day lag, ±2 SD for the daily band, 2.5 SD of a 3-day mean for a deviation, the SD floors, 2 days to clear it, SpO2 92 % and every number of the fatigue spell. SpO2 and HRV values in the simulator have no data behind them.

@@ -40,6 +40,9 @@ class DataSource(Protocol):
     def readings(self, crew_id: str, until_day: float) -> list[Reading]: ...
     def save_results(self, results: list[MeasureResult]) -> None: ...
     def studies(self, crew_id: str) -> list[dict]: ...
+    def records(self, crew_id: str, measures: list[str], start: str | None = None,
+                until_day: float | None = None) -> list[dict]: ...
+    def context(self, crew_id: str, start: str, end: str) -> list[dict]: ...
 
 
 def study_list(mission: MissionInfo, records: list[dict]) -> list[dict]:
@@ -88,7 +91,7 @@ class DataServiceSource:
     HealthService follows the DataService's clock.
     """
 
-    def __init__(self, url: str = "http://localhost:8000", timeout: float = 5.0):
+    def __init__(self, url: str = "http://127.0.0.1:8000", timeout: float = 5.0):
         self.url = url.rstrip("/")
         self.timeout = timeout
         m = self._request("GET", "/api/v1/mission")
@@ -117,6 +120,21 @@ class DataServiceSource:
 
     def studies(self, crew_id: str) -> list[dict]:
         return study_list(self._mission, self._request("GET", "/api/v1/results", {"crew": crew_id, "kind": PLAN_KIND}))
+
+    def records(self, crew_id: str, measures: list[str], start: str | None = None,
+                until_day: float | None = None) -> list[dict]:
+        """Raw reading records of `measures` from `start` (ISO time) up to mission day `until_day` (default: now),
+        as GET /api/v1/readings sends them. For the watch's vitals (vitals.py)."""
+        query = {"crew": crew_id, "measures": ",".join(measures)}
+        if start:
+            query["start"] = start
+        if until_day is not None:
+            query["day"] = repr(float(until_day))
+        return self._request("GET", "/api/v1/readings", query)
+
+    def context(self, crew_id: str, start: str, end: str) -> list[dict]:
+        """Crew context records under way between two ISO times (GET /api/v1/context)."""
+        return self._request("GET", "/api/v1/context", {"crew": crew_id, "start": start, "end": end})
 
     def _request(self, method: str, path: str, query: dict | None = None, body: dict | None = None):
         url = self.url + path + (f"?{urlencode(query)}" if query else "")
@@ -159,6 +177,7 @@ class GravsimSource:
         self.sim_mission = mission or gs.Mission.random(preset, n_crew=n_crew, seed=seed)
         self.data = gs.DataService()
         self.data.ingest(self.sim_mission.timeline(seed=seed))
+        self.data.ingest_context(self.sim_mission.context())     # crew context, as gravsim.serve sends it
         self._mission = mission_info(self.sim_mission)
         self._crew = [CrewInfo(c.id, c.sex) for c in self.sim_mission.crew]
         self._readings = {c.id: [Reading.from_record(r.to_dict(), self._mission)
@@ -184,6 +203,14 @@ class GravsimSource:
 
     def studies(self, crew_id: str) -> list[dict]:
         return study_list(self._mission, [r.to_dict() for r in self.data.results(crew_id, PLAN_KIND)])
+
+    def records(self, crew_id: str, measures: list[str], start: str | None = None,
+                until_day: float | None = None) -> list[dict]:
+        end = self._mission.timestamp(self.current_day() if until_day is None else until_day)
+        return [r.to_dict() for r in self.data.readings(crew_id, measures, start=start, end=end)]
+
+    def context(self, crew_id: str, start: str, end: str) -> list[dict]:
+        return [c.to_dict() for c in self.data.context(crew_id, start, end)]
 
     @property
     def saved_results(self) -> list:

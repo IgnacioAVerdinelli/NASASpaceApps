@@ -14,7 +14,9 @@ from gravsim.queue import Queue
 
 from . import findings, notices
 from .alerts import check
-from .processing import compute_results
+from .processing import MEASURES as PROCESSED, compute_results
+from . import vitals
+from .service import vitals_inputs
 from .reference import Reference
 from .sources import DataServiceSource
 
@@ -110,6 +112,29 @@ class DemoWorker:
         findings.publish(self.queue, self.findings, crew.id, published, previous)
         self.update_notices(crew.id, results, alerts, now)
 
+    def on_readings(self, message):
+        """data.readings_stored: strength, VO2peak and bone go through the measure processing; the daily vitals of
+        the watch and wearable through the personal-band check. The watch's 15-minute heart rate alone changes
+        neither, so it is skipped (it arrives every few seconds at demo speed)."""
+        measures = set(message.get('measures') or [])
+        if not measures or measures & set(PROCESSED):
+            self.process_readings(message)
+        if measures & set(vitals.MEASURES):
+            self.process_vitals(message['crew_id'])
+
+    def process_vitals(self, crew_id):
+        """The watch's findings for the Planner (docs/wearable.md, section 3): a suspected finding when a vital
+        enters a deviation, cleared when it is back in its band."""
+        mission, now = self.source.mission(), self.source.current_day()
+        daily, *_ = vitals_inputs(self.source, mission, crew_id, now, curves=False)
+        assessed = [vitals.assess(mission, m, daily.get(m, [])) for m in vitals.MEASURES]
+        previous = self.findings.latest(crew_id)
+        published = vitals.findings(crew_id, assessed, previous)
+        for f in published:
+            self.queue.publish(vitals.TOPIC, f, dedupe=vitals.dedupe(f))
+        if published:
+            self.findings.save(crew_id, dict(previous) | {f['measure']: f for f in published})
+
     def consume(self, consumer, channel, handler):
         item = self.queue.next(consumer, channel)
         if not item:
@@ -120,7 +145,7 @@ class DemoWorker:
         return True
 
     def step(self):
-        self.consume('health', 'events', lambda _, topic, body: self.process_readings(body) if topic == 'data.readings_stored' else None)
+        self.consume('health', 'events', lambda _, topic, body: self.on_readings(body) if topic == 'data.readings_stored' else None)
         # Stand-in for the Notification Center, which is what sends the notices: here it only records a delivery.
         self.consume('notifications', notices.CHANNEL, self.deliver)
 
@@ -137,7 +162,7 @@ class DemoWorker:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data-url', default='http://localhost:8000')
+    parser.add_argument('--data-url', default='http://127.0.0.1:8000')
     parser.add_argument('--queue', default=os.environ.get('NASA_QUEUE'), help='SQLite queue file (default: $NASA_QUEUE)')
     args = parser.parse_args()
     if not args.queue:

@@ -7,7 +7,7 @@ export const instruments = [
     text: "MARES lets researchers study muscle strength and movement aboard the International Space Station. Here, Paolo Nespoli is preparing for an ankle assessment. We draw on ground-based strength studies to generate simulated measurements and compare them with a pre-mission baseline. This helps us show changes that can inform further checks.",
     model: "ESA · Muscle Atrophy Research and Exercise System (MARES)",
     source: nasa('iss052e024957'), credit: 'NASA · ISS052-E-024957',
-    relation: 'Fotografía en vuelo de Sarcolab-3. MARES es referencia funcional, no el Biodex usado en los históricos MR079G ni un instrumento conectado a Trama.',
+    relation: 'Fotografía en vuelo de Sarcolab-3. MARES es referencia funcional, no el Biodex usado en los históricos MR079G ni un instrumento conectado a GraviTal.',
     evidence: 'https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Columbus/Muscle_Atrophy_Research_and_Exercise_System',
   },
   {
@@ -17,7 +17,7 @@ export const instruments = [
     model: "NASA · Ultrasound 2 (USND-2)",
     source: nasa('iss029e025280'), credit: 'NASA · ISS029-E-025280',
     evidence: 'https://www.nasa.gov/blogs/stationreport/2017/08/31/iss-daily-summary-report-8-31-2017/',
-    relation: 'Autoecografía SPRINT en vuelo documentada por NASA. Modelo comercial de la unidad fotografiada sin verificar. La adquisición y el procesamiento de ecografías no están implementados en Trama; no sustituye DXA en el ajuste.',
+    relation: 'Autoecografía SPRINT en vuelo documentada por NASA. Modelo comercial de la unidad fotografiada sin verificar. La adquisición y el procesamiento de ecografías no están implementados en GraviTal; no sustituye DXA en el ajuste.',
   },
   {
     id: 'esfuerzo', title: "Cycle ergometer", image: asset('cycle'),
@@ -54,7 +54,7 @@ export const instruments = [
     text: "The headbands worn by Jasmin Moghbeli and Loral O’Hara are part of Bio-Monitor, a garment and sensor system for studying physiological signs in space. For our monitoring, we generate simulated daily readings such as pulse, blood pressure and blood oxygen, then compare them with each person's usual values. We use historical data where available and documented assumptions for other signals.",
     model: "Carré Technologies / CSA · Bio-Monitor", source: nasa('iss070e007944'), credit: 'NASA · ISS070-E-007944',
     evidence: 'https://www.csa-asc.gc.ca/eng/sciences/bio-monitor.asp',
-    relation: 'Sistema de prenda, banda y aplicación de tableta documentado por CSA. Los canales sintéticos de Trama no son una especificación de capacidades de Bio-Monitor.',
+    relation: 'Sistema de prenda, banda y aplicación de tableta documentado por CSA. Los canales sintéticos de GraviTal no son una especificación de capacidades de Bio-Monitor.',
   },
 ].map(item => ({license: 'Condiciones de uso de imágenes NASA', licenseUrl: 'https://www.nasa.gov/nasa-brand-center/images-and-media/', ...item}));
 

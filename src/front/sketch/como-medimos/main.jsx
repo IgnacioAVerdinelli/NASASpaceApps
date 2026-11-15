@@ -27,8 +27,8 @@ function App() {
     <Backdrop/>
     <a className="measure-skip" href="#contenido">Skip to content</a>
     <header className="measure-header glass-bar"><div>
-      <a className="measure-brand" href={back} aria-label="Trama · back to the app"><Brand/></a>
-      <a className="btn-link" href={back}>← Back to Trama</a>
+      <a className="measure-brand" href={back} aria-label="GraviTal · back to the app"><Brand/></a>
+      <a className="btn-link" href={back}>← Back to GraviTal</a>
     </div></header>
     <main id="contenido" className="measure-main" tabIndex={-1}>
       <header className="measure-intro"><h1>How we measure</h1><p>Our health check plan and measuring instruments.</p></header>

@@ -8,7 +8,7 @@ export const missionDocument = {
 export const missionReference = {
   id: 'referencia', kind: 'document', title: "What guides our health check plan",
   image: new URL('./assets/nasa-medical-cover.webp', import.meta.url).href,
-  alt: "Cover of NASA medical standard OCHMO-STD-100.1A, Revision A, released September 9, 2024.",
+  alt: "Cover of NASA medical standard OCHMO-STD-100.1A: Office of the Chief Health and Medical Officer, NASA Space Flight Medical Selection, Recertification and Mission Evaluation Standards.",
   model: missionDocument.revision,
   text: "We draw on NASA's medical standard because it brings together the assessments needed at different stages of a mission. We use its sample schedule for a 180-day stay aboard the International Space Station as a starting point. It helps us organize health checks before, during and after the journey, while recognizing that each mission needs its own plan.",
 };

@@ -1,4 +1,4 @@
-/* Página de fuerza muscular: reutiliza style.css del sketch y agrega solo lo propio. */
+/* Strength tab: reuses the sketch's style.css and adds only its own rules. */
 .fuerza{background:#f8f9fe}
 .fuerza ::selection{background:#d9d4f3;color:#231d45}
 .page-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px 40px;align-items:center;padding:14px 7%;border-bottom:1px solid #dedfee;background:#fbfbff}
@@ -51,7 +51,15 @@
 .level-badge{display:inline-flex;align-items:center;gap:7px;width:max-content;font-size:13px;font-weight:700;color:#2f3756;background:#eeeff6;border-radius:20px;padding:4px 11px 4px 9px}
 .level-badge i{width:10px;height:10px;border-radius:50%;flex:none}
 .level-badge.level-4{background:#f6e3e4;color:#7d1a23}
+.level-badge.level-none{color:#59617b}
+.level-badge small{font-size:12px;font-weight:600;color:#59617b}
+.level-badge small::before{content:'· '}
 .alert-icon{flex:none}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.alert-badge{display:inline-flex;align-items:center;gap:6px;width:max-content;font-size:13px;font-weight:800;border-radius:20px;padding:4px 11px 4px 9px}
+.alert-badge.alert-critical{background:#a4242f;color:#fff}
+.alert-badge.alert-warning{background:#fbecc7;color:#6b4a06}
+.alert-message{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:15px;line-height:1.6;color:#2f3756;max-width:80ch}
 
 /* Detalle del grupo seleccionado */
 .detail{padding:72px 7% 32px;background:#fbfbff}

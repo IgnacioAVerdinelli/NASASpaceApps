@@ -1,6 +1,8 @@
 """Resume NLSP MR080G (CFT70, capacidad aeróbica) en un JSON de referencia para el frontend.
 
 Uso: python scripts/build-cft70-aerobic-reference.py <carpeta MR080G_CFT70> <salida.json>
+     (en el repo: data/nlsp/MR080G_aerobic_capacity/MR080G_CFT70 src/front/sketch/data/cft70-aerobic-reference.json)
+Los textos salen en inglés, como el resto de la página.
 
 Métrica principal: VO2pico relativo (columna REL VO2PK, ml/kg/min). Es la que NASA usa para su mínimo
 operativo (32,9 ml/kg/min, NASA-STD-3001 Vol 1 [V1 4001]).
@@ -71,15 +73,16 @@ def main(folder: str, out: str) -> None:
                                       "with_rer": sum(rer_peak(post1[s]) is not None for s in paired)},
         }
     reference = {
-        "source": "NASA Life Sciences Portal, MR080G Aerobic Capacity, estudio CFT70 (UTMB, 70 días de reposo en cama a −6°). DOI 10.83263/w056-8t76",
+        "source": "NASA Life Sciences Portal, MR080G Aerobic Capacity, CFT70 study (UTMB, 70 days of −6° head-down bed rest). DOI 10.83263/w056-8t76",
+        "measure": "vo2peak",
         "metric": "REL VO2PK",
         "unit": "ml/kg/min",
         "bedRestDays": 70,
-        "post1": "R+0 a R+1",
-        "post2": "R+9 a R+11",
+        "post1": "R+0 to R+1",
+        "post2": "R+9 to R+11",
         "nasaFloor": FLOOR,
-        "groups": {"CONTROL": "Sin contramedida", "EXERCISE": "Con ejercicio", "FLY": "FLY"},
-        "dataFixes": "4 sujetos con columnas corridas desde HRPK; se usó MAX WKLD como FC pico y no se usó su RER.",
+        "groups": {"CONTROL": "No countermeasure", "EXERCISE": "Exercise", "FLY": "FLY"},
+        "dataFixes": "4 subjects have their columns shifted from HRPK on: MAX WKLD was used as their peak heart rate and their RER was not used.",
         "byGroup": groups,
     }
     Path(out).write_text(json.dumps(reference, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

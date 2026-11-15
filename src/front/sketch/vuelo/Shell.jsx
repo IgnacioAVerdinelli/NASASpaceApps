@@ -1,28 +1,50 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StrengthView } from '../fuerza/App.jsx';
-import { crew } from '../fuerza/data.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
+import { analysesUrl, loadAnalyses } from '../data/analyses.js';
+import { loadCrew } from '../data/dashboard.js';
+import { useDashboard } from '../data/useDashboard.js';
 import '../style.css';
 import '../fuerza/style.css';
 import './style.css';
 
-// Cada análisis de "Mediciones en vuelo" es una pestaña. Para sumar uno nuevo, agregarlo acá.
+// Same data source as the body overview (src.jsx): the HealthService through Vite's /api proxy, another server
+// with VITE_DASHBOARD_URL, or the example file with VITE_DASHBOARD_MODE=example.
+const exampleMode = import.meta.env.VITE_DASHBOARD_MODE === 'example';
+const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
+
+// Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
-  { id: 'fuerza', label: 'Fuerza muscular', View: StrengthView },
-  { id: 'aerobica', label: 'Capacidad aeróbica', View: AerobicView },
+  { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
+  { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
 ];
 const fromHash = () => TABS.some(t => `#${t.id}` === window.location.hash) ? window.location.hash.slice(1) : TABS[0].id;
+const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew') || '';
 
 export function Shell() {
   const [tab, setTab] = useState(fromHash);
+  const [selectedCrew, setSelectedCrew] = useState(crewFromUrl);
   const tabRefs = useRef({});
   useEffect(() => {
     const onHash = () => setTab(fromHash());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  const crewState = useDashboard(exampleMode ? null : apiUrl, loadCrew);
+  const crewList = crewState.data || [];
+  const selected = crewList.includes(selectedCrew) ? selectedCrew : crewList[0];
+  const { data, error } = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
+  const crewId = data?.crew.id ?? selected;
+  useEffect(() => {
+    if (!crewId || exampleMode) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('crew', crewId);
+    window.history.replaceState(null, '', url);
+  }, [crewId]);
+
   const select = (id, focus = false) => {
-    if (id !== tab) { window.history.replaceState(null, '', `#${id}`); window.scrollTo({ top: 0 }); }
+    if (id !== tab) { window.history.replaceState(null, '', `${window.location.search}#${id}`); window.scrollTo({ top: 0 }); }
     setTab(id);
     if (focus) tabRefs.current[id]?.focus();
   };
@@ -33,19 +55,27 @@ export function Shell() {
     event.preventDefault();
     select(TABS[(next + TABS.length) % TABS.length].id, true);
   };
-  // Las pestañas inactivas quedan montadas (ocultas): no se recarga el modelo 3D y se conserva su estado.
+  const overviewHref = `./${crewId && !exampleMode ? `?crew=${encodeURIComponent(crewId)}` : ''}`;
+
+  // Inactive tabs stay mounted (hidden): the 3D model is not reloaded and each tab keeps its state.
   return <main className="vuelo">
     <header className="page-head vuelo-head">
-      <h1>Mediciones en vuelo</h1>
+      <h1>Flight measurements</h1>
       <dl className="mission">
-        <div><dt>Tripulante</dt><dd>{crew.id} <small>(simulado)</small></dd></div>
-        <div><dt>Misión</dt><dd>{crew.missionDays} días</dd></div>
-        <div><dt>Hoy</dt><dd>FD {crew.today}</dd></div>
+        <div><dt>Crew member</dt><dd>{!exampleMode && crewList.length > 0
+          ? <select aria-label="Crew member" value={selected} onChange={event => setSelectedCrew(event.target.value)}>{crewList.map(id => <option key={id} value={id}>{id}</option>)}</select>
+          : crewId ?? '—'}{data?.simulated && <small> (simulated)</small>}</dd></div>
+        {data && <div><dt>Today</dt><dd>{data.mission.todayLabel}</dd></div>}
+        {data && <div><dt>Flight length</dt><dd>{data.mission.landing} days</dd></div>}
       </dl>
-      <div className="tabs" role="tablist" aria-label="Análisis" onKeyDown={onKeyDown}>
+      <a className="page-link" href={overviewHref}>← Body overview</a>
+      <div className="tabs" role="tablist" aria-label="Analyses" onKeyDown={onKeyDown}>
         {TABS.map(t => <button key={t.id} ref={el => { tabRefs.current[t.id] = el; }} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}>{t.label}</button>)}
       </div>
     </header>
-    {TABS.map(({ id, View }) => <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View/></section>)}
+    {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
+    {!data
+      ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div>
+      : TABS.map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data}/></section>)}
   </main>;
 }

@@ -2,57 +2,45 @@ import reference from '../data/cft70-aerobic-reference.json' with { type: 'json'
 
 export { reference };
 
-// Tripulante SIMULADO (mismo CM-2 que fuerza). Prueba en cicloergómetro CEVIS con analizador de gases
-// PFS, según OCHMO-STD-100.1A Tabla 8 [6028]: FD14, FD75, FD165 y R-14 en una misión de 180 días.
-// La forma sigue lo publicado para la ISS (Moore y col. 2014): caída fuerte al inicio (~17 %) y
-// recuperación parcial en vuelo gracias al ejercicio, sin volver al valor previo.
-export const evaluations = [
-  { id: 'pre', day: 0, label: 'Pre', vo2: 41.5, hrPeak: 182, rer: 1.18, watts: 250, rpe: 18, stop: 'Fatiga de piernas', method: 'medido' },
-  { id: 'fd14', day: 14, label: 'FD 14', vo2: 36.3, hrPeak: 181, rer: 1.15, watts: 215, rpe: 19, stop: 'Fatiga de piernas', method: 'medido' },
-  { id: 'fd75', day: 75, label: 'FD 75', vo2: 38.1, hrPeak: 183, rer: 1.16, watts: 225, rpe: 18, stop: 'Fatiga general', method: 'medido' },
-];
-export const upcoming = [{ day: 165, label: 'FD 165' }, { day: 166, label: 'R−14' }];
-export const baseline = evaluations[0].vo2;
-export const NASA_FLOOR = reference.nasaFloor; // 32,9 ml/kg/min, NASA-STD-3001 Vol 1 [V1 4001]
-export const pctOf = vo2 => (vo2 / baseline - 1) * 100;
+// The crew member's VO2peak tests, levels and alerts come from the HealthService (GET /api/v1/analyses, `aerobic`).
+// This module holds what is not a measurement: the CFT70 reference and the explanation of each component.
 
-// Criterios de prueba máxima (los mismos que usa NASA para validar la prueba).
+// What makes a test maximal (the criteria NASA uses). They apply to the cycle test's own data (`test`), which
+// the DataService does not record yet: until it does, the page says so instead of showing the checks.
 export const maxCriteria = [
-  { id: 'rer', label: 'RER ≥ 1,1', ok: e => e.rer >= 1.1, value: e => e.rer.toFixed(2).replace('.', ',') },
-  { id: 'rpe', label: 'Borg ≥ 17', ok: e => e.rpe >= 17, value: e => String(e.rpe) },
+  { id: 'rer', label: 'RER ≥ 1.1', ok: test => test.rerPeak >= 1.1, value: test => test.rerPeak?.toFixed(2) },
+  { id: 'rpe', label: 'Borg ≥ 17', ok: test => test.rpePeak >= 17, value: test => String(test.rpePeak) },
 ];
 
-// Qué limita el VO₂pico, según la ecuación de Fick: VO₂ = FC × volumen sistólico × diferencia arteriovenosa de O₂.
-// Colores de identidad (no de estado), validados con la skill dataviz.
+// What limits VO2peak, by the Fick equation: VO2 = heart rate × stroke volume × arteriovenous O2 difference.
+// Identity colours (not status), checked with the dataviz skill.
 export const components = [
   {
-    id: 'heart', name: 'Corazón', role: 'Bombea la sangre (gasto cardíaco)', color: '#c2417a',
+    id: 'heart', name: 'Heart', role: 'Pumps the blood (cardiac output)', color: '#c2417a',
     keys: ['heart', 'coronary_arteries'],
-    effect: 'Llega menos sangre al corazón y bombea menos por latido. Se reporta una leve atrofia del ventrículo izquierdo.',
-    evidence: 'En CFT70 la FC pico no cambió (0 lpm en el grupo sin contramedida): la pérdida no viene del pulso, sino del volumen por latido y del músculo.',
-    measured: 'En la misma prueba se registra la FC. El estudio ISS VO2max también midió el gasto cardíaco por reinhalación con el PFS.',
+    effect: 'Less blood returns to the heart and it pumps less per beat. A mild atrophy of the left ventricle has been reported.',
+    evidence: 'In CFT70 peak heart rate did not change (0 bpm in the no-countermeasure group): the loss comes from the volume per beat and the muscles, not the pulse.',
+    measured: 'The same test records heart rate. The ISS VO2max study also measured cardiac output by rebreathing with the PFS.',
   },
   {
-    id: 'blood', name: 'Sangre y vasos', role: 'Transporta el oxígeno', color: '#7a5cc4',
+    id: 'blood', name: 'Blood and vessels', role: 'Carry the oxygen', color: '#7a5cc4',
     keys: ['aorta', 'vena_cava_superior', 'vena_cava_inferior', 'arteries_abdomen', 'arteries_pelvis', 'arteries_leg_l', 'arteries_leg_r', 'veins_leg_l', 'veins_leg_r'],
-    effect: 'Sin gravedad, los fluidos suben a la cabeza y el cuerpo elimina entre el 10 y el 15 % del volumen de plasma.',
-    evidence: 'Con menos volumen, el corazón se llena menos: es la causa principal de la caída en las primeras semanas.',
-    measured: 'No hay medición rutinaria del volumen de plasma en vuelo; se infiere.',
+    effect: 'Without gravity, fluids shift towards the head and the body sheds 10 to 15% of its plasma volume.',
+    evidence: 'With less volume the heart fills less: the main cause of the drop in the first weeks.',
+    measured: 'Plasma volume is not routinely measured in flight; it is inferred.',
   },
   {
-    id: 'muscle', name: 'Músculos de las piernas', role: 'Extraen y usan el oxígeno', color: '#0f8a6f',
+    id: 'muscle', name: 'Leg muscles', role: 'Extract and use the oxygen', color: '#0f8a6f',
     keys: ['quadriceps_l', 'quadriceps_r', 'hamstrings_l', 'hamstrings_r', 'calf_l', 'calf_r'],
-    effect: 'Pierden masa, mitocondrias y capilares: extraen menos oxígeno de la sangre que reciben.',
-    evidence: 'En CFT70 la carga máxima cayó un 24 % sin contramedida y apenas un 1 % con ejercicio.',
-    measured: 'Fuerza con dinamómetro (pestaña Fuerza) y tamaño con ecografía; la extracción no se mide de forma directa.',
+    effect: 'They lose mass, mitochondria and capillaries: they extract less oxygen from the blood they get.',
+    evidence: 'In CFT70 peak workload fell 24% without countermeasure and only 1% with exercise.',
+    measured: 'Strength with the dynamometer (Strength tab) and size with ultrasound; extraction is not measured directly.',
   },
   {
-    id: 'lungs', name: 'Pulmones', role: 'Intercambian los gases', color: '#4a90d9',
+    id: 'lungs', name: 'Lungs', role: 'Exchange the gases', color: '#4a90d9',
     keys: ['lung_l', 'lung_r', 'pulmonary_vessels'],
-    effect: 'La función pulmonar se conserva en gran parte. No suele ser lo que limita la prueba.',
-    evidence: 'Se muestran para completar el recorrido del oxígeno, no como un órgano afectado.',
-    measured: 'Ventilación y gases respirados en la misma prueba (PFS).',
+    effect: 'Lung function is largely preserved. It is not usually what limits the test.',
+    evidence: 'Shown to complete the path of oxygen, not as an affected organ.',
+    measured: 'Ventilation and breathed gases in the same test (PFS).',
   },
 ];
-
-export const fmtNum = (value, digits = 1) => value.toFixed(digits).replace('.', ',');

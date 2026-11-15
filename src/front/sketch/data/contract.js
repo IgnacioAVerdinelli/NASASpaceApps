@@ -22,3 +22,33 @@ export function validateDashboard(data) {
   if (new Set(summary.items.map(item => item.id)).size !== summary.items.length || new Set(data.charts.map(chart => chart.id)).size !== data.charts.length) fail('duplicate ids');
   return data;
 }
+
+// Flight-measurement page (vuelo.html): GET /api/v1/analyses, documented in docs/frontend-backend.md.
+const number = value => typeof value === 'number' && Number.isFinite(value);
+const nonEmpty = value => text(value) && value.length > 0;
+const optionalBoolean = value => value === null || typeof value === 'boolean';
+const level = value => value === null || (Number.isInteger(value) && value >= 1 && value <= 4);
+const alertOf = value => value === null || (object(value) && ['warning', 'critical'].includes(value.severity) && nonEmpty(value.rule) && nonEmpty(value.message));
+const upcomingList = value => Array.isArray(value) && value.length <= 100 && value.every(item => object(item) && number(item.day) && nonEmpty(item.label) && ['routine', 'retest'].includes(item.reason));
+const testPoint = value => object(value) && optionalNumber(value.value) && optionalNumber(value.changePct) && level(value.level) && optionalBoolean(value.withinNoise) && optionalBoolean(value.belowMinimum) && nonEmpty(value.quality);
+const evaluation = value => object(value) && nonEmpty(value.id) && number(value.day) && nonEmpty(value.label) && ['pre', 'flight', 'post'].includes(value.phase);
+
+// Validate the response before replacing previously valid analyses.
+export function validateAnalyses(data) {
+  const fail = message => { throw new Error(`Invalid analyses: ${message}`); };
+  if (!object(data) || data.version !== 1 || !timestamp(data.updatedAt) || typeof data.simulated !== 'boolean' || !text(data.notice)) fail('version or metadata');
+  if (!object(data.crew) || !nonEmpty(data.crew.id) || !['male', 'female'].includes(data.crew.body)) fail('crew');
+  const mission = data.mission;
+  if (!object(mission) || !text(mission.name) || !number(mission.today) || !nonEmpty(mission.todayLabel) || !number(mission.landing)) fail('mission');
+  if (!Array.isArray(data.levels) || data.levels.length !== 4 || data.levels.some((item, i) => !object(item) || item.level !== i + 1 || !nonEmpty(item.label) || !nonEmpty(item.range))) fail('levels');
+  const strength = data.strength;
+  if (!object(strength) || !Array.isArray(strength.evaluations) || strength.evaluations.length > 100 || !strength.evaluations.every(evaluation) || !Array.isArray(strength.groups) || strength.groups.length > 50 || !upcomingList(strength.upcoming)) fail('strength');
+  if (new Set(strength.evaluations.map(item => item.id)).size !== strength.evaluations.length) fail('duplicate evaluations');
+  if (strength.groups.some(group => !object(group) || !nonEmpty(group.key) || !nonEmpty(group.measure) || !nonEmpty(group.name) || !nonEmpty(group.test) || !text(group.region) || !muscleKeys(group.muscleKeys) || !group.muscleKeys.length || !text(group.unit) || !optionalNumber(group.baseline) || !Number.isInteger(group.referenceTests) || group.referenceTests < 0 || !number(group.noiseBandPct) || !alertOf(group.alert) || !Array.isArray(group.points) || group.points.length !== strength.evaluations.length || group.points.some((point, i) => !testPoint(point) || point.evaluation !== strength.evaluations[i].id))) fail('strength groups');
+  if (new Set(strength.groups.map(group => group.key)).size !== strength.groups.length) fail('duplicate groups');
+  const aerobic = data.aerobic;
+  if (!object(aerobic) || !nonEmpty(aerobic.measure) || !nonEmpty(aerobic.name) || !nonEmpty(aerobic.test) || !text(aerobic.unit) || !optionalNumber(aerobic.baseline) || !Number.isInteger(aerobic.referenceTests) || aerobic.referenceTests < 0 || !number(aerobic.noiseBandPct) || !optionalNumber(aerobic.minimum) || !number(aerobic.standardLossPct) || !alertOf(aerobic.alert) || !upcomingList(aerobic.upcoming)) fail('aerobic');
+  if (!Array.isArray(aerobic.evaluations) || aerobic.evaluations.length > 100 || aerobic.evaluations.some(item => !evaluation(item) || !testPoint(item) || !(item.test === null || object(item.test)))) fail('aerobic evaluations');
+  if (new Set(aerobic.evaluations.map(item => item.id)).size !== aerobic.evaluations.length) fail('duplicate evaluations');
+  return data;
+}

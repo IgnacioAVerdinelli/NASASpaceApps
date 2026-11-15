@@ -6,6 +6,8 @@ Actualizado: 2026-11-14.
 
 La implementación queda a tu criterio. Acá va lo que las vistas necesitan, por qué y una propuesta de cómo. Nada de esto rompe lo que ya está en `main`.
 
+**Estado (14/11/2026, rama `feat/flight-measurements`):** las pestañas ya leen datos reales del HealthService (`GET /api/v1/analyses`), que a su vez lee del DataService las lecturas y los estudios que registra el planificador (`GET /api/v1/results?kind=study`). Del DataService no hizo falta nada nuevo para eso. Los cinco pedidos de abajo siguen abiertos; mientras tanto, la página muestra "Not recorded" en la validez de cada prueba, lee las referencias de los JSON estáticos y muestra FD165 y FD167 (R−14) como dos pruebas.
+
 ## Lo que ya está bien (revisado contra los datos)
 
 - `vo2peak` en ml/kg/min desde `REL VO2PK`, con el mínimo NASA de 32,9 en `astronaut_standards`. Es la misma métrica que usa la vista.
@@ -19,7 +21,7 @@ La implementación queda a tu criterio. Acá va lo que las vistas necesitan, por
 
 **Qué:** además del valor de `vo2peak`, guardar por prueba la FC pico (lpm), el RER pico (VCO₂/VO₂), la carga pico (W), el Borg pico (6–20), el motivo de corte y si el valor fue **medido** con gases o **estimado** por FC.
 
-**Por qué:** NASA valida una prueba como máxima con RER ≥ 1,1 y Borg ≥ 17. Si no se cumple, el VO₂pico registrado subestima el real, y una caída podría ser una prueba incompleta y no una pérdida real. La vista muestra una tabla "Validez de cada prueba" con estos campos.
+**Por qué:** NASA valida una prueba como máxima con RER ≥ 1,1 y Borg ≥ 17. Si no se cumple, el VO₂pico registrado subestima el real, y una caída podría ser una prueba incompleta y no una pérdida real. La vista tiene una tabla de validez de cada prueba con estos campos; el contrato ya los espera en `aerobic.evaluations[].test` (hoy `null`).
 
 **Cómo (propuesta):**
 - `CycleErgometer.session()` ya genera FC, carga y Borg por etapa, pero no se persiste y no tiene RER. Opciones: (a) nuevas medidas `hr_peak`, `rer_peak`, `workload_peak`, `rpe_peak` con el mismo `timestamp` que `vo2peak`; o (b) un bloque `test` dentro de la lectura de `vo2peak` (por ejemplo, en `status`), con `hr_peak_bpm`, `rer_peak`, `workload_w`, `rpe_peak`, `termination` y `method`.
@@ -58,7 +60,7 @@ La implementación queda a tu criterio. Acá va lo que las vistas necesitan, por
 
 ### 5. Consulta sobre el calendario
 
-En una misión de 180 días, FD165 y R−14 caen en los días 164 y 166 de la misión: dos pruebas máximas con dos días de diferencia. La Tabla 8 lista ambas. ¿Es intencional o convendría unificarlas cuando quedan a menos de N días? La vista hoy muestra las dos como "próximas".
+En una misión de 180 días, FD165 y R−14 caen en los días 164 y 166 de la misión: dos pruebas máximas con dos días de diferencia. La Tabla 8 lista ambas. ¿Es intencional o convendría unificarlas cuando quedan a menos de N días? La vista hoy las muestra como dos pruebas (FD165 y FD167).
 
 ## Fuentes
 

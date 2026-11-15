@@ -14,6 +14,7 @@ DAY="${DAY:-130}"
 SPEED="${SPEED:-0.5}"
 FATIGUE="${FATIGUE:-CM-3:126:7}"
 SANS="${SANS:-CM-1:1.8:R}"       # SANS for the eye exam, mostly in CM-1's right eye (docs/investigacion-ojos.md)
+THROMBUS="${THROMBUS:-CM-2:45}" # a left jugular clot for CM-2 (docs/investigacion-yugular.md)
 PORT="${PORT:-5190}"
 
 # El entorno de Python: .venv en la raíz (o health/.venv, como dice el README); bin/ en Linux y macOS, Scripts/ en Windows.
@@ -31,7 +32,7 @@ Q="$DEMO_DIR/queue.sqlite"
 
 trap 'echo; echo "Deteniendo..."; kill 0' INT TERM EXIT
 cd "$DEMO_DIR"
-"$PY" -m gravsim.serve --day "$DAY" --speed "$SPEED" --fatigue "$FATIGUE" --sans "$SANS" --db "$DEMO_DIR/data.sqlite" --queue "$Q" --run-booked > data.log 2>&1 &
+"$PY" -m gravsim.serve --day "$DAY" --speed "$SPEED" --fatigue "$FATIGUE" --sans "$SANS" --thrombus "$THROMBUS" --db "$DEMO_DIR/data.sqlite" --queue "$Q" --run-booked > data.log 2>&1 &
 echo "Generando la misión (unos 40 s)..."
 until curl -s -m 2 "$DATA/api/v1/mission" > /dev/null; do sleep 1; done
 "$PY" -m healthservice --data-url "$DATA" --queue "$Q" > health.log 2>&1 &

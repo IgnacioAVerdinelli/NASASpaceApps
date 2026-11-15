@@ -1,6 +1,6 @@
 {
  "model_version": "0.2.0",
- "fitted_at": "2026-11-14T21:09:42Z",
+ "fitted_at": "2026-11-15T15:15:33Z",
  "data": "data/nlsp (NASA Life Sciences Portal: MR079G, MR035G, MR080G), head-down bed rest",
  "max_unloading_days_in_data": 90,
  "bed_days_used": {
@@ -2825,6 +2825,111 @@
    "source": "Macias 2020: -0.08 mm after flight, -0.05 mm a year later",
    "assumed": [
     "pre-flight 24.0 ± 0.9 mm"
+   ]
+  },
+  "ijv_csa": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Area of the internal jugular vein",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "mm²",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.08,
+   "device_cv": 0.08,
+   "bio_cv": 0.0,
+   "noise_source": "ultrasound area, about ±8 % (assumed; the study accepted 10 % between sonographers)",
+   "source": "Marshall-Goebel 2019 (JAMA Netw Open), left vein: 80.7 mm2 supine pre-flight, 70.3 on flight day ~50, 60.0 on day ~150; Arbeille 2015: back to baseline 4 days after landing",
+   "assumed": [
+    "pre-flight read supine: left 80 ± 22, right 100 ± 28 mm2",
+    "in flight 0.72 + 0.27·exp(-day/80) of it, ± 12 % between people"
+   ]
+  },
+  "ijv_flow_grade": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Blood flow in the vein (grade 1-4)",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded 1-4 from the Doppler waveform",
+   "source": "Marshall-Goebel 2019: grade 3 in 5 of 11 and grade 4 in 1 on flight day 50; grade 3 in 2 of 10 on day 150, one more grade 4",
+   "assumed": [
+    "left: P(grade >= 3) 55 % on day 50, 30 % on day 150; P(grade 4) 10 %",
+    "right: 3 % and 1 %",
+    "exam-to-exam correlation 0.75"
+   ]
+  },
+  "ijv_echogenicity": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Slow-blood echoes in the vein (0-2)",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "grade",
+   "decimals": 0,
+   "direction": 1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "graded none, mild, moderate",
+   "source": "Pavela 2022 (Vasc Med): mild-moderate in the left vein of 6 of 11, never more than mild in the right",
+   "assumed": [
+    "follows the stagnant flow score"
+   ]
+  },
+  "ijv_compressible": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "The vein collapses when pressed",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "flag",
+   "decimals": 0,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.0,
+   "device_cv": 0.0,
+   "bio_cv": 0.0,
+   "noise_source": "collapses or not when pressed",
+   "source": "OCHMO-STD-100.1A [6041] compression manoeuvre; a vein that does not collapse suggests a clot",
+   "assumed": [
+    "1 in 14 crew members get a left thrombus between flight days 35 and 70",
+    "the clot lies flat 30 days after landing"
+   ]
+  },
+  "ijv_peak_velocity": {
+   "instrument": "vascular",
+   "code": null,
+   "label": "Peak blood speed toward the heart",
+   "region": "Neck veins",
+   "muscle_keys": [],
+   "unit": "cm/s",
+   "decimals": 1,
+   "direction": -1,
+   "model": "derived",
+   "responder_sd": 0.0,
+   "noise_cv": 0.08,
+   "device_cv": 0.08,
+   "bio_cv": 0.0,
+   "noise_source": "pulsed Doppler, about ±2.5 cm/s (assumed)",
+   "source": "Pavela 2022: lower in flight, lowest in the left vein (no values published)",
+   "assumed": [
+    "pre-flight supine left 32 ± 9, right 40 ± 10 cm/s",
+    "in flight × 0.55 left, × 0.75 right; negative when retrograde"
    ]
   }
  }

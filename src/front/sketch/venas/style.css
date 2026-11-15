@@ -1,0 +1,54 @@
+/* Neck veins ([6041]): status, the vein in 3D, the body, the Doppler trace, the area chart and the table. */
+.veins-view{padding:16px 24px 28px;display:grid;gap:16px;color:#2f2850}
+.veins-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.veins-intro h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:30px;letter-spacing:-.02em}
+.veins-intro p{font-size:16px;line-height:1.6;color:#3d4462;margin-top:6px;max-width:105ch}
+.vein-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;border-radius:999px;padding:5px 11px;white-space:nowrap;background:#e9f5ee;color:#1c633c}
+.vein-pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.vein-pill[data-level="check"]{background:#c98a0b;color:#fff}
+.vein-pill[data-level="alarm"]{background:#a4242f;color:#fff}
+.vein-status{display:grid;gap:10px;border-left:6px solid #3f9a68}
+.vein-status[data-level="check"]{border-left-color:#c98a0b;background:#fffaf0}
+.vein-status[data-level="alarm"]{border-left-color:#a4242f;background:#fff6f6}
+.vein-status-main{display:flex;gap:14px;align-items:center}
+.vein-status-main h3{font-size:21px}
+.vein-status-main p{font-size:16px;color:#3d4462;margin-top:2px}
+.vein-signs{margin:0;padding-left:22px;display:grid;gap:4px;font-size:15.5px}
+.vein-signs li[data-level="alarm"]{font-weight:700;color:#7d1a23}
+.vein-status-meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14.5px;font-weight:700;color:#3d4462}
+.vein-status-meta span{display:inline-flex;align-items:center;gap:8px}
+.vein-main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.vein-side{display:grid;gap:16px;align-content:start}
+.vein-main figure{margin:0;display:grid;gap:10px}
+.vein-main figcaption{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.vein-main figcaption>div{display:grid;gap:3px}
+.vein-main figcaption strong{font-size:18px}
+.vein-main figcaption span{font-size:14px;color:#59617b;line-height:1.45}
+.vein-controls{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+.vein-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:3px;background:#ecebf5;border-radius:10px;width:max-content;max-width:100%}
+.vein-tabs button{display:flex;align-items:center;gap:7px;font:inherit;font-size:14px;font-weight:800;color:#4f5874;background:none;border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
+.vein-tabs button i{width:9px;height:9px;border-radius:50%;background:#3f9a68}
+.vein-tabs button[data-level="check"] i{background:#c98a0b}
+.vein-tabs button[data-level="alarm"] i{background:#a4242f}
+.vein-tabs button[aria-checked="true"]{background:#fff;color:#2f2850;box-shadow:0 1px 3px #2f285022}
+.vein-press{font:inherit;font-size:14px;font-weight:800;color:#fff;background:#4b3f8f;border:0;border-radius:9px;padding:9px 14px;cursor:pointer}
+.vein-press:disabled{background:#2f2850;cursor:default}
+.vein-3d{position:relative;height:460px;border-radius:12px;background:radial-gradient(ellipse at 50% 45%,#f7f6fd 0%,#eeedf7 70%,#e8e7f3 100%);overflow:hidden}
+.vein-3d-label{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#2f2850;white-space:nowrap;pointer-events:none;will-change:transform;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.vein-3d-label i{width:7px;height:7px;border-radius:50%;background:#2f2850;box-shadow:0 0 0 2px #fff;margin-left:-3.5px}
+.vein-3d-message{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
+.vein-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0}
+.vein-facts div{background:#f6f5fc;border:1px solid #e2e1ee;border-radius:10px;padding:9px 11px}
+.vein-facts dt{font-size:12.5px;font-weight:700;color:#59617b}
+.vein-facts dd{margin:3px 0 0;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.vein-body{height:260px;border-radius:12px;background:#f3f2fa;overflow:hidden}
+.vein-doppler{width:100%;height:auto;display:block}
+.vein-plot{height:280px}
+.vein-card{display:grid;gap:8px}
+.vein-card table{width:100%;border-collapse:collapse;font-size:15px}
+.vein-card th,.vein-card td{text-align:left;padding:8px 6px;border-top:1px solid #e7e6f1;vertical-align:top}
+.vein-card thead th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#625992;border-top:0}
+.vein-card small{display:block;font-size:12.5px;font-weight:500;color:#6a7088;margin-top:2px}
+.vein-notice{font-size:13.5px;color:#59617b}
+@media(max-width:1180px){.vein-main{grid-template-columns:1fr}.vein-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.vein-3d{height:380px}}
+@media(max-width:760px){.veins-view{padding:14px 12px 24px}.vein-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.veins-intro{flex-direction:column}}

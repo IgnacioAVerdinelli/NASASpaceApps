@@ -15,7 +15,7 @@ from gravsim.queue import Queue
 from . import findings, notices
 from .alerts import check
 from .processing import MEASURES as PROCESSED, compute_results
-from . import eyes, vitals
+from . import eyes, veins, vitals
 from .service import vitals_inputs
 from .reference import Reference
 from .sources import DataServiceSource
@@ -123,6 +123,8 @@ class DemoWorker:
             self.process_vitals(message['crew_id'])
         if measures & set(eyes.MEASURES):
             self.process_eyes(message['crew_id'])
+        if measures & set(veins.MEASURES):
+            self.process_veins(message['crew_id'])
 
     def process_vitals(self, crew_id):
         """The watch's findings for the Planner (docs/wearable.md, section 3): a suspected finding when a vital
@@ -146,6 +148,18 @@ class DemoWorker:
         published = eyes.findings(crew_id, data, previous)
         for f in published:
             self.queue.publish(eyes.TOPIC, f, dedupe=eyes.dedupe(f))
+        if published:
+            self.findings.save(crew_id, dict(previous) | {f['measure']: f for f in published})
+
+    def process_veins(self, crew_id):
+        """The jugular scan's finding for the Planner (docs/investigacion-yugular.md, section 6): suspected at level
+        check (slow or reversed blood), confirmed at alarm (a vein that does not collapse), cleared when normal again."""
+        mission, now = self.source.mission(), self.source.current_day()
+        data = veins.build_veins(mission, crew_id, now, self.source.records(crew_id, veins.MEASURES, until_day=now))
+        previous = self.findings.latest(crew_id)
+        published = veins.findings(crew_id, data, previous)
+        for f in published:
+            self.queue.publish(veins.TOPIC, f, dedupe=veins.dedupe(f))
         if published:
             self.findings.save(crew_id, dict(previous) | {f['measure']: f for f in published})
 

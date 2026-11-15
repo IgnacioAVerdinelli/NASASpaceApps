@@ -52,6 +52,9 @@ DIRECTION = {
     # the eye exam (SANS): thicker, more swollen, more hyperopic, a wider nerve sheath and a shorter eye are worse
     "oct_trt": 1, "oct_mrw": 1, "oct_choroid": 1, "frisen_grade": 1, "choroidal_folds": 1, "globe_flattening": 1,
     "refraction_se": 1, "near_va": 1, "iop": 1, "onsd": 1, "axial_length": -1,
+    # the jugular ultrasound: a stagnant or retrograde flow, smoke and a vein that does not collapse are worse;
+    # the area grows in flight (a fluid shift, not a harm by itself) and the blood slows down
+    "ijv_csa": 1, "ijv_flow_grade": 1, "ijv_echogenicity": 1, "ijv_compressible": -1, "ijv_peak_velocity": -1,
 }
 
 # Generator-wide settings. Fitted where the data allows, otherwise assumed and listed here.
@@ -113,6 +116,12 @@ DEVICE = {
     "frisen_grade": (0.0, "graded from the fundus image"),
     "choroidal_folds": (0.0, "seen or not on OCT"),
     "globe_flattening": (0.0, "seen or not on ultrasound"),
+    # the jugular ultrasound keeps its own noise (gravsim.vascular.NOISE); these CVs are only for the record
+    "ijv_csa": (0.08, "ultrasound area, about ±8 % (assumed; the study accepted 10 % between sonographers)"),
+    "ijv_flow_grade": (0.0, "graded 1-4 from the Doppler waveform"),
+    "ijv_echogenicity": (0.0, "graded none, mild, moderate"),
+    "ijv_compressible": (0.0, "collapses or not when pressed"),
+    "ijv_peak_velocity": (0.08, "pulsed Doppler, about ±2.5 cm/s (assumed)"),
 }
 
 QUANTILES = list(range(0, 101, 5))     # percentiles stored for sampling baselines (0 = min, 100 = max)
@@ -923,6 +932,41 @@ ASSUMED_OCULAR = {
 for _mid, _m in ASSUMED_OCULAR.items():
     _m["noise_cv"] = DEVICE[_mid][0]
 
+# The jugular vein ultrasound ([6041], gravsim.vascular): published group results or assumed, as
+# docs/investigacion-yugular.md lists. "derived": gravsim.vascular computes them from each person's jugular profile.
+def _vein(label, unit, decimals, source, assumed):
+    return {"instrument": "vascular", "code": None, "label": label, "region": "Neck veins", "muscle_keys": [],
+            "unit": unit, "decimals": decimals, "model": "derived", "noise_cv": 0.0, "responder_sd": 0.0,
+            "source": source, "assumed": assumed}
+
+
+ASSUMED_VASCULAR = {
+    "ijv_csa": _vein("Area of the internal jugular vein", "mm²", 0,
+                     "Marshall-Goebel 2019 (JAMA Netw Open), left vein: 80.7 mm2 supine pre-flight, 70.3 on flight day "
+                     "~50, 60.0 on day ~150; Arbeille 2015: back to baseline 4 days after landing",
+                     ["pre-flight read supine: left 80 ± 22, right 100 ± 28 mm2",
+                      "in flight 0.72 + 0.27·exp(-day/80) of it, ± 12 % between people"]),
+    "ijv_flow_grade": _vein("Blood flow in the vein (grade 1-4)", "grade", 0,
+                            "Marshall-Goebel 2019: grade 3 in 5 of 11 and grade 4 in 1 on flight day 50; grade 3 in 2 "
+                            "of 10 on day 150, one more grade 4",
+                            ["left: P(grade >= 3) 55 % on day 50, 30 % on day 150; P(grade 4) 10 %",
+                             "right: 3 % and 1 %", "exam-to-exam correlation 0.75"]),
+    "ijv_echogenicity": _vein("Slow-blood echoes in the vein (0-2)", "grade", 0,
+                              "Pavela 2022 (Vasc Med): mild-moderate in the left vein of 6 of 11, never more than "
+                              "mild in the right", ["follows the stagnant flow score"]),
+    "ijv_compressible": _vein("The vein collapses when pressed", "flag", 0,
+                              "OCHMO-STD-100.1A [6041] compression manoeuvre; a vein that does not collapse suggests "
+                              "a clot", ["1 in 14 crew members get a left thrombus between flight days 35 and 70",
+                                         "the clot lies flat 30 days after landing"]),
+    "ijv_peak_velocity": _vein("Peak blood speed toward the heart", "cm/s", 1,
+                               "Pavela 2022: lower in flight, lowest in the left vein (no values published)",
+                               ["pre-flight supine left 32 ± 9, right 40 ± 10 cm/s",
+                                "in flight × 0.55 left, × 0.75 right; negative when retrograde"]),
+}
+for _mid, _m in ASSUMED_VASCULAR.items():
+    _m["noise_cv"] = DEVICE[_mid][0]
+
+
 def finish(mid, m):
     """Rules every measure gets after its fit: direction, the exercise cap, no improvement while unloaded,
     and the noise split."""
@@ -958,6 +1002,7 @@ def main():
     measures.update(ASSUMED_SUIT)
     measures.update(ASSUMED_WATCH)
     measures.update(ASSUMED_OCULAR)
+    measures.update(ASSUMED_VASCULAR)
     measures = {mid: finish(mid, m) for mid, m in measures.items()}
     lean = {k: v for k, v in lean_subj.items() if k.startswith("lean_")}
     params = {

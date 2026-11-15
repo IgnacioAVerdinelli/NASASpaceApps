@@ -11,6 +11,7 @@ import { muscles, SURFACE_KEYS, SURFACE_MUSCLE_KEYS, intensityColor, visibleSyst
 import { buildSurfaceWeights, pickSurfaceRegion } from './surfaceWeights.js';
 import { softenMaleFace, softenMaleGroin } from './surfaceShape.js';
 import { addSurfaceEyes } from './surfaceEyes.js';
+import { addJugularVeins } from './jugularVeins.js';
 import { createIndicatorLayer, orderedIndicators } from './indicators.js';
 import './indicators.css';
 
@@ -288,6 +289,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
         for (const system of ['organs', 'vessels', 'nerves']) {
           const group = root.getObjectByName(system); if (group) group.visible = false;
         }
+        addJugularVeins(root);      // the model has no jugular veins: ijv_l and ijv_r, along the carotids
         // Organs and vessels, keyed by their node name (heart, lung_l, aorta...), for the organs layer.
         const structureGroups = [], structureMeshes = [];
         for (const system of ['organs', 'vessels']) {

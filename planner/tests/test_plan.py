@@ -23,10 +23,10 @@ def by_id(xs, iid):
 def test_ids_are_unique_and_items_follow_the_contract():
     xs = items([EVA])
     assert len({i["id"] for i in xs}) == len(xs)
-    i = by_id(xs, "6041:30")
+    i = by_id(xs, "6035:30")
     assert i["type"] == "study" and i["reason"] == "routine" and i["status"] == "booked"
     assert i["window"] == {"from": "2027-03-28T00:00:00Z", "to": "2027-04-03T00:00:00Z",
-                           "day_from": 27.0, "day_to": 33.0, "day": 30.0, "label": "L+30"}
+                           "day_from": 27.0, "day_to": 33.0, "day": 30.0, "label": "FD31"}
     eva = by_id(xs, "6029:eva:81.5:before")
     assert eva["eva"]["part"] == "before" and eva["window"]["day_to"] == 81.5
     assert by_id(xs, "6030:eva:81.5:during")["instrument"] == "suit"
@@ -38,9 +38,9 @@ def test_readings_close_auto_items_and_the_clock_misses_the_rest():
     changes = engine.update(xs, ISS, 40, readings)
     assert by_id(xs, "6025:14")["status"] == "done" and by_id(xs, "6025:14")["done_by"] == "instrument"
     assert by_id(xs, "6028:13")["status"] == "done"
-    assert by_id(xs, "6041:30")["status"] == "missed"           # a crew item nobody closed
+    assert by_id(xs, "6035:30")["status"] == "missed"           # a crew item nobody closed
     assert by_id(xs, "6025:44")["status"] == "booked"           # window not over
-    assert ("missed", by_id(xs, "6041:30")) in changes
+    assert ("missed", by_id(xs, "6035:30")) in changes
 
 
 def test_a_reading_after_today_does_not_count():
@@ -52,16 +52,16 @@ def test_a_reading_after_today_does_not_count():
 def test_simulated_crew_closes_crew_items_mid_window():
     xs = items()
     engine.update(xs, ISS, 30, {}, simulate_crew=True)
-    assert by_id(xs, "6041:30")["status"] == "done" and by_id(xs, "6041:30")["completion"] == "simulated"
+    assert by_id(xs, "6035:30")["status"] == "done" and by_id(xs, "6035:30")["completion"] == "simulated"
     assert by_id(xs, "6025:14")["status"] == "missed"           # auto items still need readings
 
 
 def test_merge_keeps_status_and_cancels_what_left_the_routine():
     stored = items([EVA])
-    by_id(stored, "6041:30")["status"] = "done"
+    by_id(stored, "6035:30")["status"] = "done"
     fresh = items()                                              # the spacewalk was removed
     merged = engine.merge(stored, fresh)
-    assert by_id(merged, "6041:30")["status"] == "done"
+    assert by_id(merged, "6035:30")["status"] == "done"
     assert by_id(merged, "6029:eva:81.5:before")["status"] == "cancelled"
     assert len(merged) == len(stored)
 
@@ -122,12 +122,12 @@ def test_no_retest_without_an_instrument_or_time_before_landing():
 
 def test_set_status():
     xs = items()
-    item = engine.set_status(xs, "6041:30", "done", "CM-1", "all normal", ISS, 30.2)
+    item = engine.set_status(xs, "6035:30", "done", "CM-1", "all normal", ISS, 30.2)
     assert item["status"] == "done" and item["done_by"] == "CM-1" and item["note"] == "all normal"
     with pytest.raises(ValueError, match="already done"):
-        engine.set_status(xs, "6041:30", "missed", "CM-1", None, ISS, 31)
+        engine.set_status(xs, "6035:30", "missed", "CM-1", None, ISS, 31)
     with pytest.raises(ValueError):
-        engine.set_status(xs, "6041:60", "booked", "CM-1", None, ISS, 31)
+        engine.set_status(xs, "6035:60", "booked", "CM-1", None, ISS, 31)
     with pytest.raises(KeyError):
         engine.set_status(xs, "nothing", "done", "CM-1", None, ISS, 31)
 
@@ -136,7 +136,7 @@ def test_view_flags_open_and_filters():
     xs = items()
     v = engine.view(xs, 30.0, from_day=25, to_day=35, item_type="study")
     assert v and all(i["type"] == "study" for i in v)
-    assert by_id(v, "6041:30")["open"] is True and by_id(v, "6041:30")["overdue"] is False
+    assert by_id(v, "6035:30")["open"] is True and by_id(v, "6035:30")["overdue"] is False
 
 
 def test_the_watch_closes_the_sleep_log():
@@ -170,3 +170,20 @@ def test_an_eye_finding_books_a_review_and_the_exam_closes_6012():
     day = exam["window"]["day_from"] + 0.5
     engine.update(xs, ISS, day + 1, {"ocular": [(day, ISS.timestamp(day))]})
     assert by_id(xs, exam["id"])["status"] == "done" and by_id(xs, exam["id"])["done_by"] == "instrument"
+
+
+def test_a_vein_finding_books_a_review_today_when_a_clot_is_possible_and_the_scan_closes_6041():
+    xs = items()
+    f = finding(measure="veins", source="vascular", state="suspected", level="check",
+                text="Neck veins (check): Left vein: blood is standing still (grade 3)")
+    (_, review), = engine.apply_finding(xs, f, CATALOG, ISS, 30.0)
+    assert review["type"] == "review" and review["title"] == "Review by the flight surgeon: neck veins (jugular)"
+    assert review["window"]["day_to"] - review["window"]["day_from"] == 7 and not any(i["type"] == "retest" for i in xs)
+    ys = items()
+    urgent = f | {"state": "confirmed", "level": "alarm", "urgent": True}
+    (_, now), = engine.apply_finding(ys, urgent, CATALOG, ISS, 60.0)
+    assert now["window"]["day_to"] - now["window"]["day_from"] == 1 and now["finding"]["urgent"] is True
+    scan = next(i for i in ys if i["id"].startswith("6041:") and i["status"] == "booked")
+    day = scan["window"]["day_from"] + 0.5
+    engine.update(ys, ISS, day + 1, {"vascular": [(day, ISS.timestamp(day))]})
+    assert by_id(ys, scan["id"])["status"] == "done" and by_id(ys, scan["id"])["done_by"] == "instrument"

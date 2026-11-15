@@ -214,7 +214,8 @@
       "schedule_text": "Example Schedule based on 180-day ISS mission: L-12/3 m, L+30 days; L+60 days; R-42 days, R+0/45d, ACI.",
       "schedule_page": 50,
       "schedule": [{"at": "L+30"}, {"at": "L+60"}, {"at": "R-42"}],
-      "completion": "crew", "instrument": null, "measures": [],
+      "completion": "auto", "instrument": "vascular",
+      "measures": ["ijv_csa", "ijv_flow_grade", "ijv_echogenicity", "ijv_compressible", "ijv_peak_velocity"],
       "performed_by": "Crew pair, with teleguidance or autonomously with just-in-time training",
       "equipment": ["ultrasound with duplex Doppler"], "iss_hardware": ["Ultrasound-2"], "duration_min": 45,
       "steps": ["Duplex ultrasound of both internal jugular veins", "Breathing and compression manoeuvres", "Save the images for the ground"],
@@ -222,7 +223,7 @@
         "how": "The probe on the neck shows the vein and the speed and direction of the blood. A healthy vein collapses when pressed; one with a clot does not. Left jugular thrombosis has been found in flight without symptoms.",
         "if_abnormal": "Tell the crew surgeon at once; do not wait for the next routine scan."
       },
-      "assumptions": ["a tolerance of 3 days is ours"]
+      "assumptions": ["a tolerance of 3 days is ours", "closed by the simulated jugular ultrasound (gravsim.JugularUltrasound, docs/investigacion-yugular.md)"]
     },
     {
       "id": "6024", "ref": "OCHMO-STD-100.1A [6024]", "section": "6.4.1",

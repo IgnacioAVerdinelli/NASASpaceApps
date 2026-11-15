@@ -72,6 +72,12 @@ LIMITS = {
     "iop": (5, 40),              # mmHg
     "onsd": (3, 10),             # mm
     "axial_length": (18, 32),    # mm
+    # the jugular vein ultrasound (gravsim.vascular, docs/investigacion-yugular.md)
+    "ijv_csa": (1, 400),         # mm², area of the internal jugular vein
+    "ijv_flow_grade": (1, 4),    # 1 continuous, 2 pulsatile, 3 stagnant, 4 retrograde (Marshall-Goebel 2019)
+    "ijv_echogenicity": (0, 2),  # 0 none, 1 mild, 2 moderate
+    "ijv_compressible": (0, 1),  # 1 = the vein collapses when pressed
+    "ijv_peak_velocity": (-80, 150),  # cm/s, toward the heart; negative = toward the head
 }
 
 

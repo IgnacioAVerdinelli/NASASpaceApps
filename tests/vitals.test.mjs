@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { clock, dayRows, loadVitals, side, tiles, validateVitals, vitalsUrl, watchNotices } from '../src/front/sketch/data/vitals.js';
+import { clock, dayRows, loadVitals, side, tiles, validateVitals, vitalsUrl, watchNotices, watchScreens } from '../src/front/sketch/data/vitals.js';
 
 const vital = (measure, status, extra = {}) => ({ measure, name: measure, unit: 'u', decimals: 0, direction: 'up', status, text: `${measure} ${status}`,
   latest: { value: 70, day: 10, at: 'x' }, band: { low: 55, high: 65, mean: 60 }, series: [], weekly: [], ...extra });
@@ -39,4 +39,24 @@ test('loadVitals reports a failing API', async () => {
   await assert.rejects(loadVitals({ url: '/x', fetchImpl: async () => ({ ok: false, status: 503 }) }), /503/);
   const ok = await loadVitals({ url: '/x', fetchImpl: async () => ({ ok: true, json: async () => data([]) }) });
   assert.equal(ok.version, 1);
+});
+
+test('watch screens: action first, then tile order, with face colour and UTC time', () => {
+  const s = watchScreens(data([vital('resting_hr', 'in_range', { latest: { value: 61, at: '2027-05-11T12:00:00Z' } }),
+    vital('resting_sbp', 'in_range', { latest: { value: 125 } }), vital('resting_dbp', 'in_range', { latest: { value: 83 } }),
+    vital('spo2', 'low_now'), vital('hrv_rmssd', 'out'), vital('sleep_hours', 'deviation'), vital('sleep_quality', 'no_band')]));
+  assert.deepEqual(s.map(x => [x.id, x.tone]), [['spo2', 'high'], ['sleep', 'medium'], ['hrv', 'info'], ['hr', 'low'], ['bp', 'low']]);
+  assert.equal(s[3].time, '12:00');
+  assert.equal(s[0].time, null);
+  assert.equal(s[4].value, '125/83');
+  assert.equal(s[4].unit, 'mmHg');
+  assert.equal(s[1].message, 'sleep_hours deviation');
+  assert.equal(s[4].usual, '55–65 / 55–65');
+  assert.equal(s[4].second.band.high, 65);
+  assert.equal(s[1].extra, 'Quality 70/7');
+  assert.equal(s[3].second, null);
+  const long = watchScreens(data([vital('resting_hr', 'in_range', { series: Array.from({ length: 30 }, (_, i) => ({ day: i, value: 60 })) })]));
+  assert.equal(long[0].series.length, 14);
+  assert.equal(long[0].series[0].day, 16);
+  assert.deepEqual(watchScreens(data([])), []);
 });

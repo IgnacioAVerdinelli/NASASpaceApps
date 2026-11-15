@@ -52,6 +52,34 @@ export function tiles(data) {
 const RANK = { low_now: 5, deviation: 4, out: 3, in_range: 2, no_band: 1, no_data: 0 };
 const rank = status => RANK[status] ?? 0;
 
+// The screens of the watch mock-up, one per tile, the ones that need action first. Every word and status comes
+// from GET /api/v1/vitals; this only picks the short label, the face colour and the reading time (UTC).
+const WATCH_LABEL = { hr: 'Resting HR', bp: 'Blood pressure', spo2: 'Blood oxygen', hrv: 'HRV', sleep: 'Sleep' };
+const WATCH_STATUS = { low_now: 'Act now', deviation: 'Lasting change', out: 'Outside usual', in_range: 'Usual', no_band: 'Learning', no_data: 'No data' };
+const WATCH_TONE = { low_now: 'high', deviation: 'medium', out: 'info', in_range: 'low' };
+const utcClock = at => {
+  const date = at ? new Date(at) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(11, 16) : null;
+};
+
+export function watchScreens(data) {
+  return tiles(data).map((t, order) => {
+    const status = t.status.status;
+    const value = t.id === 'bp' ? `${fmtValue(t.main.latest?.value)}/${fmtValue(t.second?.latest?.value)}` : fmtValue(t.main.latest?.value, t.main.decimals);
+    const usual = t.main.band ? `${fmtValue(t.main.band.low, t.main.decimals)}–${fmtValue(t.main.band.high, t.main.decimals)}` : null;
+    return {
+      id: t.id, label: WATCH_LABEL[t.id] ?? t.title, title: t.title, value, unit: t.id === 'bp' ? 'mmHg' : t.main.unit,
+      status, statusLabel: WATCH_STATUS[status] ?? status, tone: WATCH_TONE[status] ?? 'idle',
+      message: t.status.text, time: utcClock(t.main.latest?.at), arrow: side(t.status), order,
+      // Last two weeks for the mini chart, with the usual band; blood pressure also draws the diastolic line.
+      series: (t.main.series || []).slice(-14), band: t.main.band ?? null, direction: t.main.direction,
+      second: t.id === 'bp' && t.second ? { series: (t.second.series || []).slice(-14), band: t.second.band ?? null } : null,
+      usual: t.id === 'bp' && usual && t.second?.band ? `${usual} / ${fmtValue(t.second.band.low)}–${fmtValue(t.second.band.high)}` : usual,
+      extra: t.id === 'sleep' && t.second?.latest ? `Quality ${fmtValue(t.second.latest.value)}/7` : null,
+    };
+  }).sort((a, b) => rank(b.status) - rank(a.status) || a.order - b.order);
+}
+
 // Which way the latest value sits, for the arrow in a tile: 'up', 'down' or null (in the band, or no band).
 export function side(v) {
   if (!v?.band || !v.latest) return null;

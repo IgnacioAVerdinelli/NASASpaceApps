@@ -25,6 +25,7 @@ MEASURE_NAMES = {
     "heel_bmd": "heel bone density", "lean_legs": "leg lean mass", "lean_arms": "arm lean mass",
     "lean_trunk": "trunk lean mass", "resting_hr": "resting heart rate", "resting_sbp": "systolic blood pressure",
     "resting_dbp": "diastolic blood pressure", "spo2": "blood oxygen", "hrv_rmssd": "heart rate variability",
+    "sleep_hours": "sleep", "sleep_quality": "sleep quality", "watch_hr": "heart rate",
 }
 
 
@@ -168,7 +169,7 @@ def _first_free_day(day: float, evas: list[Eva]) -> float:
 
 def _finding_summary(f: dict) -> dict:
     keep = ("measure", "state", "basis", "level", "change_pct", "typical_no_exercise_pct", "beyond_noise",
-            "mission_day")
+            "mission_day", "source", "text")
     return {k: f[k] for k in keep if k in f}
 
 
@@ -210,6 +211,8 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
 
     if state == "confirmed":
         return review("confirmed finding")
+    if finding.get("source") == "watch":     # docs/wearable.md: no test repeats a watch reading; a person looks at it
+        return review(finding.get("text") or f"the watch: {finding.get('basis', 'beyond the personal band')}")
     if open_("retest"):
         return []
     recent = [i for i in items if i["type"] == "retest" and i.get("measure") == measure and i["status"] == "done"

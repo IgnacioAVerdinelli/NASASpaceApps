@@ -9,6 +9,7 @@ import { AlertIcon } from '../fuerza/App.jsx';
 import { LEVEL_COLORS, colorScale, fmtPct, levelColor, levelText } from '../fuerza/data.js';
 import { watchNotices } from '../data/vitals.js';
 import { WatchPanel } from '../vitals/WatchPanel.jsx';
+import { demoSurfaceScores } from '../data/demoSurface.js';
 import { SEVERITY_TEXT, aerobicLatest, alertsOf, muscleRows, overallStatus, scheduleDays, scheduleRows } from './data.js';
 import { Indicators } from './Indicators.jsx';
 import './style.css';
@@ -46,11 +47,20 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
   const worst = rows[0];
   const alerted = new Set(alerts.filter(a => a.focus).map(a => a.id.split(':')[1]));
   const [selectedKey, setSelectedKey] = useState(null);
-  const [layer, setLayer] = useState('organs');
+  const [layer, setLayer] = useState('surface');
   const [viewRequest, setViewRequest] = useState({ direction: 'front', request: 0 });
+  const [exploration, setExploration] = useState({ key: null, request: 0 });
+
+  function selectMuscle(key) {
+    if (!rows.some(row => row.group.muscleKeys.includes(key))) return;
+    setSelectedKey(key);
+    setExploration(previous => ({ key: previous.key === key ? null : key, request: previous.request + 1 }));
+  }
 
   const levelKey = rows.map(r => `${r.group.key}:${r.point?.level}`).join();
   const scores = useMemo(() => Object.fromEntries(rows.flatMap(r => r.group.muscleKeys.map(k => [k, r.point?.level ?? 0]))), [levelKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const demoScores = demoSurfaceScores(data.mission, crewId);
+  const surfaceScores = layer === 'surface' && demoScores ? { ...demoScores, ...scores } : scores;
   const structureColors = useMemo(() => {
     const anatomical = components.filter(c => c.id !== 'muscle')
       .flatMap(c => c.keys.map(key => [key, c.color]));
@@ -63,7 +73,7 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
   // Keep one callout per group, with a second measurement for context.
   const labelled = new Set(rows.filter(r => r.point && (alerted.has(r.group.key) || r.group.muscleKeys.includes(highlight) || r === rows[1]))
     .map((r, i) => r.group.muscleKeys.includes(highlight) ? highlight : r.group.muscleKeys[i % r.group.muscleKeys.length]));
-  const indicatorFilter = key => labelled.has(key);
+  const indicatorFilter = key => labelled.has(key) && (scores[key] ?? 0) > 1;
   const indicatorText = useMemo(() => key => {
     const r = rows.find(row => row.group.muscleKeys.includes(key));
     return r ? { name: r.group.name, value: fmtPct(r.point?.changePct) } : null;
@@ -88,7 +98,7 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
           <ul className="ov-muscle-list" aria-label="Muscle groups, largest loss first">
             {rows.map(({ group: g, point: p }) => {
               const loss = Math.min(30, Math.max(0, -(p?.changePct ?? 0)));
-              return <li key={g.key}><button type="button" className="ov-muscle" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? g.alert.severity : undefined} onClick={() => setSelectedKey(g.muscleKeys[0])}>
+              return <li key={g.key}><button type="button" className="ov-muscle" aria-pressed={g.muscleKeys.includes(highlight)} data-alert={g.alert ? g.alert.severity : undefined} onClick={() => selectMuscle(g.muscleKeys[0])}>
                 <span className="ov-muscle-name">{g.alert && <AlertIcon/>}{g.name}<small>{p ? levelText(p, levels) : 'No data'}</small></span>
                 <span className="ov-muscle-track"><i style={{ width: `${(loss / 30) * 100}%`, background: levelColor(p?.level) }}/></span>
                 <span className="ov-muscle-value num">{fmtPct(p?.changePct)}</span>
@@ -103,6 +113,7 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
           <div className="glass-sm ov-body-title">
             <h2 id="body-title">Body map</h2>
             <p>Strength vs pre-flight{strengthTest ? ` · test ${strengthTest}` : ''}</p>
+            {layer === 'surface' && demoScores && <p>Unmeasured areas: illustrative demo colours, not readings or alerts.</p>}
             <div className="seg" role="group" aria-label="Anatomy layer">
               {['organs', 'surface'].map(value => <button key={value} type="button" aria-pressed={value === layer} onClick={() => setLayer(value)}>{value === 'surface' ? 'Surface' : 'Internal'}</button>)}
             </div>
@@ -110,9 +121,9 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
           <button type="button" className="glass-sm ov-pill" aria-label="Open detailed muscle analysis" onClick={() => onOpen('fuerza', highlight)}>Muscle detail<Icon name="expand" size={14}/></button>
         </div>
         <div className="ov-body-stage"><div className="ov-body-canvas">
-          <BodyViewer body={data.crew.body} layer={layer} scores={scores} selected={highlight}
-            onSelect={key => { if (rows.some(r => r.group.muscleKeys.includes(key))) setSelectedKey(key); }}
-            framing={1.08} structureColors={structureColors} viewRequest={viewRequest} showIndicators indicatorFilter={indicatorFilter}
+          <BodyViewer body={data.crew.body} layer={layer} scores={surfaceScores} selected={highlight}
+            onSelect={selectMuscle}
+            framing={1.08} structureColors={structureColors} viewRequest={viewRequest} explorationRequest={exploration} showIndicators indicatorFilter={indicatorFilter}
             colorScale={colorScale} indicatorText={indicatorText}/>
         </div></div>
         <div className="ov-body-tools">
@@ -140,16 +151,14 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
           <p className="ov-status-detail">{detail}</p>
           {alerts.length > 0 && <ul className="ov-alerts">
             {alerts.map(a => <li key={a.id} className="ov-alert" data-tone={a.severity === 'critical' ? 'crit' : 'warn'}>
-              <div className="ov-alert-body">
+              <button type="button" className="ov-alert-body" onClick={() => onOpen(a.tab, a.focus)} aria-label={`${a.system}: ${a.message}. ${ACTION[a.tab] ?? 'Details'}`}>
                 <span className="ov-alert-icon">{a.tab === 'vitales' ? <Icon name="pulse" size={18}/> : <AlertIcon/>}</span>
-                <div><strong>{a.system} · {SEVERITY_TEXT[a.severity] ?? 'Check needed'}</strong><span>{a.message}</span></div>
-              </div>
-              <div className="ov-alert-actions">
-                <button type="button" className="btn-primary" onClick={() => onOpen(a.tab, a.focus)}>{ACTION[a.tab] ?? 'Details'} <span aria-hidden="true">→</span></button>
-                {!exampleMode && <button type="button" className="btn-link ov-alert-plan" onClick={() => onOpen('plan')}>Mission plan</button>}
-              </div>
+                <span className="ov-alert-copy"><strong>{a.system}</strong><span>{a.message}</span><small>{SEVERITY_TEXT[a.severity] ?? 'Check needed'}</small></span>
+                <span className="ov-alert-arrow" aria-hidden="true">→</span>
+              </button>
             </li>)}
           </ul>}
+          {alerts.length > 0 && !exampleMode && <button type="button" className="btn-link ov-alert-plan" onClick={() => onOpen('plan')}>View mission plan <span aria-hidden="true">→</span></button>}
         </section>
         {!exampleMode && <div className="ov-wearable"><WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/></div>}
       </div>

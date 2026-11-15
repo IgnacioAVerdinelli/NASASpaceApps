@@ -451,7 +451,7 @@ export default function BodyViewer({ body = 'male', scores = {}, selected = null
     'model-error': 'The 3D model does not contain the expected layers.',
   }[status];
   return <div ref={containerRef} aria-label="Interactive 3D model of the muscle groups" style={{ width: '100%', height: '100%', minHeight: 360, position: 'relative' }}>
-    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Muscle values">{orderedIndicators(scores, selected).map(item => { const custom = indicatorText?.(item.key, item.value); return <li key={item.key}>{custom?.name ?? item.label}: {custom?.value ?? `${Math.round(item.value)}%`}</li>; })}</ul>}
+    {showIndicators && layer !== 'skeleton' && <ul className="atlas-sr-only" aria-label="Muscle values">{orderedIndicators(scores, selected).filter(item => !indicatorFilter || indicatorFilter(item.key)).map(item => { const custom = indicatorText?.(item.key, item.value); return <li key={item.key}>{custom?.name ?? item.label}: {custom?.value ?? `${Math.round(item.value)}%`}</li>; })}</ul>}
     {message && <div role={status === 'loading' ? 'status' : 'alert'} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', pointerEvents: 'none' }}>{message}</div>}
   </div>;
 }

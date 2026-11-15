@@ -39,7 +39,7 @@
 }
 .flight-home { min-height: 44px; }
 .trama-brand { gap: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-strong); }
-.trama-brand svg { width: 30px; height: 30px; }
+.trama-brand svg { width: 36px; height: 36px; }
 .flight-crew { gap: 9px; flex-shrink: 0; min-height: 44px; padding: 0 14px 0 4px; border-radius: var(--r-pill); }
 .flight-avatar {
   display: grid;

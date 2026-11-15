@@ -1,0 +1,367 @@
+{
+ "source": "NASA Life Sciences Portal, MR079G Isokinetic Muscle Function, estudio CFT70 (UTMB, 70 días de reposo en cama a −6°). DOI 10.83263/bk5h-r757",
+ "bedRestDays": 70,
+ "post1": "R+2 a R+4",
+ "post2": "R+10 a R+13",
+ "groups": {
+  "CONTROL": "Sin contramedida",
+  "EXERCISE": "Con ejercicio",
+  "FLY": "Grupo FLY (por confirmar: probablemente equipo compacto de volante de inercia)"
+ },
+ "tests": [
+  {
+   "code": "KES60",
+   "muscle": "quadriceps",
+   "test": "Extensión de rodilla, 60°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 195.2,
+      "sd": 40.8,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": -23.3,
+      "sd": 10.3,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -18.4,
+      "sd": 7.8,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 207.2,
+      "sd": 53.6,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": -5.2,
+      "sd": 10.2,
+      "n": 18
+     },
+     "post2_pct": {
+      "mean": -2.6,
+      "sd": 9.5,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 217.6,
+      "sd": 41.9,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": -14.8,
+      "sd": 7.7,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": -9.9,
+      "sd": 5.2,
+      "n": 8
+     }
+    }
+   }
+  },
+  {
+   "code": "KFS60",
+   "muscle": "hamstrings",
+   "test": "Flexión de rodilla, 60°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 101.9,
+      "sd": 18.8,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": -7.2,
+      "sd": 13.9,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -4.2,
+      "sd": 14.5,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 100.8,
+      "sd": 24.0,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": 5.0,
+      "sd": 12.9,
+      "n": 18
+     },
+     "post2_pct": {
+      "mean": 11.8,
+      "sd": 14.6,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 114.4,
+      "sd": 15.4,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": -5.3,
+      "sd": 10.0,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": -2.0,
+      "sd": 11.5,
+      "n": 8
+     }
+    }
+   }
+  },
+  {
+   "code": "APFCS30",
+   "muscle": "calf",
+   "test": "Flexión plantar del tobillo, 30°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 119.9,
+      "sd": 29.4,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": -19.5,
+      "sd": 14.5,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -6.2,
+      "sd": 12.6,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 127.5,
+      "sd": 27.4,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": -7.5,
+      "sd": 11.5,
+      "n": 18
+     },
+     "post2_pct": {
+      "mean": -3.8,
+      "sd": 13.7,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 111.8,
+      "sd": 19.5,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": -5.5,
+      "sd": 20.2,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": 3.9,
+      "sd": 12.4,
+      "n": 8
+     }
+    }
+   }
+  },
+  {
+   "code": "ADFCS30",
+   "muscle": "shin_muscles",
+   "test": "Flexión dorsal del tobillo, 30°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 35.6,
+      "sd": 5.8,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": -7.2,
+      "sd": 4.6,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -3.4,
+      "sd": 7.1,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 33.2,
+      "sd": 5.9,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": -2.1,
+      "sd": 9.1,
+      "n": 18
+     },
+     "post2_pct": {
+      "mean": -0.2,
+      "sd": 13.5,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 35.1,
+      "sd": 6.1,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": 4.6,
+      "sd": 11.3,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": 2.6,
+      "sd": 12.9,
+      "n": 8
+     }
+    }
+   }
+  },
+  {
+   "code": "TES60",
+   "muscle": "back_muscles",
+   "test": "Extensión de tronco, 60°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 393.6,
+      "sd": 81.1,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": -11.2,
+      "sd": 12.2,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -3.0,
+      "sd": 11.6,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 426.2,
+      "sd": 99.9,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": -5.6,
+      "sd": 15.3,
+      "n": 17
+     },
+     "post2_pct": {
+      "mean": 0.4,
+      "sd": 16.8,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 432.9,
+      "sd": 63.5,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": -6.9,
+      "sd": 12.1,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": -1.9,
+      "sd": 12.2,
+      "n": 8
+     }
+    }
+   }
+  },
+  {
+   "code": "TFS60",
+   "muscle": "abdominal_muscles",
+   "test": "Flexión de tronco, 60°/s",
+   "unit": "N·m",
+   "groups": {
+    "CONTROL": {
+     "pre_Nm": {
+      "mean": 191.6,
+      "sd": 40.7,
+      "n": 12
+     },
+     "post1_pct": {
+      "mean": 6.0,
+      "sd": 28.9,
+      "n": 10
+     },
+     "post2_pct": {
+      "mean": -5.6,
+      "sd": 16.6,
+      "n": 10
+     }
+    },
+    "EXERCISE": {
+     "pre_Nm": {
+      "mean": 197.0,
+      "sd": 46.0,
+      "n": 21
+     },
+     "post1_pct": {
+      "mean": -6.3,
+      "sd": 18.9,
+      "n": 17
+     },
+     "post2_pct": {
+      "mean": 1.9,
+      "sd": 18.7,
+      "n": 17
+     }
+    },
+    "FLY": {
+     "pre_Nm": {
+      "mean": 206.2,
+      "sd": 29.6,
+      "n": 9
+     },
+     "post1_pct": {
+      "mean": -8.7,
+      "sd": 11.8,
+      "n": 8
+     },
+     "post2_pct": {
+      "mean": -4.5,
+      "sd": 15.5,
+      "n": 8
+     }
+    }
+   }
+  }
+ ]
+}

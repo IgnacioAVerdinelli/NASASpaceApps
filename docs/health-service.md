@@ -8,7 +8,7 @@
 - La regla de alertas está medida contra el `truth` de gravsim (pregunta 9).
 - El PR #7 y [data-service-status.md](data-service-status.md) respondieron las preguntas 1, 2, 3, 10, 12 y 14. Quedan abiertas la 4 y la 13 para Juan, y las del resto del equipo.
 
-Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): procesa los datos del astronauta y entrega los resultados al front, a la base (a través del DataService) y a las notificaciones.
+Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): procesa los datos del astronauta, entrega los resultados al front y a la base (a través del DataService), y publica las alertas en la cola de notificaciones. Las alertas las envía el sistema de notificaciones, no el HealthService.
 
 ## Qué hace
 
@@ -106,14 +106,21 @@ Hallazgo:
 }
 ```
 
-Alerta, ruteada por contexto:
+Alerta, ruteada por contexto. El HealthService la publica en la cola de notificaciones y el sistema de notificaciones es quien la envía. En este ejemplo CM-2 está afuera, en una caminata espacial, y se le avisa a CM-3:
 
 ```json
 {
   "type": "alert",
   "subject_crew_id": "CM-2",
-  "notify": ["CM-2", "ship_center"],
-  "routing_reason": "CM-2 available",
+  "notify": ["CM-3", "ship_center"],
+  "routing_reason": "CM-2 unavailable: eva",
+  "context": {
+    "CM-2": {"activity": "eva", "location": "outside", "source": "suit",
+             "start": "2027-06-29T11:00:00Z", "end": "2027-06-29T14:00:00Z", "synthetic": true},
+    "CM-3": {"activity": "work", "location": "Destiny", "source": "timeline",
+             "start": "2027-06-29T09:00:00Z", "end": "2027-06-29T13:00:00Z", "synthetic": true}
+  },
+  "phase": {"name": "flight", "gravity_g": 0.0},
   "measure": "knee_extension_60",
   "severity": "warning",
   "message": "Knee extension strength −22% since pre-flight, beyond the typical loss without exercise.",
@@ -123,7 +130,18 @@ Alerta, ruteada por contexto:
 }
 ```
 
-El contexto que va a dar el DataService trae `activity` (`sleep`, `exercise`, `work`, `meal`, `hygiene`, `eva`) y `location` (un módulo de la ISS, o `outside` durante una caminata espacial). Si CM-2 está en `eva` o en `hygiene` (el ejemplo del baño de la arquitectura), `notify` pasaría a ser otro tripulante disponible y el centro de la nave. En ese caso `routing_reason` lo explicaría, por ejemplo `"CM-2 on EVA"`.
+El ruteo está en `health/healthservice/demo.py` y usa `GET /api/v1/context/current` del DataService:
+
+- **A quién.** Si el tripulante está en `eva`, `hygiene` o `sleep`, `notify` pasa a ser otro tripulante disponible más el centro de la nave, y `routing_reason` lo explica.
+- **`context`.** Qué está haciendo y dónde está ahora el tripulante de la alerta y cada tripulante de `notify` (`ship_center` no tiene). Es el registro del DataService sin `crew_id`:
+  - `activity`: `sleep`, `exercise`, `work`, `meal`, `hygiene` o `eva`.
+  - `location`: un módulo de la ISS, u `outside` durante una caminata espacial.
+  - `source`, `start`, `end` y `synthetic`.
+
+  Si no hay registro para ese momento, el valor es `null`.
+- **`phase`.** La fase de la misión ahora y su gravedad, de `/api/v1/mission`.
+
+Con `context` y `phase`, el sistema de notificaciones puede decir dónde está cada uno, por ejemplo: "CM-2 está afuera, en una caminata espacial, hasta las 14:00; se le avisa a CM-3, que está en Destiny".
 
 **Cuándo alertar.** La regla implementada (detalle y números en la pregunta 9 y en [`health/README.md`](../health/README.md#alert-rule)):
 

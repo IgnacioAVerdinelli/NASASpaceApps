@@ -79,6 +79,40 @@ class DemoTests(unittest.TestCase):
             self.assertEqual([r.to_dict() for r in data.results('CM-1', 'study')], studies)
             data.store.close()
 
+    def test_alert_carries_where_the_crew_is_and_the_phase(self):
+        for eva in (False, True):
+            with self.subTest(eva=eva), tempfile.TemporaryDirectory() as tmp:
+                queue = Queue(str(Path(tmp) / 'queue.sqlite'))
+                mission = gs.Mission.random('iss_180', n_crew=2, seed=7)
+                now = mission.timestamp(95)
+                if eva:   # CM-1 outside on a spacewalk at the mission clock's "now"
+                    hour = int(now[11:13]) + int(now[14:16]) / 60
+                    mission.crew[0].add_eva(95, start_hour=hour - 1, hours=3)
+                data = gs.DataService(publisher=queue)
+                data.ingest(mission.timeline(seed=7, until=95))
+                data.ingest_context(mission.context())
+                worker = DemoWorker(LocalSource(mission, data, 95), queue)
+                alert = Alert('CM-1', 'knee_extension_60', 'warning', 'Test', 95, now, True)
+                with patch('healthservice.demo.check', return_value={'knee_extension_60': alert}):
+                    worker.process_readings({'crew_id': 'CM-1'})
+                published = []
+                while item := queue.next('t', 'notifications'):
+                    queue.ack('t', item[0])
+                    published.append(item)
+                body = next(b for _, topic, b in published if topic == 'health.alert')
+                crew = [c for c in body['notify'] if c != 'ship_center']
+                self.assertEqual(set(body['context']), {'CM-1', *crew})
+                for crew_id, where in body['context'].items():
+                    expected = data.current_context(crew_id, now).to_dict()
+                    del expected['crew_id']
+                    self.assertEqual(where, expected)
+                self.assertEqual(body['phase'], {'name': 'flight', 'gravity_g': 0.0})
+                if eva:
+                    self.assertEqual((body['context']['CM-1']['activity'], body['context']['CM-1']['location']),
+                                     ('eva', 'outside'))
+                    self.assertEqual(body['notify'], ['CM-2', 'ship_center'])
+                data.store.close()
+
     def test_routing_unavailable_and_unknown(self):
         class Source:
             def __init__(self, contexts): self.contexts = contexts

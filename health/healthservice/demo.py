@@ -19,10 +19,13 @@ UNAVAILABLE = {'eva', 'hygiene', 'sleep'}
 STUDIES = {'dxa': 'bone_densitometry', 'dynamometer': 'strength', 'cycle': 'aerobic_capacity'}
 
 
-def recipients(source, subject):
-    contexts = {}
-    for crew in source.crew():
-        contexts[crew.id] = source._request('GET', '/api/v1/context/current', {'crew': crew.id})
+def crew_contexts(source):
+    """The DataService's current context record of each crew member, by crew id (None if nothing covers now)."""
+    return {crew.id: source._request('GET', '/api/v1/context/current', {'crew': crew.id}) for crew in source.crew()}
+
+
+def recipients(source, subject, contexts=None):
+    contexts = crew_contexts(source) if contexts is None else contexts
     context = contexts.get(subject)
     if context and context['activity'] not in UNAVAILABLE:
         return [subject, 'ship_center'], f'{subject} available'
@@ -30,6 +33,12 @@ def recipients(source, subject):
                   and contexts[c.id]['activity'] not in UNAVAILABLE), None)
     return ([other, 'ship_center'] if other else ['ship_center'],
             f"{subject} unavailable: {context['activity'] if context else 'unknown context'}")
+
+
+def where(record):
+    """A context record as the alert carries it: activity, location (an ISS module, "outside" on a spacewalk),
+    source, start, end and synthetic; None if nothing covers now."""
+    return None if record is None else {k: v for k, v in record.items() if k != 'crew_id'}
 
 
 class DemoWorker:
@@ -40,7 +49,8 @@ class DemoWorker:
     def process_readings(self, message):
         crew = next(c for c in self.source.crew() if c.id == message['crew_id'])
         mission = self.source.mission()
-        day = min(self.source.current_day(), mission.day_of(message['end'])) if message.get('end') else self.source.current_day()
+        now = self.source.current_day()
+        day = min(now, mission.day_of(message['end'])) if message.get('end') else now
         readings = self.source.readings(crew.id, day)
         results = compute_results(self.reference, mission, crew, readings, day)
         self.source.save_results(results)
@@ -51,9 +61,15 @@ class DemoWorker:
                        'change_pct': result.change_pct, 'typical_no_exercise_pct': result.typical_no_exercise_pct,
                        'mission_day': day, 'synthetic': alert.synthetic}
             self.queue.publish('health.finding', finding, dedupe=f'finding:{key}')
-            notify, reason = recipients(self.source, crew.id)
-            payload = {'type': 'alert', 'subject_crew_id': crew.id, 'notify': notify,
-                       'routing_reason': reason, **alert.to_dict()}
+            # The HealthService only publishes the alert; the notification system is what sends it. `context`
+            # (where the subject and each crew member notified are, and what they are doing) and `phase` (the
+            # mission phase and its gravity now) are there so the notification can say it.
+            contexts = crew_contexts(self.source)
+            notify, reason = recipients(self.source, crew.id, contexts)
+            phase = mission.phase(now)
+            payload = {'type': 'alert', 'subject_crew_id': crew.id, 'notify': notify, 'routing_reason': reason,
+                       'context': {c: where(contexts[c]) for c in [crew.id, *notify] if c in contexts},
+                       'phase': {'name': phase.name, 'gravity_g': phase.gravity_g}, **alert.to_dict()}
             self.queue.publish('health.alert', payload, channel='notifications', dedupe=f'alert:{key}')
 
     def save_study(self, crew, day, study):
@@ -105,6 +121,7 @@ class DemoWorker:
     def step(self):
         self.consume('health', 'events', lambda _, topic, body: self.process_readings(body) if topic == 'data.readings_stored' else None)
         self.consume('scheduler', 'events', lambda _, topic, body: self.handle_finding(body) if topic == 'health.finding' else None)
+        # Stand-in for the notification system, which is what sends the alerts: here it only records a delivery.
         self.consume('notifications', 'notifications', lambda mid, _, body: [self.queue.deliver(mid, recipient, body) for recipient in body['notify']])
 
 

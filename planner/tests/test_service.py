@@ -78,8 +78,7 @@ def test_findings_from_the_queue_book_a_retest(setup):
     planner = Planner(source, queue=queue)
     queue.publish("health.finding", {"type": "finding", "crew_id": "CM-2", "measure": "vo2peak",
                                      "mission_day": 95.0, "synthetic": True})
-    while planner.step():
-        pass
+    assert planner.drain() >= 1
     plan = data.results("CM-2", PLAN_KIND)[0].payload["items"]
     retest = next(i for i in plan if i["type"] == "retest")
     assert retest["measure"] == "vo2peak" and retest["instrument"] == "cycle" and retest["window"]["day_from"] == 96.0

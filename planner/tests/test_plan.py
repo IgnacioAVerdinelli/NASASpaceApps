@@ -97,6 +97,7 @@ def test_a_finding_again_after_a_recent_retest_books_a_review_not_a_loop():
     assert retest["status"] == "done"
     (_, review), = engine.apply_finding(xs, finding(mission_day=76.0), CATALOG, ISS, 76.5)
     assert review["type"] == "review" and review["completion"] == "crew"
+    assert review["title"] == "Review by the flight surgeon: knee extension strength"
     assert "retest" in review["finding"]["why"]
     assert engine.apply_finding(xs, finding(mission_day=77.0), CATALOG, ISS, 77.0) == []   # review already open
 

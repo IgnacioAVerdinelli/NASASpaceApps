@@ -210,7 +210,7 @@ export function createIndicatorLayer(container, view, checkpoints = false) {
       const camera = view.camera.clone(); camera.updateMatrixWorld();
       const targets = layer === 'surface' ? [view.skin] : view.muscleMeshes.filter(item => item.mesh.visible).map(item => item.mesh);
       if (layer === 'muscles' && view.skeletonGroup.visible) targets.push(...view.skeletonMeshes.filter(mesh => mesh.visible));
-      job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
+      job = { camera, targets, ordered: checkpoints ? areaCheckpoints(checkpointItems, selected) : orderedIndicators(scores, selected).filter(item => !values.indicatorFilter || values.indicatorFilter(item.key)), index: 0, occupied: [], seen: new Set(), body: projectedBodyBounds(view.skin, camera, width, height) };
       lastValues = { layer, isolated, scores, selected, checkpointItems, width, height };
     }
     const { camera, targets, ordered, occupied, seen, body } = job;

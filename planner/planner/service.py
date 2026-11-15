@@ -177,13 +177,31 @@ class Planner:
         self.queue.ack(CONSUMER, message_id)
         return True
 
+    def drain(self, limit: int = 1000) -> int:
+        """Handle every waiting message (up to `limit`): findings one by one, new readings as one refresh per crew
+        member however many events arrived. Returns how many messages it handled."""
+        if self.queue is None:
+            return 0
+        tested = {m for ms in self._instruments.values() for m in ms}
+        crew, handled = set(), 0
+        while handled < limit and (nxt := self.queue.next(CONSUMER, EVENTS)):
+            message_id, topic, body = nxt
+            if topic == "health.finding":
+                self.handle_finding(body)
+            elif topic == "data.readings_stored" and tested & set(body.get("measures", [])):
+                crew.add(body.get("crew_id"))
+            self.queue.ack(CONSUMER, message_id)
+            handled += 1
+        for crew_id in sorted(c for c in crew if c in self.source.crew()):
+            self.refresh(crew_id)
+        return handled
+
     # ------------------------------------------------------------------ views
     def plan(self, crew_id: str | None = None, day: float | None = None, **filters) -> dict:
         crew_id = self._crew(crew_id)
         mission = self.source.mission()
-        with self._lock:
-            today = self.source.current_day() if day is None else float(day)
-            items, _ = self.build(crew_id, today)
+        today = self.source.current_day() if day is None else float(day)
+        items, _ = self.build(crew_id, today)        # read-only: works on a copy, so it needs no lock
         return {
             "version": 1, "crew_id": crew_id,
             "mission": {"name": mission.name, "today": round(today, 3), "todayLabel": mission.label(today),

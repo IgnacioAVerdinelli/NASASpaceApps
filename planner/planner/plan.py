@@ -16,6 +16,20 @@ RETEST_DAYS = 7          # a retest is booked in the 7 days that start tomorrow 
 REVIEW_DAYS = 7          # a review by the flight surgeon is due within 7 days (ours)
 RETEST_COOLDOWN = 14     # a retest done in the last 14 days turns a new suspected finding into a review (ours)
 NOTIFY_MISSED = ("study", "retest", "review")    # missed routines and treatments do not page the ship center
+# Plain names for the measures a finding can name, so titles never show a raw id.
+MEASURE_NAMES = {
+    "knee_extension_60": "knee extension strength", "knee_flexion_60": "knee flexion strength",
+    "ankle_plantarflexion_30": "ankle plantarflexion strength", "ankle_dorsiflexion_30": "ankle dorsiflexion strength",
+    "trunk_extension_60": "trunk extension strength", "trunk_flexion_60": "trunk flexion strength",
+    "vo2peak": "aerobic capacity (VO2peak)", "hip_bmd": "hip bone density", "spine_bmd": "spine bone density",
+    "heel_bmd": "heel bone density", "lean_legs": "leg lean mass", "lean_arms": "arm lean mass",
+    "lean_trunk": "trunk lean mass", "resting_hr": "resting heart rate", "resting_sbp": "systolic blood pressure",
+    "resting_dbp": "diastolic blood pressure", "spo2": "blood oxygen", "hrv_rmssd": "heart rate variability",
+}
+
+
+def measure_name(measure: str) -> str:
+    return MEASURE_NAMES.get(measure, measure.replace("_", " "))
 
 
 def _window(mission: Mission, day_from: float, day_to: float, label: str, day: float | None = None) -> dict:
@@ -188,7 +202,7 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
             return []
         start = max(today, day)
         item = _item(item_id=iid, crew_id=crew_id, item_type="review", routine=routine,
-                     title=f"Review by the flight surgeon: {measure}", mission=mission, day_from=start,
+                     title=f"Review by the flight surgeon: {measure_name(measure)}", mission=mission, day_from=start,
                      day_to=start + REVIEW_DAYS, label=mission.label(start), reason="finding", completion="crew",
                      measure=measure, finding=_finding_summary(finding) | {"why": why}, synthetic=synthetic)
         items.append(item)

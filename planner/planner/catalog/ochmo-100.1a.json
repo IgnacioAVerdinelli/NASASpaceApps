@@ -29,7 +29,7 @@
       "duration_min": 30,
       "steps": ["Medical history since the last evaluation", "Temperature", "Blood pressure", "Pulse", "Respiratory rate", "Report the findings to the crew surgeon"],
       "guide": {
-        "how": "The crew medical officer takes the vital signs of the crew member at rest and asks about symptoms since the last evaluation. Blood labs may be added (see 6019).",
+        "how": "The crew medical officer takes the vital signs of the crew member at rest and asks about symptoms since the last evaluation. Blood tests may be added.",
         "if_abnormal": "Repeat the vital sign, record it and tell the crew surgeon. Do not treat on the basis of this evaluation alone."
       },
       "assumptions": ["L+180 and L+270 fall on or after landing on a 180-day mission and are dropped", "a tolerance of 3 days around L+90 is ours"]
@@ -51,7 +51,7 @@
       "duration_min": 15,
       "steps": ["Open the private link", "Review symptoms, sleep, medication and anything the crew member wants to raise", "The flight surgeon records the conference"],
       "guide": {
-        "how": "A private conversation between the crew member and the flight surgeon; nobody else listens. It is also where the weekly sleep data (6039) is discussed.",
+        "how": "A private conversation between the crew member and the flight surgeon; nobody else listens. It is also where the weekly sleep log is discussed.",
         "if_abnormal": "The flight surgeon decides the follow-up. On a mission with a long radio delay, record the questions for the next contact."
       },
       "assumptions": ["the weekly series starts on L+14 after the first conference in L+1/7", "R-0 (landing day) is left out of the daily series"]
@@ -73,7 +73,7 @@
       "steps": ["Put on the attenuating earphones in the quietest module", "Pure-tone audiometry, both ears", "Tympanometry (middle ear)", "Save the audiogram"],
       "guide": {
         "how": "Pure tones of different pitch get quieter until they can no longer be heard; the crew member presses a button each time a tone is heard. The result is the hearing threshold in dB at each frequency.",
-        "if_abnormal": "Repeat in a quieter module, check that hearing protection (6008) is being worn, and tell the crew surgeon. A supplemental test can be requested by the crew member or the crew surgeon."
+        "if_abnormal": "Repeat in a quieter module, check that hearing protection is being worn, and tell the crew surgeon. A supplemental test can be requested by the crew member or the crew surgeon."
       },
       "assumptions": ["FD21 is mission day 20", "'every 3 months' is every 91 days, starting 3 months after FD21, with 7 days of tolerance"]
     },
@@ -135,8 +135,8 @@
       "duration_min": 10,
       "steps": ["Sit on the device and hold still", "The device applies a known force and measures the acceleration", "Record the mass (three trials)"],
       "guide": {
-        "how": "Scales do not work without weight, so the device uses Newton's second law: a known force, a measured acceleration, mass = force / acceleration. The value is shared with the nutritional assessment (6038).",
-        "if_abnormal": "An unexpected loss of mass triggers the nutritional follow-up of 6038; tell the crew surgeon."
+        "how": "Scales do not work without weight, so the device uses Newton's second law: a known force, a measured acceleration, mass = force / acceleration. The value is shared with the weekly dietary questionnaire.",
+        "if_abnormal": "An unexpected loss of mass triggers a nutritional follow-up; tell the crew surgeon."
       },
       "assumptions": ["'monthly' is every 30 days from L+7"]
     },
@@ -354,7 +354,7 @@
       "performed_by": "Crew member",
       "equipment": ["vitamin D3 from the on-board pharmacy"], "iss_hardware": [], "duration_min": 1,
       "steps": ["Take the weekly maintenance dose (5000 I.U. vitamin D3) or the dose the crew surgeon prescribed"],
-      "guide": {"how": "There is no sunlight inside the vehicle. Maintenance dose: 1,000 I.U. daily or 5,000 I.U. once a week; desired 25-OH vitamin D range 35-90 ng/ml.", "if_abnormal": "Dosing for low pre-flight levels is set by the crew surgeon per the table in 6037."},
+      "guide": {"how": "There is no sunlight inside the vehicle. Maintenance dose: 1,000 I.U. daily or 5,000 I.U. once a week; desired 25-OH vitamin D range 35-90 ng/ml.", "if_abnormal": "Dosing for low pre-flight levels is set by the crew surgeon, following the dosing table in the NASA standard."},
       "assumptions": ["booked as the weekly maintenance dose; a daily dose is equally valid"]
     },
     {
@@ -387,7 +387,7 @@
       "performed_by": "Crew member, on waking",
       "equipment": ["sleep log", "actigraphy watch (if available)"], "iss_hardware": ["Actiwatch"], "duration_min": 2,
       "steps": ["Hours slept", "Sleep quality from 1 (very poor) to 7 (excellent)"],
-      "guide": {"how": "Rate the night on waking; an actigraphy watch can add the times actually asleep. The data is discussed at the weekly private medical conference.", "if_abnormal": "Repeated short or poor sleep is discussed with the crew surgeon; sleep medication must have been ground-tested first (6040)."},
+      "guide": {"how": "Rate the night on waking; an actigraphy watch can add the times actually asleep. The data is discussed at the weekly private medical conference.", "if_abnormal": "Repeated short or poor sleep is discussed with the crew surgeon; sleep medication must have been tested on the ground before flight."},
       "assumptions": ["one daily item with half a day of tolerance"]
     }
   ]

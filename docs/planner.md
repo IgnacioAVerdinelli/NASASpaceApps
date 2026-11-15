@@ -254,7 +254,7 @@ These are agreed in the decision of 15/11. Each one keeps working the same way f
 | 3 | Service: DataService source, queue consumers, reminders, `--simulate-crew` | Tomás | 2 |
 | 4 | HTTP API and the Vite proxy | Tomás | 3 |
 | 5 | Migration of the readers (section 8) | Tomás | 2 |
-| 6 | **Plan view in the frontend**: today's items, upcoming items, routine guide and mark as done, against section 7 and the JSON in section 5. It can start now with a fixture made from that JSON | Enzo | contract only |
+| 6 | **Plan view in the frontend**: "Mission plan" tab of `vuelo.html` (`src/front/sketch/plan/`, `data/plan.js`): counts, studies across the flight, next 7 days, whole mission by routine, missed, routine guide and mark as done or missed | Tomás (built on `feat/plan-view`) | contract only |
 | 7 | **`suspected` and `cleared` findings** in the HealthService, with the shape in [architecture.md](architecture.md#messages-the-planner-depends-on). Built: `health/healthservice/findings.py` ([health-service.md](health-service.md#hallazgo-y-aviso)) | Valen | — |
 | 8 | **Notification kind** for `plan.reminder` and `plan.missed` in the Notification Center | Nacho | contract only |
 | 9 | **Exercise sessions** after a confirmed finding (architecture table). Needs the HealthService to publish logged exercise for the last 14 days | later | 7 and an adherence signal |

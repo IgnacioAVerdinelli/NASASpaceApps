@@ -34,3 +34,23 @@
 .decision-status[data-status="warning"],.decision-options .decision-status[data-status="warning"]{background:#fff0ce;color:#765000}
 
 .measurement-trend{margin:22px 0 0;padding-top:16px;border-top:1px solid #dedfec}.measurement-trend figcaption{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;color:#505a77;font-size:11px;line-height:1.4}.measurement-trend figcaption span:first-child{flex-basis:100%;font-weight:700}.measurement-trend figcaption strong{font-size:20px;line-height:1.2;color:#2f2850;font-variant-numeric:tabular-nums}.measurement-trend figcaption strong small{font-size:11px;font-weight:600;color:#505a77}.measurement-chart{height:125px;width:100%;margin-top:10px}.measurement-chart:focus-within{outline:2px solid #6055a5;outline-offset:2px}
+
+/* Full width: the flight pages use the whole screen, with a small gutter instead of centred columns. */
+.vuelo-head{padding-left:24px;padding-right:24px}
+.vuelo .plan{max-width:none;padding:20px 24px 32px}
+.vuelo .fuerza-overview .body-panel{padding:20px 2% 20px 24px}
+.vuelo .fuerza .summary{padding:28px 24px 24px 12px}
+.vuelo .fuerza .summary-content{max-width:none}
+.vuelo .trends,.vuelo .method,.vuelo .detail{padding-left:24px;padding-right:24px}
+.vuelo .trends-inner,.vuelo .section-heading{max-width:none}
+/* No hero spacing between sections: the next block starts close to the last, so less scrolling on a wall display. */
+.vuelo .detail{padding-top:32px}
+.vuelo .detail-head{padding-bottom:18px}
+.vuelo .detail-charts{margin-top:20px}
+.vuelo .method{padding-top:36px;padding-bottom:48px}
+.vuelo .trends{padding-top:36px;padding-bottom:48px}
+.vuelo .section-heading{margin-bottom:24px}
+.vuelo .plan .recommendations-header p{max-width:none}
+.vuelo .plan-layout{grid-template-columns:minmax(300px,26%) minmax(0,1fr)}
+@media(max-width:850px){.vuelo .plan-layout{grid-template-columns:1fr}}
+@media(max-width:600px){.vuelo-head{padding-left:16px;padding-right:16px}.vuelo .plan{padding:20px 16px 40px}}

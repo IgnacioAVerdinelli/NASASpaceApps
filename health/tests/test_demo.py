@@ -71,7 +71,11 @@ class DemoTests(unittest.TestCase):
                 queue.ack('t', item[0])
                 if item[1] == 'health.finding':
                     findings.append(item[2])
-            self.assertEqual({f['measure'] for f in findings}, {'knee_extension_60'})   # for the Planner
+            confirmed = [f for f in findings if f['state'] == 'confirmed']      # the alert, for the Planner
+            self.assertEqual({(f['measure'], f['basis'], f['rule']) for f in confirmed},
+                             {('knee_extension_60', 'mean of two', 'beyond_typical')})
+            # anything else comes from one real test past the noise
+            self.assertTrue(all(f['state'] == 'suspected' for f in findings if f not in confirmed))
             self.assertTrue(queue.deliveries())
             before = len(queue.deliveries())
             with patch('healthservice.demo.check', return_value={'knee_extension_60': alert}):

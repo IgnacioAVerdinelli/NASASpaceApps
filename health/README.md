@@ -1,6 +1,6 @@
 # HealthService
 
-**Local demo update:** `python -m healthservice.demo --queue PATH` consumes DataService events, processes all crew members, publishes health notices (`health.notice`, [contract v1](../docs/health-notices.md)), schedules the supported studies and records simulated deliveries. The queue can also come from `NASA_QUEUE`; `python -m healthservice.notices` publishes synthetic fixtures and consumes the queue from another process. Start all components as described in the [root README](../README.md). `python -m healthservice --queue PATH` exposes the delivery log at `/api/v1/deliveries`. In this mode processing is not limited to dashboard requests; the known limitation below applies to running the HealthService without the demo worker.
+**Local demo update:** `python -m healthservice.demo --queue PATH` consumes DataService events, processes all crew members, publishes findings for the Planner (`health.finding`) and health notices (`health.notice`, [contract v1](../docs/health-notices.md)), and records simulated deliveries. Studies are booked by the Planner (`planner/`). The queue can also come from `NASA_QUEUE`; `python -m healthservice.notices` publishes synthetic fixtures and consumes the queue from another process. Start all components as described in the [root README](../README.md). `python -m healthservice --queue PATH` exposes the delivery log at `/api/v1/deliveries`. In this mode processing is not limited to dashboard requests; the known limitation below applies to running the HealthService without the demo worker.
 
 The "HealthService (Python)" of [docs/architecture.md](../docs/architecture.md): it reads the crew's readings from the
 DataService, works out how each measure changed against the person's pre-flight reference, compares it with the NASA
@@ -92,10 +92,10 @@ version: one record per measure at the same time would overwrite each other. The
 | `alerts.py` | Alert rule (below) and an in-memory queue. |
 | `findings.py` | Findings for the Planner, with their state: `suspected` after one test past the noise, `confirmed` with the alert, `cleared` when neither holds. The last one per measure is kept in the DataService (kind `finding`). See [docs/health-service.md](../docs/health-service.md#hallazgo-y-aviso). |
 | `notices.py` | Health notices for the Notification Center (contract v1, issue #11): routing by priority and context, revisions, mission location, and a command line to publish fixtures and consume the queue. See [docs/health-notices.md](../docs/health-notices.md). |
-| `demo.py` | Queue worker: processes `data.readings_stored`, publishes findings and notices, schedules studies, and stands in for the Notification Center's deliveries. |
+| `demo.py` | Queue worker: processes `data.readings_stored`, publishes findings and notices, and stands in for the Notification Center's deliveries. |
 | `sources.py` | What the HealthService needs from the DataService: `DataServiceSource` (HTTP) and `GravsimSource` (gravsim's DataService in the same process, for tests and the evaluation). |
 | `levels.py` | Levels 1 to 4 of a test (below) and the noise band of one test. |
-| `analyses.py` | Builds the JSON for the flight-measurement page (`vuelo.html`) from the same results, alerts and the scheduler's studies. |
+| `analyses.py` | Builds the JSON for the flight-measurement page (`vuelo.html`) from the same results, alerts and the tests the Planner booked. |
 | `service.py` | Ties it together. Results are saved and alerts raised only when new readings arrive, not on every poll. |
 | `api.py`, `__main__.py` | HTTP API (FastAPI) and command line. |
 | `evaluation/alert_rule.py` | Scores alert rules against gravsim's `truth` (below). |
@@ -193,7 +193,7 @@ Results per person during flight, in the designed cases:
   extension against a 2-test reference); a case worked out by hand.
 - One VO2peak test past the standard is shown as level 4 but not alerted.
 - The page shows the same numbers as the dashboard and the same alerts the queue gets.
-- Upcoming tests come from the studies the demo scheduler records, read over HTTP; a retest goes to the tab of its
+- Upcoming tests come from the Planner's plan (kind `plan`), read over HTTP; a retest goes to the tab of its
   measure.
 
 `tests/test_demo.py` (4 checks) covers the demo worker.

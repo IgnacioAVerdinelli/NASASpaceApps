@@ -163,7 +163,7 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
     """What a HealthService finding books (docs/planner.md, "Finding rules"), in place. Returns the transitions
     as (status, item): ("booked", new item) or ("cancelled", item)."""
     crew_id, measure = finding["crew_id"], finding["measure"]
-    state = finding.get("state") or "suspected"     # the HealthService sends no state yet: its findings are alerts
+    state = finding.get("state") or "suspected"     # findings from before health/healthservice/findings.py carry none
     day = float(finding.get("mission_day", today))
     synthetic = bool(finding.get("synthetic", True))
     ids = {i["id"] for i in items}

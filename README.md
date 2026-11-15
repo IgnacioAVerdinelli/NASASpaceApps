@@ -38,7 +38,9 @@ La demostración de alertas para wearable está disponible en `/alerts/` desde e
 
 La página principal (`/`) reúne alertas, estudios programados y las mediciones en vuelo, con dos pestañas: fuerza muscular por grupo y capacidad aeróbica (VO₂pico). Muestran cada prueba con su nivel, la banda de ruido de medición, las alertas y las próximas pruebas que agenda el planificador; todo sale de `GET /api/v1/analyses` del HealthService y se actualiza solo. El mapa corporal está en `/overview.html`; ambas páginas conservan el tripulante elegido (`?crew=`).
 
-La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
+**Forma rápida:** `bash scripts/demo.sh` levanta todo en una terminal y deja la página en `http://127.0.0.1:5190/vuelo.html`. Ver la [guía de la demo](docs/guia-demo.md) (instalación, qué mostrar y problemas comunes) y el [contexto de lo construido](docs/handoff/planner-y-reloj.md).
+
+La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo a mano, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
 
 ```bash
 python3 -m venv health/.venv

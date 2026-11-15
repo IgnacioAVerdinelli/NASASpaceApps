@@ -41,7 +41,7 @@ Conclusions are not medical decisions. A confirmed finding that the routine does
 | **Planner** | Table 8 studies, retests and exercise sessions, fitted to the crew timeline; serves the plan. | Built, `planner/` (port 3001), design in [planner.md](planner.md): the in-flight routine of OCHMO-STD-100.1A for a 180-day ISS mission, plus pre- and post-flight DXA, strength and VO2peak; retests and reviews from findings; `GET /api/v1/plan`. Exercise sessions: not yet. |
 | **Event queue** | `data.*` and `health.*` messages between services. | SQLite pub/sub (`sim/gravsim/queue.py`), one cursor per consumer. |
 | **Notification queue and Notification Center** | `health.notice` and `plan.reminder`, delivered to wearables, room displays, the ship center, the EVA radio and Earth. | Same SQLite file, channel `notifications`. Deliveries are simulated and listed at `GET /api/v1/deliveries` on the HealthService; no real devices, radio or Earth link. |
-| **Frontend** | 3D body, flight measurements, the plan. | Built, `src/front/sketch/`, reading the HealthService. The plan view: not yet. |
+| **Frontend** | 3D body, flight measurements, the plan. | Built, `src/front/sketch/`: Health summary, Vital signs (the watch, [wearable.md](wearable.md)), Mission plan (the Planner), Muscle strength and Aerobic capacity. Run it all with `bash scripts/demo.sh` ([guía](guia-demo.md)). |
 
 ## Messages the Planner depends on
 

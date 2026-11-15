@@ -4,6 +4,8 @@ import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { PlanView } from '../plan/PlanView.jsx';
 import { SummaryView } from '../summary/SummaryView.jsx';
 import { VitalsView } from '../vitals/VitalsView.jsx';
+import { EyesView } from '../ojos/EyesView.jsx';
+import { VeinsView } from '../venas/VeinsView.jsx';
 import { loadVitals, vitalsUrl } from '../data/vitals.js';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
@@ -23,6 +25,8 @@ const TABS = [
   { id: 'fuerza', label: 'Muscles', title: 'Muscle strength' },
   { id: 'aerobica', label: 'Aerobic', title: 'Aerobic capacity' },
   { id: 'vitales', label: 'Wearable', title: 'Vital signs' },
+  { id: 'ojos', label: 'Eyes', title: 'Eye exam' },
+  { id: 'venas', label: 'Neck veins', title: 'Neck vein ultrasound' },
   { id: 'plan', label: 'Mission plan', title: 'Mission plan' },
 ];
 
@@ -68,6 +72,9 @@ export function Shell() {
   const bodyUrl = exampleMode ? '' : crewId ? dashboardUrl(apiUrl, crewId) : null;
   const bodyState = useDashboard(needsBodyData ? bodyUrl : null, loadDashboard);
   const active = TABS.find(item => item.id === tab);
+  // Source and mission name: in the heading of every tab but the Overview.
+  const sourceLabel = data ? (exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data') : null;
+  const missionLabel = data ? MISSION.name.toUpperCase() : null;   // example roster label (data/roster.js)
   const error = analyses.error || crewState.error;
 
   function activate(id) {
@@ -125,6 +132,12 @@ export function Shell() {
 
   function renderView(id) {
     if (!visited.has(id)) return null;
+    if (id === 'ojos' || id === 'venas') {   // the imaging studies read their own JSON from the HealthService
+      if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'ojos' ? 'Eye exams' : 'Jugular scans'} unavailable in this example</strong><p>{id === 'ojos' ? 'The eye exam view' : 'The neck vein view'} uses studies from the HealthService. Start the full mission demo to explore this view.</p></div></div>;
+      if (!crewId) return <DataNotice error={crewState.error}/>;
+      const View = id === 'ojos' ? EyesView : VeinsView;
+      return <View key={crewId} apiUrl={apiUrl} crewId={crewId} body={data?.crew.body}/>;
+    }
     if (id === 'vitales' || id === 'plan') {
       if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
       if (!crewId) return <DataNotice error={crewState.error}/>;
@@ -160,6 +173,9 @@ export function Shell() {
           </div>
         </nav>
         {!exampleMode && <a className="flight-back glass-sm" href={`./crew.html${crewId ? `?crew=${encodeURIComponent(crewId)}` : ''}`}><span aria-hidden="true">←</span>All crew</a>}
+        {data && <div className="flight-mission">
+          <span className="flight-context"><Icon name="plan" size={15}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></span>
+        </div>}
         <div className="flight-crew glass-sm">
           <span className="flight-avatar">{person(crewId).photo ? <img src={person(crewId).photo} alt=""/> : <Icon name="crew" size={19}/>}</span>
           <div><span className="flight-crew-label">Crew member</span>
@@ -171,12 +187,15 @@ export function Shell() {
       </div>
     </header>
     <main className="flight-content" id="flight-content" tabIndex={-1}>
-      <div className="flight-heading">
-        <div className="flight-heading-main"><h1>{active.title}</h1>
-          {data && <span className="flight-source glass-sm"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>}
-        </div>
-        {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{MISSION.name.toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></div>}
-      </div>
+      {/* The Overview has no visible heading so its cards fit in the first view; the mission line lives in the header. */}
+      {tab === 'summary'
+        ? <h1 className="flight-sr-only">{active.title}</h1>
+        : <div className="flight-heading">
+          <div className="flight-heading-main"><h1>{active.title}</h1>
+            {data && <span className="flight-source glass-sm"><i/>{sourceLabel}</span>}
+          </div>
+          {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{missionLabel}</span></div>}
+        </div>}
       {error && data && <div className="flight-notice glass" role="status">Connection lost. Showing the last available measurements.</div>}
       {TABS.map(item => <FlightPanel key={item.id} id={item.id} hidden={tab !== item.id}>{renderView(item.id)}</FlightPanel>)}
     </main>

@@ -137,7 +137,7 @@ function CompactTrace({ day, stale }) {
   </div>;
 }
 
-function CompactWatch({ vitals, onOpen, error }) {
+function CompactWatch({ vitals, onOpen, error, trace = true }) {
   const all = vitals ? tiles(vitals) : [];
   const heart = all.find(t => t.id === 'hr');
   const secondary = all.filter(t => t.id !== 'hr').slice(0, 4);
@@ -161,7 +161,7 @@ function CompactWatch({ vitals, onOpen, error }) {
         <p className="compact-watch-value"><span className="num">{fmtValue(heart?.main.latest?.value, heart?.main.decimals)}</span> <small>{heart?.main.unit || 'bpm'} resting</small></p>
         {heart && <StatusPill status={heart.status.status}/>}
       </div>
-            <CompactTrace day={vitals.day} stale={Boolean(error)}/>
+      {trace && <CompactTrace day={vitals.day} stale={Boolean(error)}/>}
       {secondary.length ? <dl className="compact-watch-secondary">{secondary.map(t => <div key={t.id}>
         <dt>{t.title}</dt>
         <dd><span className="num">{tileValue(t)}</span><small> {tileUnit(t)}</small></dd>
@@ -173,8 +173,8 @@ function CompactWatch({ vitals, onOpen, error }) {
 }
 
 // The "Now · watch" panel: tiles, the pattern hint and the day of heart rate.
-export function WatchPanel({ vitals, onOpen, compact = false, error }) {
-  if (compact) return <CompactWatch vitals={vitals} onOpen={onOpen} error={error}/>;
+export function WatchPanel({ vitals, onOpen, compact = false, error, trace = true }) {
+  if (compact) return <CompactWatch vitals={vitals} onOpen={onOpen} error={error} trace={trace}/>;
   if (!vitals) return <section className="watch-now glass"><p className="vitals-empty">Loading your watch…</p></section>;
   return <section className="watch-now glass" aria-labelledby="watch-title">
     <header className="watch-now-head"><h2 id="watch-title">Now · from your watch</h2><span>Compared with your own last two weeks (shaded band)</span></header>

@@ -1,0 +1,71 @@
+/* Neck veins tab · Frosted glass. Shared layout: ../components/imaging.css.
+   Here only what is the tab's own: the ultrasound screens, which stay dark because they are images (data), and the
+   four flow grades. The screens' greys and the colour-Doppler red/blue are the scan's own, not theme colours. */
+
+.veins .vein-screens { display: grid; gap: 2px; border-radius: var(--r-sm); overflow: hidden; background: #16292C; padding: 2px; }
+.veins .vein-imaging-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: 2px; }
+.veins .vein-anatomy { display: grid; grid-template-rows: minmax(350px, 1fr) auto; margin: 0; background: #10212A; min-width: 0; }
+.veins .vein-3d { position: relative; isolation: isolate; overflow: hidden; min-height: 350px; width: 100%; height: 100%; background: #0C1B23; }
+.veins .vein-3d-caption { position: absolute; top: 16px; left: 18px; font: 600 11px/1.5 var(--font); letter-spacing: .12em; color: #B7D0CD; pointer-events: none; }
+.veins .vein-3d-caption small { display: block; font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: #8AA5A6; }
+.veins .vein-3d-label {
+  position: absolute; top: 0; left: 0; display: grid; gap: 2px; max-width: 155px; padding-left: 10px;
+  border-left: 1px solid #899998; color: #E5CFCB; font: 600 12px/1.5 var(--font); text-shadow: 0 1px 3px #0009; pointer-events: none;
+}
+.veins .vein-3d-label[hidden] { display: none; }
+.veins .vein-3d-label[data-anchor=artery] { color: #E6B9AF; }
+.veins .vein-clot-label { color: #F0CE99; border-left-color: #CBA874; }
+.veins .vein-clot-label small { font-size: 11px; font-weight: 400; color: #C3B29A; }
+.veins .vein-3d-footer { position: absolute; bottom: 14px; left: 18px; right: 18px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font: 500 11px var(--font); color: #8AA5A6; pointer-events: none; }
+.veins .vein-3d-footer span:last-child { color: #B0C8C5; }
+.veins .vein-3d-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 30px; text-align: center; font-size: 13px; color: #C4DBD8; background: #10212A; }
+.veins .vein-anatomy > figcaption { display: flex; justify-content: space-between; gap: 8px; padding: 10px 16px; font: 500 11px/1.5 var(--font); color: #8AA5A6; border-top: 1px solid #203439; }
+.veins .vein-anatomy > figcaption span:first-child { display: flex; align-items: center; gap: 6px; }
+.veins .vein-plane-key { display: inline-block; width: 10px; height: 6px; background: #6CB6AA44; border: 1px solid #62B7A5; }
+
+.veins .vein-ultrasound { display: grid; align-content: start; gap: 2px; background: #152C31; min-width: 0; }
+.veins .ultrasound-frame { margin: 0; background: #080F13; overflow: hidden; color: #B8CECA; min-width: 0; }
+.veins .ultrasound-frame > figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; padding: 9px 14px;
+  font: 500 11px/1.4 var(--font); color: #8AA5A6; background: #0C1B20; border-bottom: 1px solid #183034;
+}
+.veins .ultrasound-frame figcaption b { margin-right: 10px; font-size: 11px; font-weight: 600; letter-spacing: .12em; color: #C7DFD5; }
+.veins .ultrasound-frame figcaption small { font-size: 11px; color: #8AA5A6; text-align: right; }
+.veins .vein-scan-canvas { display: block; width: 100%; height: auto; aspect-ratio: 740 / 246; background: #070F13; }
+.veins .vein-colour-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 14px; font: 500 11px var(--font); color: #A0B3B3; border-top: 1px solid #183034; }
+.veins .vein-colour-key > span { display: flex; align-items: center; gap: 5px; }
+.veins .vein-colour-key i { width: 8px; height: 8px; border-radius: 2px; }
+.veins .vein-colour-key .away { background: #2577D8; }
+.veins .vein-colour-key .toward { background: #D64E40; }
+.veins .vein-colour-key small { margin-left: auto; font-size: 11px; color: #8AA5A6; }
+.veins .vein-scan-spectral { height: 156px; aspect-ratio: auto; }
+
+/* Compression result: an info box, red when the vein stays open. */
+.veins .img-alert[data-tone=info] { background: rgba(207,216,255,.45); border-color: var(--info-border); }
+.veins .vein-compression p { margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--ink-2); max-width: 90ch; }
+
+/* The four flow grades: small glass pieces, the selected one as a white lens. */
+.veins .vein-flow-patterns { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; }
+.veins .vein-flow-patterns li {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-radius: var(--r-sm);
+  background: var(--seg-bg); color: var(--ink-2); font-size: 12px; font-weight: 600;
+}
+.veins .vein-flow-patterns li[data-selected=true] { background: var(--tab-on-bg); box-shadow: var(--tab-on-shadow); color: var(--link); }
+.veins .vein-flow-patterns svg { width: 72px; height: 26px; flex: none; }
+.veins .vein-flow-patterns b { font-weight: 500; }
+
+.veins .vein-study { scroll-margin-top: 112px; }
+
+@media (max-width: 1180px) {
+  .veins .vein-anatomy { grid-template-rows: minmax(300px, 1fr) auto; }
+  .veins .vein-3d { min-height: 300px; }
+  .veins .vein-colour-key small { margin-left: 0; flex-basis: 100%; }
+  .veins .vein-flow-patterns svg { width: 52px; }
+}
+@media (max-width: 760px) {
+  .veins .vein-imaging-grid { grid-template-columns: 1fr; }
+  .veins .vein-anatomy { grid-template-rows: 320px auto; }
+  .veins .vein-3d { height: 320px; }
+  .veins .vein-flow-patterns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .veins .vein-study { scroll-margin-top: 190px; }
+}

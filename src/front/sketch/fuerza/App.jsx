@@ -4,6 +4,7 @@ import BodyViewer from '../../body-3d/BodyViewer.jsx';
 import { BodyTrends } from '../BodyTrends.jsx';
 import { muscles, SURFACE_MUSCLE_KEYS } from '../../body-3d/anatomy.js';
 import { testModeReducer } from '../data/testMode.js';
+import { demoSurfaceScores } from '../data/demoSurface.js';
 import { ChartContainer } from '../components/chart.jsx';
 import { ALERT_TEXT, colorScale, dayAxis, dayLabel, fmtNum, fmtPct, levelColor, levelText, reference, referenceFor, xOf } from './data.js';
 import '../style.css';
@@ -28,6 +29,7 @@ function useTweenedScores(target, duration = 600) {
   const shownRef = useRef(target);
   useEffect(() => {
     const from = shownRef.current;
+    if (Object.keys(target).length === Object.keys(from).length && Object.keys(target).every(key => from[key] === target[key])) return undefined;
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduce) { shownRef.current = target; setShown(target); return undefined; }
     let frame = 0, start = null;
@@ -170,14 +172,18 @@ export function StrengthView({ data, focusRequest = null, bodyState, trendTarget
   const levelKey = groups.map(group => `${group.keys.join('+')}:${group.points[evalIndex].level}`).join();
   const scores = useMemo(() => Object.fromEntries(groups.flatMap(group => group.keys.map(key => [key, group.points[evalIndex].level ?? 0]))), [levelKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const shownScores = useTweenedScores(scores);
+  const demoScores = demoSurfaceScores(mission, crew.id);
+  const surfaceScores = useMemo(() => demoScores ? { ...demoScores, ...shownScores } : shownScores, [demoScores, shownScores]);
   const selectedGroup = keyToGroup.get(selectedKey) ?? groups[0]?.key ?? null;
-  const checkpointItems = useMemo(() => groups.map(g => ({ id: g.key, title: g.name, muscleKeys: g.keys })), [groups]);
+  const checkpointKey = JSON.stringify(groups.map(g => [g.key, g.name, g.keys]));
+  const checkpointItems = useMemo(() => groups.map(g => ({ id: g.key, title: g.name, muscleKeys: g.keys })), [checkpointKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const indicatorText = useMemo(() => key => {
     const g = groups.find(item => item.keys.includes(key));
     if (!g) return null;
     const side = key.endsWith('_l') ? ' · left' : key.endsWith('_r') ? ' · right' : '';
     return { name: g.name + side, value: fmtPct(g.points[evalIndex].changePct) };
   }, [groups, evalIndex]);
+  const indicatorFilter = key => (scores[key] ?? 0) > 1;
 
   // As on the main page: zoom to exactly the area touched; touching it again goes back to the whole body.
   const choose = key => {
@@ -203,12 +209,12 @@ export function StrengthView({ data, focusRequest = null, bodyState, trendTarget
     <section className="overview fuerza-overview" aria-label="Body map">
       <div className="strength-map">
         <div className="map-top">
-          <div className="map-title glass-sm"><h2>{testMode ? 'Test mode' : 'Body map'}</h2><p>{testMode ? 'Temporary colours, not crew data' : `Strength vs pre-flight · ${current.phase === 'pre' ? 'pre-flight reference' : `test ${current.label}`}`}</p></div>
+          <div className="map-title glass-sm"><h2>{testMode ? 'Test mode' : 'Body map'}</h2><p>{testMode ? 'Temporary colours, not crew data' : `Strength vs pre-flight · ${current.phase === 'pre' ? 'pre-flight reference' : `test ${current.label}`}`}</p>{!testMode && demoScores && <p>Unmeasured areas: illustrative demo colours, not readings or alerts.</p>}</div>
           <button type="button" className="test-mode-toggle btn-glass" aria-pressed={Boolean(testMode)} aria-controls="strength-test-controls" onClick={() => { dispatchTest(testMode ? { type: 'exit' } : { type: 'start', model: { body: crew.body, layer: 'surface', scores: bodyState?.data?.body.scores || {} }, selected: selectedKey }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{testMode ? 'Exit test mode' : 'Test mode'}</button>
         </div>
         {testMode && <div id="strength-test-controls" className="test-controls glass-sm" aria-label="Test mode controls"><p>Test mode · Changes are temporary and do not affect dashboard data.</p><div className="test-control-groups"><div className="seg" role="group" aria-label="Body model">{[['male', 'Male'], ['female', 'Female']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.body === key} onClick={() => { dispatchTest({ type: 'body', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div className="seg" role="group" aria-label="Anatomy layer">{[['surface', 'Surface'], ['muscles', 'Muscles'], ['skeleton', 'Bones']].map(([key, name]) => <button type="button" key={key} aria-pressed={testMode.layer === key} onClick={() => { dispatchTest({ type: 'layer', value: key }); setExploration(prev => ({ key: null, request: prev.request + 1 })); }}>{name}</button>)}</div><div className="test-actions"><button type="button" className="btn-glass" onClick={() => dispatchTest({ type: 'paint' })}>Paint all</button><button type="button" className="btn-glass" onClick={() => dispatchTest({ type: 'clear' })}>Clear colors</button></div></div><div className="test-editor"><label>Muscle <select value={testMode.selected || ''} onChange={event => choose(event.target.value || null)}><option value="">Select a muscle</option>{muscles.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label><label>Intensity <input type="range" min="0" max="100" disabled={!testMode.selected} value={testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0} onChange={event => dispatchTest({ type: 'intensity', value: Number(event.target.value) })}/><output className="num">{testMode.selected ? testMode.scores[testMode.selected] ?? 0 : 0}</output></label></div></div>}
         <div className="body-stage"><div className="body-halo" aria-hidden="true"/><div className="model-canvas">
-          <BodyViewer body={testMode?.body ?? crew.body} layer={testMode?.layer ?? "surface"} scores={testMode?.scores ?? shownScores} selected={testMode ? testMode.selected : selectedKey} onSelect={choose} framing={1.1} showIndicators={!testMode} checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={testMode ? undefined : colorScale} indicatorText={testMode ? undefined : indicatorText}/>
+          <BodyViewer body={testMode?.body ?? crew.body} layer={testMode?.layer ?? "surface"} scores={testMode?.scores ?? surfaceScores} selected={testMode ? testMode.selected : selectedKey} onSelect={choose} framing={1.1} showIndicators={!testMode} checkpointItems={checkpointItems} explorationRequest={exploration} colorScale={testMode ? undefined : colorScale} indicatorText={testMode ? undefined : indicatorText} indicatorFilter={indicatorFilter}/>
         </div></div>
         {!testMode && <ul className="legend-levels glass-sm" aria-label="Colour scale">
           {levels.map(level => <li key={level.level}><i style={{ background: levelColor(level.level) }}/><span>{level.label}<small>{level.range}</small></span></li>)}

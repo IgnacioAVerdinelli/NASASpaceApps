@@ -14,6 +14,7 @@ from .mission import Mission
 STATUSES = ("booked", "done", "missed", "cancelled")
 RETEST_DAYS = 7          # a retest is booked in the 7 days that start tomorrow (our assumption, as in the architecture)
 REVIEW_DAYS = 7          # a review by the flight surgeon is due within 7 days (ours)
+URGENT_REVIEW_DAYS = 1   # an urgent finding (a possible jugular clot) is reviewed the same day (ours)
 RETEST_COOLDOWN = 14     # a retest done in the last 14 days turns a new suspected finding into a review (ours)
 NOTIFY_MISSED = ("study", "retest", "review")    # missed routines and treatments do not page the ship center
 # Plain names for the measures a finding can name, so titles never show a raw id.
@@ -26,6 +27,7 @@ MEASURE_NAMES = {
     "lean_trunk": "trunk lean mass", "resting_hr": "resting heart rate", "resting_sbp": "systolic blood pressure",
     "resting_dbp": "diastolic blood pressure", "spo2": "blood oxygen", "hrv_rmssd": "heart rate variability",
     "sleep_hours": "sleep", "sleep_quality": "sleep quality", "watch_hr": "heart rate",
+    "eyes": "eyes (SANS)", "veins": "neck veins (jugular)",
 }
 
 
@@ -168,7 +170,7 @@ def _first_free_day(day: float, evas: list[Eva]) -> float:
 
 
 def _finding_summary(f: dict) -> dict:
-    keep = ("measure", "state", "basis", "level", "change_pct", "typical_no_exercise_pct", "beyond_noise",
+    keep = ("measure", "state", "basis", "level", "urgent", "change_pct", "typical_no_exercise_pct", "beyond_noise",
             "mission_day", "source", "text")
     return {k: f[k] for k in keep if k in f}
 
@@ -195,7 +197,7 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
 
     routine = catalog.routine_for_measure(measure)
 
-    def review(why: str):
+    def review(why: str, within: float = REVIEW_DAYS):
         if open_("review"):
             return []
         iid = f"review:{measure}:{fmt(round(day, 2))}"
@@ -204,15 +206,22 @@ def apply_finding(items: list[dict], finding: dict, catalog: Catalog, mission: M
         start = max(today, day)
         item = _item(item_id=iid, crew_id=crew_id, item_type="review", routine=routine,
                      title=f"Review by the flight surgeon: {measure_name(measure)}", mission=mission, day_from=start,
-                     day_to=start + REVIEW_DAYS, label=mission.label(start), reason="finding", completion="crew",
+                     day_to=start + within, label=mission.label(start), reason="finding", completion="crew",
                      measure=measure, finding=_finding_summary(finding) | {"why": why}, synthetic=synthetic)
         items.append(item)
         return [("booked", item)]
 
+    if finding.get("source") == "vascular":  # docs/investigacion-yugular.md: a flow anomaly or a possible clot
+        why = finding.get("text") or f"the jugular scan: {finding.get('basis', 'a flow anomaly')}"
+        if finding.get("urgent") or state == "confirmed":     # a vein that does not collapse: today
+            return review(why, URGENT_REVIEW_DAYS)
+        return review(why)
     if state == "confirmed":
         return review("confirmed finding")
     if finding.get("source") == "watch":     # docs/wearable.md: no test repeats a watch reading; a person looks at it
         return review(finding.get("text") or f"the watch: {finding.get('basis', 'beyond the personal band')}")
+    if finding.get("source") == "ocular":    # docs/investigacion-ojos.md: a SANS sign goes to the flight surgeon
+        return review(finding.get("text") or f"the eye exam: {finding.get('basis', 'a sign of SANS')}")
     if open_("retest"):
         return []
     recent = [i for i in items if i["type"] == "retest" and i.get("measure") == measure and i["status"] == "done"

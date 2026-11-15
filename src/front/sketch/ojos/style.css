@@ -1,0 +1,14 @@
+/* Eyes tab · Frosted glass. Shared layout: ../components/imaging.css. Here only the 3D eye and its labels. */
+.eyes .eye-3d {
+  position: relative; height: 440px; border-radius: var(--r-sm); overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.75) 0%, rgba(255,255,255,.35) 70%, rgba(255,255,255,.2) 100%);
+}
+.eyes .eye-3d-label {
+  position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px;
+  font: 600 12px var(--font); color: var(--ink-strong); white-space: nowrap; pointer-events: none; will-change: transform;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+}
+.eyes .eye-3d-label i { width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--ink-strong); box-shadow: 0 0 0 2px #fff; }
+.eyes .eye-3d-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 13px; color: var(--ink-2); }
+@media (max-width: 1180px) { .eyes .eye-3d { height: 380px; } }
+@media (max-width: 760px) { .eyes .eye-3d { height: 320px; } }

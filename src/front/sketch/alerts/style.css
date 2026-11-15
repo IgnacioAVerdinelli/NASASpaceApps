@@ -22,7 +22,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--link); outline-
 }
 .alert-brand { display: inline-flex; align-items: center; min-height: 44px; border-radius: var(--r-sm); }
 .alert-brand .trama-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-strong); }
-.alert-brand .trama-brand svg { width: 30px; height: 30px; }
+.alert-brand .trama-brand svg { width: 36px; height: 36px; }
 .back-link { gap: 8px; font-size: 13px; }
 .arrow { width: 18px; height: 18px; flex: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .arrow.back { transform: rotate(180deg); }

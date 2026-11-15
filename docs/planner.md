@@ -49,7 +49,7 @@ Day numbers are mission days: launch is day 0 and landing is day 180. NASA's fli
 | 6002 | Health status evaluation | flight | L+14/21, L+90, L+180, L+270, R−21/14 | 14–21, 90, 159–166 | crew |
 | 6003 | Private medical conference | flight | L+1-7, weekly, pre/post EVA, R−5 d, daily to R−0 d | weekly from day 1–7; daily R−5…R−1; before and after each EVA | crew |
 | 6007 | In-flight hearing assessment | flight | on or before FD21, then every 3 months | 0–20, then every 90 days | crew |
-| 6012 | Specialized ocular assessment (SANS) | flight | L+30, L+90, L+180, L+270, R−30 | 30, 90, 150 | crew |
+| 6012 | Specialized ocular assessment (SANS) | flight | L+30, L+90, L+180, L+270, R−30 | 30, 90, 150 | eye exam readings (`ocular`) |
 | 6013 | Bone densitometry (DXA) | pre, post | L−180/30 d; R+ <30 d; R+1 year | −180…−30; 180–210; 545 | DXA readings |
 | 6015 | Body mass | flight | L+7, then monthly | 7, 37, 67, 97, 127, 157 | crew |
 | 6022 | Personal radiation dosimetry | flight | ongoing | none (continuous) | — |
@@ -63,7 +63,7 @@ Day numbers are mission days: launch is day 0 and landing is day 180. NASA's fli
 | 6037 | Vitamin D supplement | flight | daily or once a week | weekly, 7, 14, …, 175 | crew |
 | 6038 | Dietary questionnaire | flight | weekly | 7, 14, …, 175 | crew |
 | 6039 | Sleep log | pre, flight, post | L−7 d continuously until R+7 d | every day from −7 to 187 | the watch's sleep report (`sleep_hours`) |
-| 6041 | Jugular vein ultrasound (DVT screening) | flight | L+30, L+60, R−42 | 30, 60, 138 | crew |
+| 6041 | Jugular vein ultrasound (DVT screening) | flight | L+30, L+60, R−42 | 30, 60, 138 | jugular ultrasound readings (`vascular`) |
 | 6014, 6016, 6019 (in flight) | Ultrasound, skin photos, in-flight labs | flight | ACI, or L+180 (= landing) | none | — |
 
 A point date (L+30) becomes a window of ± `tolerance_days`, 3 by default. A window written in the standard (L+14/21) is used as written. Both choices are recorded in the catalog.
@@ -201,6 +201,8 @@ These are the architecture's rules, plus a cooldown so that a retest cannot loop
 | `confirmed` | Books a `review` (flight surgeon or crew medical officer) for the next 7 days, unless one is already open for that measure. The architecture's exercise sessions wait for an adherence signal (section 9). |
 | `cleared` | Cancels the open retest or review for that measure. |
 | any state, `"source": "watch"` | A deviation of the watch ([wearable.md](wearable.md)): always a `review`, never a retest, since no test repeats a watch reading. Its `finding.why` is the watch's own sentence ("Higher than usual for the last 3 days"). `cleared` cancels it. |
+| any state, `"source": "ocular"` | A sign of SANS in the eye exam ([investigacion-ojos.md](investigacion-ojos.md)): a `review` by the flight surgeon within 7 days, never a retest. `cleared` cancels it. |
+| any state, `"source": "vascular"` | A jugular flow anomaly ([investigacion-yugular.md](investigacion-yugular.md)): a `review` within 7 days; when `"urgent": true` or `confirmed` (a vein that does not collapse, a possible clot) the review is due within 1 day (`URGENT_REVIEW_DAYS`). Never a retest. `cleared` cancels it. |
 
 The 7 days and the 14 days are our assumptions, not NASA's, as are the architecture's 7 days and 70 %.
 

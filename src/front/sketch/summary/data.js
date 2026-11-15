@@ -4,10 +4,10 @@
 import { shortDay, upcoming } from '../data/plan.js';
 
 export const STATUS = {
-  critical: { tone: 'critical', chip: 'crit', title: 'Action needed', detail: 'A NASA standard was crossed. Tell the crew medical officer and the flight surgeon. The follow-up booked for it is in your mission plan.' },
+  critical: { tone: 'critical', chip: 'crit', title: 'Action needed', detail: 'Tell the crew medical officer and the flight surgeon. The follow-up is in your mission plan.' },
   warning: { tone: 'warning', chip: 'warn', title: 'Check needed', detail: 'A loss is faster than expected. A retest or a review has been booked.' },
-  watch: { tone: 'warning', chip: 'warn', title: 'Check needed', detail: 'Your watch shows a change that has lasted a few days. A review by the flight surgeon has been booked; rest if you can and mention it at your next medical conference.' },
-  ok: { tone: 'ok', chip: 'ok', title: 'No alerts', detail: 'Nothing needs action now. Keep following the exercise and measurement routine. The colours of the body map show change since before flight, not alarms.' },
+  watch: { tone: 'warning', chip: 'warn', title: 'Check needed', detail: 'Flight surgeon review booked. Rest if you can.' },
+  ok: { tone: 'ok', chip: 'ok', title: 'No alerts', detail: 'Keep up your exercise and tests. Body map colours show change since before flight, not alarms.' },
 };
 
 // What each alert severity means, in a few words (titles of the alert boxes and of the indicator chips).

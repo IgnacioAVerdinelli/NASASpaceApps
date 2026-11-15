@@ -171,6 +171,29 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - **Gráficos (recharts)**: línea principal `--link` 2–2.5px; fuerza `#B24A18`; relleno de área 14%; grilla
   `--line-soft`; ticks 11–13px `--muted`; tooltip = `.glass-sm`.
 
+- **Estudios por imagen** (pestañas Eyes y Neck veins; layout común en `components/imaging.css`):
+  - arriba, la card de la figura (`.glass`) y, a la derecha, la card de estado con el patrón de "Mission status"
+    (eyebrow + chip, frase de 20px/600, texto, chips por lado y caja de alerta) y el cuerpo 3D "Where" sin card,
+    con título `.glass-sm` y halo, como en Aerobic;
+  - los niveles de cada estudio van a los tonos de la tabla 2.2: sin signo / normal → `ok`, clase A / check → `warn`,
+    clase B / alarm → `crit`. El mismo punto de color marca cada ojo, vena o examen en los `.seg`;
+  - ojo/vena y examen se eligen con `.seg` (un punto de estado por opción); una sola acción `.btn-primary` por card
+    ("Play the mission", "Compress the vein"); las lecturas como en la card de VO₂ (`dt` 11px, `dd` 20px `.num`);
+  - **las pantallas de ecografía (B-mode, Doppler color, espectral) y el corte 3D de la vena quedan oscuras**: son
+    imágenes, es decir datos, y van dentro de la card de vidrio con radio `--r-sm`. Sus grises y el rojo/azul del
+    Doppler color son los del ecógrafo, no del tema. Todo lo que las rodea sigue este documento.
+
+- **Selección de tripulante** (`crew.html`, [detalle](crew-select.md)):
+  - el carrusel 3D va **sin card**, directo sobre el fondo con un halo blanco radial, como el mapa del cuerpo; las
+    flechas ‹ › son círculos `.glass-sm` de 48px; los monos son azul IVA (el color vive en la escena, no en el tema);
+  - la tira de retratos es una píldora `.glass-sm`; el elegido lleva una pastilla `--action` que se desliza, con
+    texto blanco; el punto del retrato usa los `--*-dot` de 2.2;
+  - la card del elegido es `.glass` (380px a la derecha; abajo en < 980px): retrato 64px, nombre 24px/600, rol 14px
+    `--ink-2`, chip + título del aviso con el `--*-ink` del tono, lecturas como la card de VO₂ (`.num` 24px), signos
+    vitales en filas con fondo `--*-bg` del tono cuando están alterados, una `.btn-primary` ancha + `.btn-link`;
+  - animaciones siempre activas: la card entra desde el lado del giro (~0,45 s) y sus partes en escalera; los números
+    cuentan; al abrir el overview la página se desvanece sin mover la cámara.
+
 ---
 
 ## 7. Layout
@@ -183,6 +206,7 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - ≤760px: una columna en este orden: status, cuerpo, indicadores, músculos, wearable, schedule. Las pestañas
   muestran solo íconos o pasan a grilla; el timeline scrollea dentro de su card.
 - Objetivos táctiles ≥ 44px (pestañas 38px dentro de una cápsula de 46px).
+- Son 7 pestañas: entre 741 y 940px ocupan todo el ancho con menos padding; en ≤740px pasan a una grilla de 4 columnas (4 + 3).
 
 ---
 
@@ -196,3 +220,22 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - [ ] Funciona a 1440, 1180, 760 y 390px de ancho, sin scroll horizontal.
 - [ ] Con `prefers-reduced-transparency` se ve sólido y legible.
 - [ ] Focus visible (`outline: 3px solid var(--link)`), botones reales, nada clickeable en un `div`.
+
+---
+
+## 9. Logo
+
+La marca es la variante **B3 · Superficie de gravedad** con corazón, que eligió el equipo en el canvas de
+diseño (página "Logo · GraviTal"). La línea gruesa es el cuerpo, que se hunde en un pozo de gravedad; el
+corazón queda en el fondo, y las líneas finas de abajo son la superficie del espacio-tiempo deformada.
+
+| Dónde | Archivo | Colores |
+|---|---|---|
+| Header (dashboard, simulador de alertas) | `Brand()` / `BrandMark()` en `vuelo/Icons.jsx` | `--brand-ink` (= `--ink-strong`), `--brand-heart` (= `--accent`), `--brand-field` `#9AA8E0` |
+| Favicon de todas las páginas | `public/favicon.svg` | Tile `#0E1630`; línea `#EEF2FF`, corazón `#8C9EFF`, líneas finas blancas al 40 % |
+
+- La marca va siempre con sus tres piezas; no se recolorea con los tonos de estado.
+- En el header se usa a 36px junto a "GraviTal" en Chakra Petch 700. Por debajo de 24px las líneas finas
+  casi no se ven: para tamaños chicos se usa el favicon (sobre tile oscuro, líneas finas más gruesas).
+- No usar elementos del logo de la NASA (esfera, órbita roja, "worm") junto a la marca.
+- El logo se hizo con asistencia de IA (Claude): declararlo en el campo de uso de IA de la entrega.

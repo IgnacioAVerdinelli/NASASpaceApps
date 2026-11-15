@@ -2,6 +2,7 @@ import React from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fmtValue } from '../data/vitals.js';
 import { StatusPill, WatchPanel } from './WatchPanel.jsx';
+import { WristWatch } from './WristWatch.jsx';
 import './style.css';
 
 // Theme tokens (theme/glass.css) and the --vitals-* variables of ./style.css.
@@ -66,12 +67,7 @@ export function VitalsView({ vitals, error }) {
   return <div className="vitals-view">
     {error && <div className="flight-notice" role="status">Connection lost. Showing the last available watch readings.</div>}
     <WatchPanel vitals={vitals}/>
-    <div className="watch-reference glass-sm">
-      <details><summary>How the watch compares readings</summary>
-        <p>The watch compares each day with the crew member’s previous two weeks. A change lasting three days schedules a flight surgeon review. Periodic strength, aerobic and bone tests track longer-term changes.</p>
-      </details>
-      <a className="btn-link" href={'./alerts/' + window.location.search}>Open wearable alert simulator <span aria-hidden="true">↗</span></a>
-    </div>
+    <WristWatch key={vitals.crew?.id} vitals={vitals}/>
     <div className="vital-cards">{vitals.vitals.map(v => <VitalCard key={v.measure} vital={v}/>)}</div>
     <p className="vitals-foot">{vitals.notice} The usual range and every threshold are ours (docs/wearable.md), not NASA limits.</p>
   </div>;

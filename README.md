@@ -36,7 +36,7 @@ npm run dev
 
 La demostración de alertas para wearable está disponible en `/alerts/` desde el mismo servidor. Sus alertas son ejemplos simulados y se pueden seleccionar para explorar el reloj.
 
-La página principal (`/` o `/vuelo.html`) abre **Health overview**. Muestra el modelo 3D, los indicadores de fuerza y capacidad aeróbica, el reloj y la agenda del tripulante. La barra superior permite entrar al detalle de músculos, capacidad aeróbica, wearable, y plan de misión. El detalle de músculos incluye el mapa corporal y las tendencias. Los enlaces conservan la pestaña y el tripulante (`?crew=CM-3#vitales`, por ejemplo). `/overview.html` abre el detalle de músculos.
+`/crew.html` es la selección de tripulante: la tripulación en un carrusel 3D y una card con el estado de cada persona, antes de entrar a su overview ([detalle](docs/crew-select.md)). La página principal (`/` o `/vuelo.html`) abre **Health overview**. Muestra el modelo 3D, los indicadores de fuerza y capacidad aeróbica, el reloj y la agenda del tripulante. La barra superior permite entrar al detalle de músculos, capacidad aeróbica, wearable, y plan de misión. El detalle de músculos incluye el mapa corporal y las tendencias. Los enlaces conservan la pestaña y el tripulante (`?crew=CM-3#vitales`, por ejemplo). `/overview.html` abre el detalle de músculos.
 
 **Forma rápida:** `bash scripts/demo.sh` levanta todo en una terminal y deja la página en `http://127.0.0.1:5190/vuelo.html`. Ver la [guía de la demo](docs/guia-demo.md) (instalación, qué mostrar y problemas comunes) y el [contexto de lo construido](docs/handoff/planner-y-reloj.md).
 

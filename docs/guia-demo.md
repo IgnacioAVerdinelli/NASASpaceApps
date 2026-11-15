@@ -34,6 +34,7 @@ Arranca, en este orden:
 | Worker (`healthservice.demo`) | — | Procesa eventos, publica hallazgos y avisos, simula las entregas |
 | Planner | 3001 | Arma el plan de cada tripulante desde la norma de la NASA |
 | Página (Vite) | 5190 | `http://127.0.0.1:5190/vuelo.html?crew=CM-3#summary` |
+| Selección de tripulante | 5190 | `http://127.0.0.1:5190/crew.html` ([detalle](crew-select.md)) |
 
 El arranque genera el historial de cinco personas y espera a que salud y planificación procesen los eventos antes de anunciar que está listo. Puede tardar más de un minuto. Las bases, los logs y los temporales van a `.demo/` (está en `.gitignore`). `Ctrl+C` detiene todo. Cada arranque reemplaza las bases `data.sqlite` y `queue.sqlite` de la demo y empieza una misión nueva.
 
@@ -52,7 +53,9 @@ Los casos están preparados para `DAY=130` y `SPEED=0`; con otros valores pueden
 
 ## 3. Qué mostrar
 
-La página es `/vuelo.html`. El selector de tripulante está arriba.
+Se puede empezar por `/crew.html`: la tripulación (ficticia) en un carrusel 3D y una card con el estado de cada persona; clic en la persona de adelante (o en "Open health overview") abre su overview. Los datos de salud siguen siendo sintéticos. Detalle en [crew-select.md](crew-select.md).
+
+La página es `/vuelo.html`. El selector de tripulante está arriba; "← All crew" vuelve a la selección.
 
 En Surface, las regiones con mediciones usan sus resultados; las demás muestran colores ilustrativos distintos para cada tripulante. Esos colores no son lecturas, no generan alertas y no representan un diagnóstico. El mapa interno y las tablas conservan las mediciones disponibles.
 

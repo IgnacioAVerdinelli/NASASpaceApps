@@ -135,3 +135,11 @@ La capa "Ahora" del Health summary y la pestaña "Vital signs" leen un tercer JS
 - **`patterns[]`:** `{id, text}`; hoy solo `fatigue`.
 - **`day`:** `curves.today`, `yesterday`, `week_ago` y `preflight`, cada una `[{minute, value}]` en minutos desde las 00:00 UTC; `context` `[{start, end, activity}]` con `sleep`, `exercise` o `eva` de hoy.
 - El frontend no calcula nada: estado, banda y texto vienen del HealthService.
+
+## Selección de tripulante (`/crew.html`)
+
+No agrega endpoints. Por cada ID de `GET /api/v1/health` (`crew`) lee `GET /api/v1/analyses?crew=<id>`,
+`GET /api/v1/vitals?crew=<id>` y el plan del Planner (`GET /api/v1/plan?crew=<id>`), y arma un resumen corto con las
+mismas funciones del Health summary. Cada fuente es opcional por tripulante. Usa `analyses.crew.body` para elegir el
+cuerpo 3D. Los roles genéricos de la tripulación (ficticia) salen del front (`src/front/sketch/data/roster.js`), no del backend.
+Detalle: [crew-select.md](crew-select.md).

@@ -11,6 +11,7 @@ import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { Brand, Icon } from './Icons.jsx';
+import { missionName, person } from '../data/roster.js';
 import { Backdrop } from './Backdrop.jsx';
 import '../style.css';
 import '../fuerza/style.css';
@@ -73,7 +74,7 @@ export function Shell() {
   const active = TABS.find(item => item.id === tab);
   // Source and mission name: in the heading of every tab but the Overview.
   const sourceLabel = data ? (exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data') : null;
-  const missionLabel = data ? data.mission.name.replaceAll('_', ' ').toUpperCase() : null;
+  const missionLabel = data ? missionName(data.mission) : null;
   const error = analyses.error || crewState.error;
 
   function activate(id) {
@@ -171,15 +172,16 @@ export function Shell() {
               tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}><Icon name={t.id}/>{t.label}</button>)}
           </div>
         </nav>
+        {!exampleMode && <a className="flight-back glass-sm" href={`./crew.html${crewId ? `?crew=${encodeURIComponent(crewId)}` : ''}`}><span aria-hidden="true">←</span>All crew</a>}
         {data && <div className="flight-mission">
           <span className="flight-context"><Icon name="plan" size={15}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></span>
         </div>}
         <div className="flight-crew glass-sm">
-          <span className="flight-avatar"><Icon name="crew" size={19}/></span>
+          <span className="flight-avatar">{person(crewId).photo ? <img src={person(crewId).photo} alt=""/> : <Icon name="crew" size={19}/>}</span>
           <div><span className="flight-crew-label">Crew member</span>
             {!exampleMode && crewList.length > 0
-              ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id}>{id}</option>)}</select>
-              : <strong>{crewId ?? '—'}</strong>}
+              ? <select name="crew" aria-label="Crew member" value={selected} onChange={event => { setFocusRequest(null); setSelectedCrew(event.target.value); }}>{crewList.map(id => <option key={id} value={id}>{person(id).name}</option>)}</select>
+              : <strong>{crewId ? person(crewId).name : '—'}</strong>}
           </div>
         </div>
       </div>

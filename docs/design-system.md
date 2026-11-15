@@ -183,6 +183,17 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
     imágenes, es decir datos, y van dentro de la card de vidrio con radio `--r-sm`. Sus grises y el rojo/azul del
     Doppler color son los del ecógrafo, no del tema. Todo lo que las rodea sigue este documento.
 
+- **Selección de tripulante** (`crew.html`, [detalle](crew-select.md)):
+  - el carrusel 3D va **sin card**, directo sobre el fondo con un halo blanco radial, como el mapa del cuerpo; las
+    flechas ‹ › son círculos `.glass-sm` de 48px; los monos son azul IVA (el color vive en la escena, no en el tema);
+  - la tira de tripulantes es una píldora `.glass-sm`; el elegido lleva una pastilla `--action` que se desliza, con
+    texto blanco; el punto del avatar usa los `--*-dot` de 2.2;
+  - la card del elegido es `.glass` (380px a la derecha; abajo en < 980px): avatar 64px, ID 24px/600, rol 14px
+    `--ink-2`, chip + título del aviso con el `--*-ink` del tono, lecturas como la card de VO₂ (`.num` 24px), signos
+    vitales en filas con fondo `--*-bg` del tono cuando están alterados, una `.btn-primary` ancha + `.btn-link`;
+  - animaciones siempre activas: la card entra desde el lado del giro (~0,45 s) y sus partes en escalera; los números
+    cuentan; al abrir el overview la página se desvanece sin mover la cámara.
+
 ---
 
 ## 7. Layout

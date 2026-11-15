@@ -54,10 +54,13 @@
 .flight-crew-label { font-size: 10px; line-height: 1.2; color: var(--muted); }
 .flight-crew strong, .flight-crew select { font: 600 13px/1.3 var(--font); }
 .flight-crew select { border: 0; background-color: transparent; color: var(--ink); cursor: pointer; margin-left: -4px; }
+.flight-back { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-pill); font: 600 12px var(--font); color: var(--link); text-decoration: none; margin-left: auto; }
+.flight-back:hover { color: var(--link-hover); }
 .flight-content { position: relative; z-index: 1; padding-bottom: 40px; }
 /* Mission line (source chip + mission + day) in the header, next to the crew selector. */
 /* Header: only the flight day (seven tabs leave no room for more). */
 .flight-mission { display: flex; align-items: center; margin-left: auto; min-width: 0; }
+.flight-back + .flight-mission { margin-left: 12px; }
 .flight-mission .flight-context { white-space: nowrap; }
 .flight-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .flight-content:focus { outline: none; }
@@ -121,3 +124,10 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -.01em;
 }
+
+.flight-avatar { overflow: hidden; }
+.flight-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; display: block; }
+
+/* Arriving from the crew select: the page settles in. */
+@keyframes flight-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.flight-content { animation: flight-enter .5s cubic-bezier(.2,.7,.2,1) both; }

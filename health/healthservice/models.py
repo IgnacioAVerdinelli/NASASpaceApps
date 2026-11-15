@@ -50,11 +50,15 @@ class MissionInfo:
         flight = [p for p in self.phases if p.gravity_g < 1.0]
         return max(p.end for p in flight) if flight else 0.0
 
-    def gravity(self, day: float) -> float:
+    def phase(self, day: float) -> Phase:
+        """The phase under way on mission `day`; before the first phase the first one, after the last the last."""
         for p in self.phases:
             if p.start <= day < p.end:
-                return p.gravity_g
-        return self.phases[0].gravity_g if day < self.start else self.phases[-1].gravity_g
+                return p
+        return self.phases[0] if day < self.start else self.phases[-1]
+
+    def gravity(self, day: float) -> float:
+        return self.phase(day).gravity_g
 
     def timestamp(self, day: float) -> str:
         t = self.launch_date + timedelta(days=float(day))

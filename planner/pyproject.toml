@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "planner"
+version = "0.1.0"
+description = "Planner: books NASA's mission medical routine (OCHMO-STD-100.1A Table 8), retests and reviews (NASA Space Apps 2026)"
+requires-python = ">=3.10"
+# gravsim is needed for the shared SQLite queue (--queue) and for the tests
+dependencies = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "httpx>=0.27"]
+
+[tool.setuptools]
+packages = ["planner"]
+
+[tool.setuptools.package-data]
+planner = ["catalog/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

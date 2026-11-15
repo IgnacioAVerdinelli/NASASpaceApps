@@ -50,3 +50,18 @@ test('local status changes affect only studies', () => {
   assert.equal(updateStatus(items, 'b', 'Completed')[1].status, undefined);
   assert.equal(updateStatus(items, 'a', 'invalid'), items);
 });
+
+test('alert measurements use real series and leave gaps for invalid readings', () => {
+  const data = fixture();
+  data.aerobic.evaluations[1].value = 123;
+  data.aerobic.evaluations[1].quality = 'missing';
+  const alert = recommendations(data).find(item => item.id === 'alert:aerobic');
+  assert.equal(alert.measurement.series[0].value, data.aerobic.evaluations[0].value);
+  assert.equal(alert.measurement.series[1].value, null);
+  assert.equal(alert.measurement.series.at(-1).label, data.aerobic.evaluations.at(-1).label);
+  assert.equal(alert.measurement.unit, data.aerobic.unit);
+  assert.equal(recommendations(data).find(item => item.type === 'Routine').measurement.series, undefined);
+  data.strength.groups[0].alert = { severity: 'warning', rule: 'beyond_typical', message: 'Faster loss' };
+  const strength = recommendations(data).find(item => item.id === `alert:strength:${data.strength.groups[0].key}`);
+  assert.equal(strength.measurement.series.at(-1).value, data.strength.groups[0].points.at(-1).value);
+});

@@ -1,4 +1,11 @@
 // The analyses contract groups retests by analysis and does not identify the specific measure.
+export function measurementSeries(points, evaluations) {
+  return points.map((point, index) => ({
+    label: evaluations[index]?.label ?? '',
+    value: point.quality === 'ok' && Number.isFinite(point.value) ? point.value : null,
+  }));
+}
+
 export function recommendations(data) {
   const { strength, aerobic, crew, mission } = data;
   const items = [];
@@ -7,7 +14,7 @@ export function recommendations(data) {
       id: `alert:strength:${group.key}`, type: 'Alert', title: `${group.name} · ${group.alert.severity} alert`,
       crew: crew.id, dayLabel: mission.todayLabel, severity: group.alert.severity,
       view: 'fuerza', muscle: group.muscleKeys[0],
-      measurement: { title: group.name, detail: group.test },
+      measurement: { title: group.name, detail: group.test, unit: group.unit, series: measurementSeries(group.points, strength.evaluations) },
       finding: { title: group.alert.severity === 'critical' ? 'Critical alert' : 'Warning', detail: group.alert.message },
       action: { title: 'Review measurement', detail: 'Open the analysis for details.' },
     });
@@ -15,7 +22,7 @@ export function recommendations(data) {
   if (aerobic.alert) items.push({
     id: 'alert:aerobic', type: 'Alert', title: `${aerobic.name} · ${aerobic.alert.severity} alert`,
     crew: crew.id, dayLabel: mission.todayLabel, severity: aerobic.alert.severity, view: 'aerobica',
-    measurement: { title: aerobic.name, detail: aerobic.test },
+    measurement: { title: aerobic.name, detail: aerobic.test, unit: aerobic.unit, series: measurementSeries(aerobic.evaluations, aerobic.evaluations) },
     finding: { title: aerobic.alert.severity === 'critical' ? 'Critical alert' : 'Warning', detail: aerobic.alert.message },
     action: { title: 'Review measurement', detail: 'Open the analysis for details.' },
   });

@@ -27,18 +27,18 @@ Conclusions are not medical decisions. A confirmed finding that the routine does
 1. The sources (in the demo, the generator) send readings and crew context to the DataService, which cleans and stores them and publishes `data.readings_stored`.
 2. The HealthService works out the status of each measure. After one test past the measurement noise it publishes a suspected `health.finding`. When the mean of two tests confirms it, it raises the alert, publishes a confirmed finding and a routed `health.notice`.
 3. The Planner books the next step: the Table 8 study, a retest after a suspected finding, or exercise sessions after a confirmed one. It saves the plan through the DataService, serves it at `GET /api/v1/plan`, and publishes `plan.reminder` notices.
-4. The crew runs the booked study or session, the instruments record it, and step 1 starts again. In the demo the generator runs the booked studies.
+4. The crew runs the booked study or session, the instruments record it, and step 1 starts again. In the demo the generator runs the booked retests (`--run-booked`).
 
 ## Parts and state
 
 | Part | What it does | State on `main` |
 |---|---|---|
 | **Sources** | Medical instruments (dynamometer, DXA scanner, cycle ergometer), wearables, room sensors, the spacesuit and the crew timeline. The last three are crew context: where someone is and what they are doing. | We have none. The generator stands in for them. |
-| **Generator** (`gravsim`) | Readings and crew context for any mission day, following curves fitted from the NASA bed-rest data. | Built, `sim/`. Running the studies the Planner books: not yet (Juan). |
+| **Generator** (`gravsim`) | Readings and crew context for any mission day, following curves fitted from the NASA bed-rest data. | Built, `sim/`. Runs the retests the Planner books with `--run-booked` (off by default); the Planner's 14-day retest cooldown stops the retest loop ([planner.md](planner.md), section 6). |
 | **DataService** | Cleans every reading, converts it to one unit per measure, stores readings, context and results (status, studies, plan), answers queries over HTTP (port 8000) and announces new data. | Built, `sim/gravsim/`. Saves to SQLite with `--db`, publishes to the SQLite queue with `--queue`. |
 | **Database** | Readings, crew context, results. | SQLite. |
 | **HealthService** | Status, findings, alerts and routed notices; the dashboard and flight-measurement JSON (port 3000). The model is trained on Earth and runs on board. | Built, `health/`. Findings carry `state` (`suspected`, `confirmed`, `cleared`): `health/healthservice/findings.py`, [health-service.md](health-service.md#hallazgo-y-aviso). |
-| **Planner** | Table 8 studies, retests and exercise sessions, fitted to the crew timeline; serves the plan. | Demo: a queue consumer inside `health/healthservice/demo.py` that books strength, bone density and aerobic capacity studies and a retest after an alert. Its own module and `GET /api/v1/plan`: designed in [planner.md](planner.md), being built on `feat/planner`. |
+| **Planner** | Table 8 studies, retests and exercise sessions, fitted to the crew timeline; serves the plan. | Built, `planner/` (port 3001), design in [planner.md](planner.md): the in-flight routine of OCHMO-STD-100.1A for a 180-day ISS mission, plus pre- and post-flight DXA, strength and VO2peak; retests and reviews from findings; `GET /api/v1/plan`. Exercise sessions: not yet. |
 | **Event queue** | `data.*` and `health.*` messages between services. | SQLite pub/sub (`sim/gravsim/queue.py`), one cursor per consumer. |
 | **Notification queue and Notification Center** | `health.notice` and `plan.reminder`, delivered to wearables, room displays, the ship center, the EVA radio and Earth. | Same SQLite file, channel `notifications`. Deliveries are simulated and listed at `GET /api/v1/deliveries` on the HealthService; no real devices, radio or Earth link. |
 | **Frontend** | 3D body, flight measurements, the plan. | Built, `src/front/sketch/`, reading the HealthService. The plan view: not yet. |

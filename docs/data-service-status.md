@@ -1,84 +1,44 @@
-# Data service: status and planned changes
+# Data service: status
 
-Snapshot: Saturday 14 Nov 2026, 19:50 (Argentina, UTC-3). Pull request #7 is merged: the data service is on `main` in `sim/`. Owner: Juan (the data service). Read this before working from what is on GitHub: several changes are in progress or local and not pushed yet.
+Snapshot: Sunday 15 Nov 2026, 00:45 (Argentina, UTC-3). Owner: Juan. The data service is the left part of [architecture.md](architecture.md): sources → DataService ↔ database, with the generator (`gravsim`) standing in for every source. It is all on `main` in `sim/`, and nothing of it is pending review.
 
-The agreed architecture is in [architecture.md](architecture.md). The data service is the left part of it: sources → DataService ↔ database, with the generator (`gravsim`) standing in for every source during the challenge. The HealthService, the two queues, the analysis scheduler, the notification system and the frontend belong to other teammates.
+## What is on `main`
 
-## Where things are
-
-| Place | What is there | State |
+| Change | Where | State |
 |---|---|---|
-| `main` | `docs/architecture.md` (diagram and parts), `docs/img/architecture-sketch.png`, `docs/references/OCHMO-STD-100.1A_RevA_2024-09-09.pdf` (Table 8 on pages 33-37) | Pushed |
-| `feat/sensor-simulator` on GitHub (`0560b75`) | `sim/`: the generator, the DataService with its HTTP API, crew context, the event hook, tests, README, demo notebook; the HealthService mock in `sim/mocks/`. Based on `Feat/gravityEffectsInvestigation` (Tomás's data in `data/nlsp/`) | Pushed, **current** |
-| Pull request [#7](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/7) to `main`, from branch `data-service` | Only `sim/` without `sim/mocks/`. Final checks passed; Valentín's review asked for `/api/v1/mission`, added before merging | **Merged** (`37aa6c3`) |
+| Generator, DataService, HTTP API, crew context, events, fit, data checks | PR [#7](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/7) (`37aa6c3`) | Merged |
+| SQLite storage (`--db`) and the SQLite message queue (`--queue`, `sim/gravsim/queue.py`) for the local demo | Enzo's integration commit `e6fe3dd` | Merged |
+| The generator runs the retests the scheduler books (`--run-booked`, off by default) | PR [#15](https://github.com/IgnacioAVerdinelli/NASASpaceApps/pull/15) (`6507667`) | Merged |
 
-## 1. Done and pushed (on `feat/sensor-simulator`)
+Tests: `cd sim && pytest` gives 118 passed and 1 expected failure.
 
-- **Generator (`sim/gravsim/`).** Readings for any crew member and mission day, from four simulated instruments: a dynamometer (strength), a DXA scanner (bone density, lean mass), a cycle ergometer (VO2peak) and a wearable (resting heart rate, blood pressure, SpO2, HRV). Its curves are fitted to the NASA bed-rest data in `data/nlsp/`. It has these controls:
-  - exercise adherence over time;
-  - fast responders;
-  - injuries on a chosen day;
-  - instrument faults: offset, drift, dropout, spike, stuck;
-  - a noise scale;
-  - mission presets: ISS 180 days, Artemis 30 days, Mars.
-- **DataService (`sim/gravsim/dataservice.py`).** Every reading passes through the same cleaning step (`pipeline.py`):
-  - timestamps are converted to UTC;
-  - missing values are marked;
-  - duplicates are dropped;
-  - values outside physical limits are flagged;
-  - each measure is converted to one unit (`units.py`, e.g. beats per second → bpm).
+## What it does
 
-  It stores readings and processed results and answers timeline queries. The SQLite store (`store.py`) has its schema defined but does nothing yet; for the challenge, all data comes from the generator.
-- **Data quality, checked by an independent review against the NASA data and standards.**
-  - No baseline, reading or change falls outside what NASA measured, within the 90 days the data covers.
-  - No impossible values.
-  - Exercise never looks worse than no exercise.
-  - The schedule follows OCHMO-STD-100.1A Table 8.
-  - Two known data gaps are documented, not hidden: calf strength under exercise, and single blood-pressure readings.
-  - The README lists the decisions that are open to veto.
-
-## 2. Pushed in `0560b75` (was in progress)
-
-- **The dashboard mock moves out of the data service.**
-  - The dashboard builder that fed the 3D page during the demo moves from `sim/gravsim/health.py` to `sim/mocks/healthservice/`. It is a mock of the HealthService, which another teammate owns.
-  - The dependency only goes from the mock to the DataService, never the other way.
-  - The mock keeps serving `/api/v1/dashboard` so the 3D page demo still works. Nothing is deleted.
-- **`gravsim.serve` becomes the DataService's own HTTP API** (standard library, JSON):
-  - `GET /api/v1/readings`: every reading so far for a crew member (`crew`, `measures`, `day` filters).
-  - `GET /api/v1/latest`: the newest usable reading of each measure.
-  - `GET /api/v1/context`: context records between `start` and `end` (default: the last 24 h).
-  - `GET /api/v1/context/current`: what a crew member is doing and where, at `at` (default: now), or null.
-  - `GET /api/v1/results` and `POST /api/v1/results`: processed results. POST takes JSON with `crew_id`, `kind`, `timestamp` and `payload`.
-- **Crew context, the data behind context-aware alerts.**
-  - A `ContextRecord`: `crew_id`, `start`, `end` (UTC), `activity`, `location`, `source`, `synthetic`.
-    - Activities: sleep, exercise, work, meal, hygiene, eva.
-    - Location: an ISS module, or "outside" during a spacewalk.
-    - Source: room sensors, crew timeline or spacesuit.
-  - The generator simulates a daily routine for each person (sleep 22:30-06:00, meals, hygiene, work in a module, two exercise blocks that follow exercise adherence, a few unplanned toilet visits from the room sensor), plus spacewalk days you can set (`crew.add_eva(day, start_hour, hours)`, with an hour in the Quest airlock before and after). During a spacewalk the suit reports a new measure, `heart_rate`, every 5 minutes.
-  - When sources overlap, `current_context` prefers what was observed: suit, then room sensor, then the crew timeline.
-  - The DataService stores context and answers "where is this astronaut and what are they doing".
-- **Event hook, for the event queue.**
-  - `DataService(publisher=...)` takes any object with `publish(topic, message)`. The default is a mock that only logs.
-  - Topics: `data.readings_stored` (crew_id, count, measures, start, end), `data.context_updated` (crew_id, count, activities, start, end), `data.result_saved` (crew_id, kind, timestamp, computed_at, model_version). One message per ingest call per crew member; nothing is published when nothing was stored. The DataService stores first, then publishes.
-  - The exact schemas are in `sim/README.md` on the branch.
-- **Demo notebook:** the dashboard section moves to a separate notebook next to the mock.
-
-## 3. Planned
-
-1. **Final checks: done.** Data quality and standards (no regressions); crew context, events and API (5 small issues, fixed); merge readiness (the subset installs and passes on a clean machine).
-3. **Pull request to `main`** containing only the data service and its dependencies.
-   - Lands: `sim/gravsim/`, `sim/fit/` (with `source_data/`, the 256 strength files the fit needs; `data/nlsp/` is not touched), the data-service tests, `sim/pyproject.toml`, the README and the demo notebook. Strength is stored in N·m.
-   - Stays on the branch: the dashboard mock, Tomás's research doc and `prototype/`, and the duplicate zips in `data/healthData/`.
-   - The team reviews and merges it.
+- **Generator.** Readings for any crew member and mission day from four simulated instruments: a dynamometer (strength), a DXA scanner (bone density, lean mass), a cycle ergometer (VO2peak) and a wearable (resting heart rate, blood pressure, SpO2, HRV). The suit adds `heart_rate` every 5 minutes during a spacewalk. Curves are fitted to the NASA bed-rest data in `data/nlsp/`. Controls: exercise adherence, fast responders, injuries, instrument faults (offset, drift, dropout, spike, stuck), a noise scale, and the ISS 180-day, Artemis 30-day and Mars presets. The test days follow OCHMO-STD-100.1A Table 8 (`gravsim.schedule.nasa_days`).
+- **DataService.** Every reading goes through one cleaning step: UTC timestamps, missing values marked, duplicates dropped, values outside physical limits flagged, one unit per measure (strength in N·m). It stores readings, crew context and results, answers queries over Python and HTTP, and announces what it stored on the event queue. Details in [sim/README.md](../sim/README.md).
 
 ## For other services
 
-- **Run the DataService API:** `cd sim && python -m gravsim.serve` (port 8000). `GET /api/v1/mission` gives the mission, its phases and gravity, the clock and the crew with their sex. `/readings` and `/latest` leave out `truth` and `status` unless you add `?truth=1`. The HealthService mock that feeds the 3D page: `python -m mocks.healthservice.serve` (port 3000).
-- **Read data** through the DataService API above, not from the generator directly.
-- **Sensors** can only send data from Python for now (`ingest()`, `ingest_context()`); there is no HTTP endpoint for sending readings yet.
-- **Every reading:**
-  - has one unit per measure;
-  - carries `synthetic: true` (generated data);
-  - carries `extrapolated: true` past what the bed-rest data covers (more than 90 days without gravity, or partial gravity).
-- **`truth`** on a reading holds the noise-free value and the active faults. A real monitoring system would not see it; use it only to score your own detection.
-- **The analysis scheduler** can store and read its studies through `save_result` / `results` (or the HTTP endpoints), with `kind` set to its own name, e.g. `study`.
+Run it with `python -m gravsim.serve --db PATH --queue PATH` (port 8000); the root [README](../README.md) has the full demo.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/v1/mission` | Name, launch date, phases with their gravity, the clock (`now`, `now_day`) and the crew with their sex |
+| `GET /api/v1/readings`, `GET /api/v1/latest` | Readings up to now. `truth` and `status` (the simulator's hidden state) only with `?truth=1`, for scoring a detector |
+| `GET /api/v1/context`, `GET /api/v1/context/current` | Crew context. `/context` covers the last 24 hours unless you pass `start` and `end` |
+| `GET /api/v1/results`, `POST /api/v1/results` | Processed results. One result per crew member, kind, time and model version: saving again replaces it |
+
+Events on channel `events`: `data.readings_stored`, `data.context_updated`, `data.result_saved` (shapes in `sim/gravsim/events.py`). Every reading carries `synthetic: true`, and `extrapolated: true` past what the bed-rest data covers. Sensors can send data only from Python (`ingest()`, `ingest_context()`); there is no HTTP endpoint for that.
+
+## Checked against the Planner design (15 Nov)
+
+Against [planner.md](planner.md), on a running DataService (ISS 180 preset, day 95):
+
+- **Saving the plan.** A 450-item plan saved twice as kind `plan` for one crew member left one record (184 KB), and the second save replaced the first. Each save took about 30 ms.
+- **Spacewalks.** The whole mission's context for one crew member is 2983 records (0.5 MB) and comes back in 0.05 s. The preset has one spacewalk, on day 108, for CM-1 and CM-2. Its record has activity `eva` and source `suit`, so filter by activity.
+- **Routine tests close by themselves.** The generator's DXA, dynamometer and cycle days fall inside the Planner's windows for routines 6013, 6024, 6025 and 6028. It also runs a DXA scan on day 360 (R+180) that has no plan item, which does no harm.
+
+## Pending
+
+1. `run_booked_studies` reads `retest` items of kind `plan` instead of kind `study`, on the first day of each window. [planner.md](planner.md) section 8 puts this change in the Planner PR.
+2. Turn `--run-booked` on in the demo once the Planner is merged. Its 14-day cooldown stops the retest loop found on 15 Nov: with today's scheduler, each retest raises the alert again and books another one (CM-2 got 5 VO2peak retests in 13 days).

@@ -27,14 +27,14 @@ Conclusions are not medical decisions. A confirmed finding that the routine does
 1. The sources (in the demo, the generator) send readings and crew context to the DataService, which cleans and stores them and publishes `data.readings_stored`.
 2. The HealthService works out the status of each measure. After one test past the measurement noise it publishes a suspected `health.finding`. When the mean of two tests confirms it, it raises the alert, publishes a confirmed finding and a routed `health.notice`.
 3. The Planner books the next step: the Table 8 study, a retest after a suspected finding, or exercise sessions after a confirmed one. It saves the plan through the DataService, serves it at `GET /api/v1/plan`, and publishes `plan.reminder` notices.
-4. The crew runs the booked study or session, the instruments record it, and step 1 starts again. In the demo the generator runs the booked studies.
+4. The crew runs the booked study or session, the instruments record it, and step 1 starts again. In the demo the generator runs the booked retests (`--run-booked`).
 
 ## Parts and state
 
 | Part | What it does | State on `main` |
 |---|---|---|
 | **Sources** | Medical instruments (dynamometer, DXA scanner, cycle ergometer), wearables, room sensors, the spacesuit and the crew timeline. The last three are crew context: where someone is and what they are doing. | We have none. The generator stands in for them. |
-| **Generator** (`gravsim`) | Readings and crew context for any mission day, following curves fitted from the NASA bed-rest data. | Built, `sim/`. Running the studies the Planner books: not yet (Juan). |
+| **Generator** (`gravsim`) | Readings and crew context for any mission day, following curves fitted from the NASA bed-rest data. | Built, `sim/`. Runs the retests the Planner books with `--run-booked` (off by default); the Planner's 14-day retest cooldown stops the retest loop ([planner.md](planner.md), section 6). |
 | **DataService** | Cleans every reading, converts it to one unit per measure, stores readings, context and results (status, studies, plan), answers queries over HTTP (port 8000) and announces new data. | Built, `sim/gravsim/`. Saves to SQLite with `--db`, publishes to the SQLite queue with `--queue`. |
 | **Database** | Readings, crew context, results. | SQLite. |
 | **HealthService** | Status, findings, alerts and routed notices; the dashboard and flight-measurement JSON (port 3000). The model is trained on Earth and runs on board. | Built, `health/`. Suspected findings: not yet ([health-service.md](health-service.md), question 9). |

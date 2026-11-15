@@ -2,7 +2,7 @@
 .fuerza{background:#f8f9fe}
 .fuerza ::selection{background:#d9d4f3;color:#231d45}
 .page-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px 40px;align-items:center;padding:14px 7%;border-bottom:1px solid #dedfee;background:#fbfbff}
-.page-head h1{font-family:Chivo,Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0}
+.page-head h1{font-family:var(--font);font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0}
 .page-head h1 span{font-weight:500;color:#4f5874}
 .lede{font-size:17px;line-height:1.65;color:#465071;max-width:70ch;margin-top:14px}
 .mission{display:flex;flex-wrap:wrap;gap:6px 28px;margin:0}
@@ -64,14 +64,14 @@
 /* Detalle del grupo seleccionado */
 .detail{padding:72px 7% 32px;background:#fbfbff}
 .detail-head{display:flex;justify-content:space-between;align-items:end;gap:30px;padding-bottom:24px;border-bottom:1px solid #d9ddeb}
-.detail-head h2{font-family:Chivo,Arial,sans-serif;font-size:clamp(32px,3.2vw,46px);font-weight:600;letter-spacing:-.035em;margin:0 0 8px}
+.detail-head h2{font-family:var(--font);font-size:clamp(32px,3.2vw,46px);font-weight:600;letter-spacing:-.035em;margin:0 0 8px}
 .detail-sub{font-size:16px;color:#4f5874}
 .detail-figure{display:flex;flex-direction:column;align-items:end;gap:8px;text-align:right}
 .detail-figure strong{font-size:44px;letter-spacing:-.03em;color:#2f2850;font-variant-numeric:tabular-nums;line-height:1}
 .detail-figure span{font-size:15px;color:#4f5874}
 .detail-charts{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:24px;margin-top:30px}
 .panel{margin:0;background:#f1f0fa;border-radius:14px;padding:clamp(20px,2.5vw,32px)}
-.panel h3{font-family:Chivo,Arial,sans-serif;font-size:21px;letter-spacing:-.02em}
+.panel h3{font-family:var(--font);font-size:21px;letter-spacing:-.02em}
 .panel figcaption p{font-size:15px;line-height:1.6;color:#4f5874;margin-top:8px;max-width:70ch}
 .detail-chart{height:320px;margin-top:18px}
 .fuerza .chart-tooltip{font-size:14px}
@@ -79,7 +79,7 @@
 
 /* Método */
 .method{padding:64px 7% 96px;background:#fbfbff}
-.method h2{font-family:Chivo,Arial,sans-serif;font-size:clamp(28px,2.8vw,40px);font-weight:600;letter-spacing:-.03em}
+.method h2{font-family:var(--font);font-size:clamp(28px,2.8vw,40px);font-weight:600;letter-spacing:-.03em}
 .method-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:30px;margin-top:28px;border-top:1px solid #d9ddeb;padding-top:26px}
 .method h3{font-size:17px;margin-bottom:10px}
 .method p{font-size:15px;line-height:1.7;color:#465071}

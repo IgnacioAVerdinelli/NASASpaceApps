@@ -1,6 +1,6 @@
 /* Mission plan: readable at arm's length (body 15–16px+, key numbers 32px+), "now" before "later". Same tokens as the Health summary. */
 .plan{max-width:1200px;margin:0 auto;padding:40px 28px 72px;color:#2f2850}
-.plan h2{font-family:Chivo,Arial,sans-serif;font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:0}
+.plan h2{font-family:var(--font);font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:0}
 .plan .recommendations-header p{color:#3d4462;font-size:16px;line-height:1.5;margin:6px 0 0;max-width:62ch}
 .plan .demo-label{white-space:normal;text-align:right}
 .plan :focus-visible{outline:3px solid #6055a5;outline-offset:2px}
@@ -93,7 +93,7 @@
 .plan-detail{background:#fff;border:1px solid #dddfea;border-radius:16px;padding:24px 28px;min-width:0}
 .plan-detail[data-status="open"]{border:2px solid #b9b1de}
 .plan-detail-head{display:flex;justify-content:space-between;align-items:start;gap:20px}
-.plan-detail h2{font-family:Chivo,Arial,sans-serif;font-size:clamp(24px,2.4vw,30px);line-height:1.2;letter-spacing:-.02em;margin:6px 0 8px}
+.plan-detail h2{font-family:var(--font);font-size:clamp(24px,2.4vw,30px);line-height:1.2;letter-spacing:-.02em;margin:6px 0 8px}
 .plan-when{font-size:19px;font-weight:800;color:#2f2850}.plan-when[data-status="open"]{color:#4c437e}.plan-when[data-status="missed"]{color:#8c212b}.plan-when[data-status="done"]{color:#1c633c}
 .plan-window{font-size:15px;color:#4f5874;line-height:1.5;margin-top:4px}
 .plan-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:20px 0 0}
@@ -164,7 +164,7 @@
 @media(max-width:850px){.plan-layout{grid-template-columns:1fr}.plan-list{position:static;max-height:none;overflow:visible}}
 @media(max-width:600px){.plan{padding:0 0 40px}.plan .recommendations-header{align-items:start;flex-direction:column}.plan-now{padding:18px}.plan-counts{row-gap:16px}.plan-counts div:nth-child(2){border-right:0}.plan-counts div:nth-child(3){padding-left:0}.plan-detail,.plan-detail[data-status="open"]{padding:20px}}
 .plan,.plan-layout,.plan-list,.plan-detail-wrap,.plan-now,.plan-counts,.plan-detail{min-width:0}
-.plan-detail h2{font-family:Chivo,Arial,sans-serif;font-size:clamp(24px,2.4vw,30px);line-height:1.2;letter-spacing:-.02em;margin:6px 0 8px}
+.plan-detail h2{font-family:var(--font);font-size:clamp(24px,2.4vw,30px);line-height:1.2;letter-spacing:-.02em;margin:6px 0 8px}
 .plan-group{font-family:inherit!important;font-size:13px!important;line-height:1.4!important;letter-spacing:.06em!important}
 .plan-actions input{min-width:0;width:100%}
 @media(max-width:600px){.plan-facts{grid-template-columns:minmax(0,1fr)}.plan-switch button{min-width:0}.routine-row-head{flex-wrap:wrap}.plan-detail-head>div{min-width:0}.plan-window,.plan-guide,.plan-detail strong{overflow-wrap:anywhere}}

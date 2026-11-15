@@ -46,7 +46,7 @@
 
 .vitals-view{padding:16px 24px 28px;display:grid;gap:16px;color:#2f2850}
 .vitals-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
-.vitals-intro h2{font-family:Chivo,Arial,sans-serif;font-size:30px;letter-spacing:-.02em}
+.vitals-intro h2{font-family:var(--font);font-size:30px;letter-spacing:-.02em}
 .vitals-intro p{font-size:16px;line-height:1.6;color:#3d4462;margin-top:6px;max-width:95ch}
 .vital-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
 .vital-card header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}

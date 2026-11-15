@@ -2,7 +2,7 @@
 .body-map-view .overview{min-height:0;gap:18px;background:none;align-items:stretch}
 .body-map-view .body-panel,.body-map-view .summary{min-width:0;padding:26px;border-radius:16px;background:rgba(255,255,255,.78)}
 .body-map-view .body-panel-heading{align-items:start;color:#19213e;letter-spacing:0}
-.body-map-view .body-panel-heading h2,.body-map-view .summary h2{font-family:Chivo,Arial,sans-serif;font-size:22px;line-height:1.25;letter-spacing:-.02em;margin:0 0 7px}
+.body-map-view .body-panel-heading h2,.body-map-view .summary h2{font-family:var(--font);font-size:22px;line-height:1.25;letter-spacing:-.02em;margin:0 0 7px}
 .body-map-view .body-panel-heading p{font-size:14px;font-weight:500;line-height:1.5;color:#53617b}
 .body-map-view .body-stage{min-height:520px;border-radius:12px;background:radial-gradient(ellipse at center,#e3eafb 0%,#f5f8fc 66%,transparent 75%)}
 .body-map-view .orbit{border-color:#becbe4}

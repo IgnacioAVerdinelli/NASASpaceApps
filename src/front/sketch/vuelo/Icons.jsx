@@ -24,7 +24,7 @@ export function Icon({ name, size = 18 }) {
 export function Brand() {
   return <span className="trama-brand" translate="no">
     <svg aria-hidden="true" viewBox="0 0 38 38" width="34" height="34" fill="none">
-      <rect width="38" height="38" rx="11" fill="#354dcc"/>
+      <rect width="38" height="38" rx="11" fill="#2F45C0"/>
       <g stroke="white" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
         <path d="m7 24 8-14 5 9 4-7 7 12"/><path d="m13 26 7-12 6 11"/>
       </g>

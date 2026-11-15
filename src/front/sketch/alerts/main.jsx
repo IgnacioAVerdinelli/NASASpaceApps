@@ -1,4 +1,5 @@
 import '../fonts/typography.css';
+import '../theme/glass.css';
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Brand } from '../vuelo/Icons.jsx';

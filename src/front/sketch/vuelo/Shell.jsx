@@ -9,6 +9,7 @@ import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { Brand, Icon } from './Icons.jsx';
+import { Backdrop } from './Backdrop.jsx';
 import '../style.css';
 import '../fuerza/style.css';
 import './style.css';
@@ -33,7 +34,7 @@ function tabFromUrl() {
 function DataNotice({ error, subject = 'health data' }) {
   const preview = new URL(window.location.href);
   preview.searchParams.set('source', 'example');
-  return <div className="flight-notice" role={error ? 'alert' : 'status'}>
+  return <div className="flight-notice glass" role={error ? 'alert' : 'status'}>
     <Icon name="pulse" size={24}/>
     <div><strong>{error ? 'Connection unavailable' : 'Loading ' + subject + '…'}</strong>
       {error && <p>Reconnecting to the {subject} service…</p>}</div>
@@ -124,7 +125,7 @@ export function Shell() {
   function renderView(id) {
     if (!visited.has(id)) return null;
     if (id === 'vitales' || id === 'plan') {
-      if (exampleMode) return <div className="flight-notice"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
+      if (exampleMode) return <div className="flight-notice glass"><Icon name={id} size={26}/><div><strong>{id === 'plan' ? 'Mission plan' : 'Watch readings'} unavailable in this example</strong><p>{id === 'plan' ? 'The mission plan uses scheduled tasks from the Planner.' : 'The wearable view uses readings from the HealthService.'} Start the full mission demo to explore this view.</p></div></div>;
       if (!crewId) return <DataNotice error={crewState.error}/>;
       return id === 'plan' ? <PlanView crew={crewId}/> : <VitalsView vitals={vitals} error={vitalsState.error}/>;
     }
@@ -145,18 +146,19 @@ export function Shell() {
   }
 
   return <div className="vuelo">
+    <Backdrop/>
     <a className="flight-skip" href="#flight-content" onClick={event => { event.preventDefault(); document.getElementById('flight-content').focus(); }}>Skip to content</a>
-    <header className="flight-bar">
+    <header className="flight-bar glass-bar">
       <div className="flight-bar-inner">
         <a className="flight-home" href="#summary" aria-label="Trama health overview"><Brand/></a>
         <nav className="flight-navigation" aria-label="Crew health">
-          <div className="flight-tabs" role="tablist" aria-label="Health views" onKeyDown={navigateTabs}>
+          <div className="flight-tabs glass-tabs" role="tablist" aria-label="Health views" onKeyDown={navigateTabs}>
             {TABS.map(t => <button key={t.id} ref={el => { tabRefs.current[t.id] = el; }}
               type="button" role="tab" id={'tab-' + t.id} aria-selected={tab === t.id} aria-controls={'panel-' + t.id}
               tabIndex={tab === t.id ? 0 : -1} onClick={() => select(t.id)}><Icon name={t.id}/>{t.label}</button>)}
           </div>
         </nav>
-        <div className="flight-crew">
+        <div className="flight-crew glass-sm">
           <span className="flight-avatar"><Icon name="crew" size={19}/></span>
           <div><span className="flight-crew-label">Crew member</span>
             {!exampleMode && crewList.length > 0
@@ -169,11 +171,11 @@ export function Shell() {
     <main className="flight-content" id="flight-content" tabIndex={-1}>
       <div className="flight-heading">
         <div className="flight-heading-main"><h1>{active.title}</h1>
-          {data && <span className="flight-source"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>}
+          {data && <span className="flight-source glass-sm"><i/>{exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data'}</span>}
         </div>
         {data && <div className="flight-context"><Icon name="orbit" size={22}/><span>{data.mission.name.replaceAll('_',' ').toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{data.mission.todayLabel} <small>/ {data.mission.landing} days</small></span></div>}
       </div>
-      {error && data && <div className="flight-notice" role="status">Connection lost. Showing the last available measurements.</div>}
+      {error && data && <div className="flight-notice glass" role="status">Connection lost. Showing the last available measurements.</div>}
       {TABS.map(item => <FlightPanel key={item.id} id={item.id} hidden={tab !== item.id}>{renderView(item.id)}</FlightPanel>)}
     </main>
   </div>;

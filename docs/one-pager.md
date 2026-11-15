@@ -35,7 +35,7 @@ El siguiente paso es demostrar un flujo completo para **una región y una magnit
 
 ## Fundamento
 
-El enfoque parte de los [riesgos del vuelo espacial investigados por NASA](https://www.nasa.gov/hrp/risks/) y de trabajos como [Tele-SUS](https://pmc.ncbi.nlm.nih.gov/articles/PMC8047175/), que estudió el seguimiento muscular mediante ecografía en astronautas. Estos antecedentes orientan la propuesta; no validan clínicamente el prototipo. Más detalle y fuentes en [contexto del seguimiento muscular](contexto-final-seguimiento-muscular.md) y [contexto del desafío](contexto-challenge.md).
+El enfoque parte de los [riesgos del vuelo espacial investigados por NASA](https://www.nasa.gov/hrp/risks/) y de trabajos como [Tele-SUS](https://pmc.ncbi.nlm.nih.gov/articles/PMC8047175/), que estudió el seguimiento muscular mediante ecografía en astronautas. Estos antecedentes orientan la propuesta; no validan clínicamente el prototipo. Más detalle y fuentes en [fuentes de investigaciones musculares](fuentes-investigaciones-musculares.md) y en el [desafío oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/).
 
 ## El punch
 

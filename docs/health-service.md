@@ -7,7 +7,7 @@
 - Sirve al front de Enzo; probado de punta a punta con el DataService, el HealthService y el front levantados por separado.
 - La regla de alertas está medida contra el `truth` de gravsim (pregunta 9). Se sumó una segunda regla, el estándar de NASA para VO2peak, medida igual.
 - Sirve también la página de mediciones en vuelo (`vuelo.html`, pestañas de fuerza y capacidad aeróbica) con `GET /api/v1/analyses`: nivel de cada prueba, banda de ruido, alertas y próximas pruebas.
-- El PR #7 y [data-service-status.md](data-service-status.md) respondieron las preguntas 1, 2, 3, 10, 12 y 14. Quedan abiertas la 4 y la 13 para Juan, y las del resto del equipo.
+- El PR #7 respondió las preguntas 1, 2, 3, 10, 12 y 14. Quedan abiertas la 4 y la 13 para Juan, y las del resto del equipo.
 
 Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): procesa los datos del astronauta, entrega los resultados al front y a la base (a través del DataService), y publica las alertas en la cola de notificaciones. Las alertas las envía el sistema de notificaciones, no el HealthService.
 
@@ -26,7 +26,7 @@ Es la pieza "HealthService (Python)" de [architecture.md](architecture.md): proc
 - No genera datos: eso es gravsim.
 - No entrega las alertas: eso es el sistema de notificaciones. El HealthService decide a quién van y el sistema de notificaciones las hace llegar.
 - No decide cuándo toca cada estudio: eso es el planificador de análisis, con la Tabla 8 de OCHMO-STD-100.1A.
-- No diagnostica ni da un porcentaje global de degradación ([contexto-final-seguimiento-muscular.md](contexto-final-seguimiento-muscular.md), §9).
+- No diagnostica ni da un porcentaje global de degradación.
 - Todavía no tiene modelos: la arquitectura los ubica acá, pero quedan para después.
 
 ## Con quién habla
@@ -162,7 +162,7 @@ Ahora que un hallazgo puede generar un estudio extra, una regla con falsas alarm
 
 ## Preguntas abiertas
 
-**Respondidas por Juan** en [data-service-status.md](data-service-status.md) (14/11, 18:50) y en el PR #7 (mergeado el 14/11):
+**Respondidas por Juan** en el PR #7 (mergeado el 14/11):
 
 - **1 (API, misión y tripulantes).** Se lee por HTTP, en el puerto 8000:
   - `GET /api/v1/mission`: nombre, fecha de lanzamiento, fases con su gravedad, el día "ahora" de su reloj (`now_day`) y los tripulantes con su sexo. Lo agregó a pedido nuestro en el PR #7;

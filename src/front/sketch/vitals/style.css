@@ -64,13 +64,6 @@ article.vital-tile { cursor: default; }
 .day-legend i.area { width: 10px; height: 10px; border-radius: 2px; }
 .day-legend .day-unit { margin-left: auto; color: var(--muted); }
 
-/* ---- Reference strip ---- */
-.watch-reference { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 0 16px; padding: 0 16px; font-size: 13px; }
-.watch-reference summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; color: var(--link); font-weight: 600; }
-.watch-reference summary:hover { color: var(--link-hover); }
-.watch-reference details p { max-width: 70ch; margin: 0 0 14px; line-height: 1.5; color: var(--ink-2); }
-.watch-reference a.btn-link { text-decoration: none; font-size: 13px; }
-
 /* ---- One card per vital ---- */
 .vital-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
 .vital-detail { min-width: 0; padding: 20px 22px; }
@@ -116,8 +109,7 @@ article.vital-tile { cursor: default; }
 .compact-watch-shared-time { margin-top: 10px; }
 
 /* ---- Focus ---- */
-.vital-tile:focus-visible, .day-compare button:focus-visible, .compact-watch-link:focus-visible,
-.watch-reference summary:focus-visible, .watch-reference a:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+.vital-tile:focus-visible, .day-compare button:focus-visible, .compact-watch-link:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
 
 /* ---- Responsive ---- */
 @media (max-width: 1280px) { .vital-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); } }

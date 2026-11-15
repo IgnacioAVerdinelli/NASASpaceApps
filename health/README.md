@@ -1,6 +1,6 @@
 # HealthService
 
-**Local demo update:** `python -m healthservice.demo --queue PATH` consumes DataService events, processes all crew members, schedules the supported studies and records simulated deliveries. Start all components as described in the [root README](../README.md). `python -m healthservice --queue PATH` exposes the delivery log at `/api/v1/deliveries`. In this mode processing is not limited to dashboard requests; the known limitation below applies to running the HealthService without the demo worker.
+**Local demo update:** `python -m healthservice.demo --queue PATH` consumes DataService events, processes all crew members, publishes health notices (`health.notice`, [contract v1](../docs/health-notices.md)), schedules the supported studies and records simulated deliveries. The queue can also come from `NASA_QUEUE`; `python -m healthservice.notices` publishes synthetic fixtures and consumes the queue from another process. Start all components as described in the [root README](../README.md). `python -m healthservice --queue PATH` exposes the delivery log at `/api/v1/deliveries`. In this mode processing is not limited to dashboard requests; the known limitation below applies to running the HealthService without the demo worker.
 
 The "HealthService (Python)" of [docs/architecture.md](../docs/architecture.md): it reads the crew's readings from the
 DataService, works out how each measure changed against the person's pre-flight reference, compares it with the NASA
@@ -88,11 +88,13 @@ version: one record per measure at the same time would overwrite each other. The
 | `reference.py` | Curves fitted from the bed-rest data (gravsim's `params.json`; path in `HEALTH_REFERENCE_PATH`). |
 | `processing.py` | Reference, change, score and typical change with and without exercise, per measure. Ported from the dashboard builder of gravsim 0.1.0. |
 | `dashboard.py` | Builds the JSON for the 3D page from those results. |
+| `contract.py` | Python copy of the page's checks (`src/front/sketch/data/contract.js`), for the tests. |
+| `alerts.py` | Alert rule (below) and an in-memory queue. |
+| `notices.py` | Health notices for the Notification Center (contract v1, issue #11): routing by priority and context, revisions, mission location, and a command line to publish fixtures and consume the queue. See [docs/health-notices.md](../docs/health-notices.md). |
+| `demo.py` | Queue worker: processes `data.readings_stored`, publishes findings and notices, schedules studies, and stands in for the Notification Center's deliveries. |
+| `sources.py` | What the HealthService needs from the DataService: `DataServiceSource` (HTTP) and `GravsimSource` (gravsim's DataService in the same process, for tests and the evaluation). |
 | `levels.py` | Levels 1 to 4 of a test (below) and the noise band of one test. |
 | `analyses.py` | Builds the JSON for the flight-measurement page (`vuelo.html`) from the same results, alerts and the scheduler's studies. |
-| `contract.py` | Python copy of the pages' checks (`src/front/sketch/data/contract.js`), for the tests. |
-| `alerts.py` | Alert rules (below) and an in-memory queue. |
-| `sources.py` | What the HealthService needs from the DataService: `DataServiceSource` (HTTP) and `GravsimSource` (gravsim's DataService in the same process, for tests and the evaluation). Besides readings, it reads the studies the demo scheduler records (`kind=study`) for the upcoming tests. |
 | `service.py` | Ties it together. Results are saved and alerts raised only when new readings arrive, not on every poll. |
 | `api.py`, `__main__.py` | HTTP API (FastAPI) and command line. |
 | `evaluation/alert_rule.py` | Scores alert rules against gravsim's `truth` (below). |

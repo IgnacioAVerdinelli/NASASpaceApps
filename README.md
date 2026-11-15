@@ -36,7 +36,7 @@ npm run dev
 
 La demostración de alertas para wearable está disponible en `/alerts/` desde el mismo servidor. Sus alertas son ejemplos simulados y se pueden seleccionar para explorar el reloj.
 
-Las mediciones en vuelo están en `/vuelo.html` (link "Flight measurements" de la página principal), con dos pestañas: fuerza muscular por grupo y capacidad aeróbica (VO₂pico). Muestran cada prueba con su nivel, la banda de ruido de medición, las alertas y las próximas pruebas que agenda el planificador; todo sale de `GET /api/v1/analyses` del HealthService y se actualiza solo. Las dos páginas conservan el tripulante elegido (`?crew=`).
+La página principal (`/`) reúne alertas, estudios programados y las mediciones en vuelo, con dos pestañas: fuerza muscular por grupo y capacidad aeróbica (VO₂pico). Muestran cada prueba con su nivel, la banda de ruido de medición, las alertas y las próximas pruebas que agenda el planificador; todo sale de `GET /api/v1/analyses` del HealthService y se actualiza solo. El mapa corporal está en `/overview.html`; ambas páginas conservan el tripulante elegido (`?crew=`).
 
 La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
 

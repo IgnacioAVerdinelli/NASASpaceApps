@@ -40,7 +40,7 @@ Los textos admiten hasta 1000 caracteres. Las listas de resultados y gráficos a
 
 ## Mediciones en vuelo: `GET /api/v1/analyses`
 
-La página `vuelo.html` (pestañas "Muscle strength" y "Aerobic capacity") consume un segundo JSON del mismo HealthService, test por test. El frontend no calcula nada: cada valor, nivel, banda de ruido y alerta viene de acá, y son los mismos que el HealthService guarda y manda a la cola. El frontend solo los pasa a colores y texto.
+La página principal `/` (pestañas "Muscle strength" y "Aerobic capacity") consume un segundo JSON del mismo HealthService, test por test. El frontend no calcula nada: cada valor, nivel, banda de ruido y alerta viene de acá, y son los mismos que el HealthService guarda y manda a la cola. El frontend solo los pasa a colores y texto.
 
 - **Transporte:** el mismo que el dashboard (sondeo cada 3 s, sin caché, cancelación a los 8 s, se conserva el último estado válido). La URL sale de `VITE_DASHBOARD_URL` cambiando `/dashboard` por `/analyses` y conservando sus parámetros; `?crew=` elige tripulante y `?day=` mira un día pasado sin guardar nada. Un tripulante desconocido devuelve `404` con la lista de tripulantes. Con `VITE_DASHBOARD_MODE=example` se usa [analyses.example.json](../src/front/sketch/data/analyses.example.json) (CM-1, semilla 7, día 170).
 - **Validador:** `validateAnalyses` en `src/front/sketch/data/contract.js`, con su copia en `health/healthservice/contract.py` para los tests.
@@ -114,3 +114,7 @@ La integración es solo de lectura: el frontend no envía cambios al backend. La
 - `trapezius_r`: Trapezius (R)
 - `upper_arm_muscles_l`: Upper Arm Muscles (L)
 - `upper_arm_muscles_r`: Upper Arm Muscles (R)
+
+## Recomendaciones y alertas
+
+La página principal muestra las alertas de ambos análisis y los estudios próximos del planificador desde `/api/v1/analyses`. Los retests se distinguen de las evaluaciones de rutina; el contrato agrupa los estudios por análisis y no identifica el músculo concreto de cada retest. Los cambios de estado son locales a la demo y no se envían al planificador.

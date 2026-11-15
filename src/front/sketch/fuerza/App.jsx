@@ -133,7 +133,7 @@ function MuscleDetail({ group, evaluations, evalIndex, mission, upcoming, levels
 }
 
 // Strength view. The header and the tabs come from vuelo/Shell.jsx.
-export function StrengthView({ data }) {
+export function StrengthView({ data, focusRequest = null }) {
   const { strength, mission, crew, levels, notice } = data;
   const { evaluations, upcoming } = strength;
   const groups = useMemo(() => strength.groups.map(group => ({ ...group, keys: group.muscleKeys })), [strength.groups]);
@@ -147,6 +147,15 @@ export function StrengthView({ data }) {
   const [exploration, setExploration] = useState({ key: null, request: 0 });
   const current = evaluations[evalIndex];
   const keyToGroup = useMemo(() => new Map(groups.flatMap(group => group.keys.map(key => [key, group.key]))), [groups]);
+  const handledFocus = useRef(null);
+  useEffect(() => {
+    if (focusRequest && focusRequest !== handledFocus.current && keyToGroup.has(focusRequest.key)) {
+      handledFocus.current = focusRequest;
+      setSelectedKey(focusRequest.key);
+      pickEvaluation(evaluations.length - 1);
+      setExploration(previous => ({ key: focusRequest.key, request: previous.request + 1 }));
+    }
+  }, [focusRequest, keyToGroup, evaluations.length, pickEvaluation]);
 
   const rows = useMemo(() => groups.map(group => ({ group, point: group.points[evalIndex] }))
     .sort((a, b) => (a.point.changePct ?? Infinity) - (b.point.changePct ?? Infinity)), [groups, evalIndex]);

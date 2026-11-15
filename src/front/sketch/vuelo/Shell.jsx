@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StrengthView } from '../fuerza/App.jsx';
+import { dayDistance, recommendations, updateStatus } from './recommendations.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
 import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { loadCrew } from '../data/dashboard.js';
@@ -15,6 +16,7 @@ const apiUrl = import.meta.env.VITE_DASHBOARD_URL || '/api/v1/dashboard';
 
 // Each analysis of "Flight measurements" is a tab. To add one, add it here.
 const TABS = [
+  { id: 'recommendations', label: 'Recommendations' },
   { id: 'fuerza', label: 'Muscle strength', View: StrengthView },
   { id: 'aerobica', label: 'Aerobic capacity', View: AerobicView },
 ];
@@ -23,8 +25,12 @@ const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew'
 
 export function Shell() {
   const [tab, setTab] = useState(fromHash);
+  const [items, setItems] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [focusRequest, setFocusRequest] = useState(null);
   const [selectedCrew, setSelectedCrew] = useState(crewFromUrl);
   const tabRefs = useRef({});
+  const previousCrew = useRef(null);
   useEffect(() => {
     const onHash = () => setTab(fromHash());
     window.addEventListener('hashchange', onHash);
@@ -36,6 +42,16 @@ export function Shell() {
   const selected = crewList.includes(selectedCrew) ? selectedCrew : crewList[0];
   const { data, error } = useDashboard(exampleMode ? '' : selected ? analysesUrl(apiUrl, selected) : null, loadAnalyses);
   const crewId = data?.crew.id ?? selected;
+  const today = data?.mission.today ?? null;
+  useEffect(() => {
+    if (!data) return;
+    const current = recommendations(data);
+    const sameCrew = previousCrew.current === data.crew.id;
+    setItems(previous => current.map(item => item.type === 'Alert' ? item : ({ ...item, status: sameCrew ? previous.find(old => old.id === item.id)?.status ?? item.status : item.status })));
+    if (!sameCrew) setSelectedId(current[0]?.id);
+    previousCrew.current = data.crew.id;
+  }, [data]);
+  const selectedItem = items.find(item => item.id === selectedId) || items[0];
   useEffect(() => {
     if (!crewId || exampleMode) return;
     const url = new URL(window.location.href);
@@ -55,7 +71,7 @@ export function Shell() {
     event.preventDefault();
     select(TABS[(next + TABS.length) % TABS.length].id, true);
   };
-  const overviewHref = `./${crewId && !exampleMode ? `?crew=${encodeURIComponent(crewId)}` : ''}`;
+  const overviewHref = `./overview.html${crewId && !exampleMode ? `?crew=${encodeURIComponent(crewId)}` : ''}`;
 
   // Inactive tabs stay mounted (hidden): the 3D model is not reloaded and each tab keeps its state.
   return <main className="vuelo">
@@ -74,8 +90,25 @@ export function Shell() {
       </div>
     </header>
     {(error || crewState.error) && data && <div className="connection-notice" role="status">Connection lost. Showing the last available data.</div>}
-    {!data
-      ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div>
-      : TABS.map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data}/></section>)}
+    {!data ? <div className="connection-notice" role={error || crewState.error ? 'alert' : 'status'}>{error || crewState.error ? 'Unable to load data. Retrying automatically…' : 'Loading data…'}</div> : <>
+    <section id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations" hidden={tab !== 'recommendations'} className="recommendations">
+      <div className="recommendations-header"><div><h2>Recommendations</h2><p>Alerts and upcoming assessments from HealthService.</p></div>{data.simulated && <span className="demo-label">SIMULATED DATA</span>}</div>
+      <p className="recommendations-intro">Explore the measurement, observation and suggested next step.</p>
+      {selectedItem ? <div className="decision-layout">
+        <article className="decision-main" aria-labelledby="recommendation-detail-title">
+          <div className="decision-heading"><div><span className="decision-kind">{selectedItem.type} · {selectedItem.dayLabel}</span><h3 id="recommendation-detail-title">{selectedItem.title}</h3><p>{selectedItem.type === 'Alert' ? 'Current alert' : dayDistance(selectedItem.day, today)} · Crew member {selectedItem.crew}</p></div><span className="decision-status" data-status={selectedItem.severity || selectedItem.status}>{selectedItem.severity ? `${selectedItem.severity} alert` : selectedItem.status}</span></div>
+          <div className="decision-steps" aria-label="Assessment details">
+            {[['Measurement', selectedItem.measurement], ['Observation', selectedItem.finding], ['Suggested action', selectedItem.action]].map(([label, step]) => <div className="decision-step" key={label}>
+              <span className="step-label">{label}</span><strong>{step.title}</strong><p>{step.detail}</p>
+            </div>)}
+          </div>
+          <div className="recommendation-actions"><button type="button" onClick={() => { setFocusRequest(selectedItem.muscle ? { key: selectedItem.muscle, request: Date.now() } : null); select(selectedItem.view, true); }}>View related measurement <span aria-hidden="true">→</span></button>{selectedItem.type !== 'Alert' && <label>Local demo status <select value={selectedItem.status} onChange={event => setItems(current => updateStatus(current, selectedItem.id, event.target.value))}><option>Scheduled</option><option>Pending</option><option>Completed</option></select></label>}</div>
+        </article>
+        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{item.type === 'Alert' ? 'Current alert' : dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.severity || item.status}>{item.severity ? `${item.severity} alert` : item.status}</span></button>)}</div></aside>
+      </div> : <div className="decision-empty"><h3>No alerts or upcoming assessments</h3><p>No alerts or scheduled assessments are available for this crew member.</p></div>}
+      <p className="recommendations-note">Alerts and scheduled assessments come from HealthService. Local demo status changes are not saved or sent to the scheduler.</p>
+    </section>
+    {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
+    </>}
   </main>;
 }

@@ -1,7 +1,7 @@
 """How big a change is, for the flight-measurement page (strength and aerobic capacity).
 
 One scale for every measure on that page, so the page, the HealthService and the alerts use the same numbers
-(the scale comes from docs/handoff/frontend.md, by Tomás):
+(the scale was agreed with Tomás for the flight-measurement page):
 
 - level 1: less than 5% worse than pre-flight;
 - level 2: 5 to 10% worse;

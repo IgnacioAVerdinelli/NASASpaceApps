@@ -14,7 +14,6 @@ Este documento resume el trabajo de la rama `Feat/gravityEffectsInvestigation`: 
 |---|---|---|
 | `data/nlsp/` | Datos abiertos de reposo en cama del NASA Life Sciences Portal: 4 experimentos (de MR079G solo CFT70), 2.716 archivos, ~13 MB | En commit; carpetas no-CFT70 de MR079G quitadas sin commit |
 | `data/nlsp/README.md` | Descripción de los datasets, sus estudios, formato y DOI | Sin commit |
-| `prototype/index.html` | Prototipo descartable "GravTrack" (HTML + Chart.js) **con datos falsos** | En stage, sin commit |
 | `docs/investigacion-gravedad.md` | Este documento | Sin commit |
 
 Fuera del repositorio, en `D:\Tomas\NasaSpaceApps\.nlsp-staging\`, quedaron los zips originales de NLSP, los informes en Excel del Space Station Research Explorer y los PDF de NASA usados como referencia (OCHMO-STD-100.1A, OCHMO-TB-031, Standard Measures).
@@ -497,23 +496,9 @@ La herramienta sigue el calendario de NASA: le pide al astronauta cada medición
 
 ---
 
-## 7. Prototipo `prototype/index.html` (GravTrack)
+## 7. Prototipo GravTrack
 
-Es un prototipo **descartable** para validar la idea. Es un único HTML con Chart.js 4.4.1 desde cdnjs, así que necesita internet. Se abre con doble clic. **Todos los datos del astronauta son falsos** (tripulante CM-2, misión de 180 días, hoy FD112).
-
-| Pestaña | Qué muestra |
-|---|---|
-| Resumen | Línea de tiempo de la misión, semáforo por sistema (hueso, aeróbico, fuerza, masa, ojo, ortostatismo, sueño) marcado como *medido* o *estimado*, minutos de ejercicio semanales contra 600 y las 3 recomendaciones principales |
-| Progresión vs. histórico | Línea del astronauta sobre bandas que se pueden prender y apagar (control, ejercicio, AG, ISS, mujeres), con umbrales de NASA y proyección a FD180 |
-| Cargar datos | Los 7 métodos de entrada; varios son interactivos y actualizan gráficos y alertas |
-| Calendario | Tabla 8 de OCHMO-STD-100.1A con lo hecho y lo próximo según FD112 |
-| Orientación | Recomendaciones calculadas según el estado de cada sistema, con su fuente |
-| Regreso a la gravedad | Frecuencia cardíaca en la prueba de inclinación (antes, predicción R+0, historial MR001G) y curva de recuperación |
-| Fuentes y supuestos | Datasets con DOI y advertencias |
-
-**Importante:** las bandas históricas del prototipo son **aproximaciones a mano** de los valores publicados. Todavía no se calculan desde los CSV de `data/nlsp/`.
-
----
+El primer prototipo descartable (un HTML con Chart.js y datos falsos) se usó para validar la idea y ya no está en el repositorio. La aplicación actual vive en `src/front/sketch/`.
 
 ## 8. Próximos pasos
 

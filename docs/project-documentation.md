@@ -6,7 +6,7 @@
 
 ## 1. Project at a glance
 
-**Challenge:** [Create Health Monitoring Software for Astronauts on Space Missions](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/). The team's [challenge research](contexto-challenge.md) records that the official brief asks for a visual tool that helps astronauts assess their health and offers guidance on possible actions. It identifies the astronaut as the main user and considers long missions, limited access to support, and a variety of possible health indicators.
+**Challenge:** [Create Health Monitoring Software for Astronauts on Space Missions](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/). The official brief asks for a visual tool that helps astronauts assess their health and offers guidance on possible actions. It identifies the astronaut as the main user and considers long missions, limited access to support, and a variety of possible health indicators.
 
 **The problem.** A crew member needs to understand changes in health over time, but isolated measurements can be hard to interpret. On distant missions, communication delays and limited access to specialists make understandable information and an organized next step especially valuable.
 
@@ -122,7 +122,7 @@ The guide describes a longer live walkthrough; the official submission demo may 
 
 ## 6. Submission workspace
 
-The following is a working draft, not a submitted form. The team's [challenge research](contexto-challenge.md#6-participación-entrega-y-evaluación) records a direct review of the official guide on 14 November 2026. The official challenge and submission pages returned HTTP 502 during this documentation pass on 15 November; **recheck the current form and guide** for exact fields, eligibility, limits, AI disclosure and deadlines. The local research records an English-language submission, a public demo link and a public final-project link, plus fields for NASA data, other references and AI use.
+The following is a working draft, not a submitted form. The team made a direct review of the official guide on 14 November 2026. The official challenge and submission pages returned HTTP 502 during this documentation pass on 15 November; **recheck the current form and guide** for exact fields, eligibility, limits, AI disclosure and deadlines. The local research records an English-language submission, a public demo link and a public final-project link, plus fields for NASA data, other references and AI use.
 
 ### Project name
 
@@ -156,6 +156,6 @@ We used NASA Life Sciences Portal experiments MR079G (isokinetic muscle function
 ## 7. Further technical and research documentation
 
 - [System architecture](architecture.md) · [frontend/backend contract](frontend-backend.md) · [HealthService design](health-service.md) · [Planner](planner.md) · [wearable](wearable.md)
-- [Demo guide](guia-demo.md) · [handoff](handoff/README.md) · [planner and watch handoff](handoff/planner-y-reloj.md)
+- [Demo guide](guia-demo.md)
 - [Dataset inventory](../data/nlsp/README.md) · [simulator and fit](../sim/README.md) · [strength fit sources](../sim/fit/source_data/README.md)
-- [Challenge research and submission guide notes](contexto-challenge.md) · [muscle-monitoring research](contexto-final-seguimiento-muscular.md) · [muscle research sources](fuentes-investigaciones-musculares.md) · [monitoring variables](variables-de-monitoreo.md)
+- [Muscle research sources](fuentes-investigaciones-musculares.md) · [gravity research](investigacion-gravedad.md) · [eyes](investigacion-ojos.md) · [neck veins](investigacion-yugular.md)

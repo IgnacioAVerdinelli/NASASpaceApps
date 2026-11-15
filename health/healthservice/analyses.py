@@ -13,7 +13,7 @@ every number, level and alert comes from here, the same ones the HealthService s
 - Upcoming tests: the tests the Planner booked (its plan, kind "plan" in the DataService), routine or a retest
   after a finding. Without the Planner running there are none.
 - The cycle test's own data (peak heart rate, RER, Borg, why it stopped, measured or estimated) is not recorded
-  by the DataService yet (docs/handoff/dataservice.md, requests 1 and 2), so `test` is null.
+  by the DataService yet, so `test` is null.
 """
 from __future__ import annotations
 

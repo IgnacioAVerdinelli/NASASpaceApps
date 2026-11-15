@@ -49,7 +49,7 @@ Se contrastaron documentación general, tres pilares, inventario NLSP, notas loc
 
 Entrada Vite independiente, sin importar Shell, cuerpo anatómico ni clientes de servicios. Se conserva `crew`, `source`, entrada y vista conocidas en el regreso mediante una lista de destinos locales. La prueba de navegación permanece en `tests/measurement-navigation.test.mjs`.
 
-Verificación y medidas de la corrección: [informe de comparación](como-medimos-stack-verificacion.md). Incluye inspección de referencia, herramientas reutilizadas, capturas al mismo viewport, revisión de transiciones, ida y vuelta, resize, móvil y limpieza al desmontar. La compilación mantiene la advertencia previa por el tamaño del chunk anatómico del dashboard. No se realizó una auditoría exhaustiva con lectores de pantalla ni validación clínica.
+La corrección se verificó con inspección de referencia, herramientas reutilizadas, capturas al mismo viewport, revisión de transiciones, ida y vuelta, resize, móvil y limpieza al desmontar. La compilación mantiene la advertencia previa por el tamaño del chunk anatómico del dashboard. No se realizó una auditoría exhaustiva con lectores de pantalla ni validación clínica.
 
 El servidor de desarrollo solicitado por Nacho permanece en `http://localhost:5194/como-medimos.html` durante la revisión local. No hay commit ni push de esta landing.
 

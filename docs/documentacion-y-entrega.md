@@ -12,7 +12,7 @@ En una misión prolongada, una persona de la tripulación necesita entender cóm
 
 GraviTal reúne en una interfaz las tendencias de un reloj simulado, pruebas periódicas de fuerza y capacidad aeróbica, un cuerpo 3D y un plan de tareas. Compara las mediciones con referencias personales y con datos de estudios de reposo en cama de NASA; muestra cambios, incertidumbre y posibles seguimientos. Busca apoyar la autonomía y la revisión humana, sin reemplazar al equipo médico.
 
-El [desafío oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/) plantea una herramienta visual para que astronautas evalúen su salud y reciban orientación. Nuestra interpretación y las fuentes consultadas están en [contexto del desafío](contexto-challenge.md).
+El [desafío oficial](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/) plantea una herramienta visual para que astronautas evalúen su salud y reciban orientación.
 
 ### Qué se puede mostrar hoy
 
@@ -68,7 +68,7 @@ La demo queda en `http://127.0.0.1:5190/vuelo.html` y se detiene con `Ctrl+C`. P
 
 ## 5. Formulario: respuestas en inglés para adaptar
 
-La [guía oficial de entrega](https://www.spaceappschallenge.org/resources/project-submission-guide/) devolvió error 502 al consultarla el 15 de noviembre. Los campos de abajo provienen de las [notas del equipo](contexto-challenge.md#6-participación-entrega-y-evaluación), que registran una lectura de la guía el 14 de noviembre. **[VERIFICAR]** Confirmar los nombres, límites de caracteres, formato y requisitos en el formulario actual. Los textos son borradores: revisar que describan exactamente lo que el equipo entregue.
+La [guía oficial de entrega](https://www.spaceappschallenge.org/resources/project-submission-guide/) devolvió error 502 al consultarla el 15 de noviembre. Los campos de abajo provienen de notas del equipo que registran una lectura de la guía el 14 de noviembre. **[VERIFICAR]** Confirmar los nombres, límites de caracteres, formato y requisitos en el formulario actual. Los textos son borradores: revisar que describan exactamente lo que el equipo entregue.
 
 ### Project Name
 
@@ -135,4 +135,4 @@ Fuentes externas, recursos y créditos. **[COMPLETAR]** Revisar con todo el equi
 - [ ] Revisar que cada afirmación esté respaldada y que la entrega distinga claramente datos reales de investigación, datos sintéticos, funcionalidades implementadas y propuestas futuras.
 - [ ] Confirmar que el proyecto y los materiales finales se ven correctamente y que la información presentada coincide con la demo.
 
-Para más detalle técnico y bibliografía, consultar la [documentación maestra en inglés](project-documentation.md), la [investigación del desafío](contexto-challenge.md) y el [inventario de fuentes musculares](fuentes-investigaciones-musculares.md).
+Para más detalle técnico y bibliografía, consultar la [documentación maestra en inglés](project-documentation.md) y el [inventario de fuentes musculares](fuentes-investigaciones-musculares.md).

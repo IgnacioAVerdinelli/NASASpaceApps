@@ -1,6 +1,6 @@
 # Guía: levantar y mostrar la demo
 
-Cómo correr el sistema completo y qué recorrer en la página. Para saber qué hace cada parte y por qué, ver [handoff/planner-y-reloj.md](handoff/planner-y-reloj.md) y [architecture.md](architecture.md).
+Cómo correr el sistema completo y qué recorrer en la página. Para saber qué hace cada parte y por qué, ver [architecture.md](architecture.md), [planner.md](planner.md) y [wearable.md](wearable.md).
 
 ## 1. Instalar (una vez)
 

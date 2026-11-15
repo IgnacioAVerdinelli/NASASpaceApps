@@ -12,7 +12,7 @@ import time
 
 from gravsim.queue import Queue
 
-from . import notices
+from . import findings, notices
 from .alerts import check
 from .processing import compute_results
 from .reference import Reference
@@ -37,6 +37,7 @@ class DemoWorker:
         self.source, self.queue = source, queue
         self.reference = Reference.load()
         self.notices = notices.NoticeStore(source)
+        self.findings = findings.FindingStore(source)
 
     def _notice(self, *, previous, crew_id, measure, priority, title, message, created_at, event, contexts, now,
                 synthetic, state='active'):
@@ -104,13 +105,9 @@ class DemoWorker:
         results = compute_results(self.reference, mission, crew, readings, day)
         self.source.save_results(results)
         alerts = check(self.reference, mission, results)
-        for measure, alert in alerts.items():
-            result = next(r for r in results if r.measure == measure)
-            key = f'{crew.id}:{measure}:{result.last_reading_at}'
-            finding = {'type': 'finding', 'crew_id': crew.id, 'measure': measure,
-                       'change_pct': result.change_pct, 'typical_no_exercise_pct': result.typical_no_exercise_pct,
-                       'mission_day': day, 'synthetic': alert.synthetic}
-            self.queue.publish('health.finding', finding, dedupe=f'finding:{key}')
+        previous = self.findings.latest(crew.id)
+        published = findings.changes(self.reference, mission, results, alerts, previous)
+        findings.publish(self.queue, self.findings, crew.id, published, previous)
         self.update_notices(crew.id, results, alerts, now)
 
     def consume(self, consumer, channel, handler):

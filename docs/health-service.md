@@ -93,19 +93,45 @@ Campos de cada medida:
 
 Un **hallazgo** es el dato analítico: va a la cola de eventos, para el planificador. Un **aviso** es el mensaje para personas: va a la cola de notificaciones, con los destinatarios ya decididos.
 
-Hallazgo:
+Hallazgo (topic `health.finding`, canal `events`; `healthservice/findings.py`). Tiene la forma que espera el Planner ([architecture.md](architecture.md#messages-the-planner-depends-on), [planner.md](planner.md) §6):
 
 ```json
 {
   "type": "finding",
   "crew_id": "CM-2",
   "measure": "knee_extension_60",
-  "change_pct": -22.1,
-  "typical_no_exercise_pct": -18.4,
-  "mission_day": 120,
+  "state": "suspected",
+  "basis": "one test",
+  "rule": "beyond_typical",
+  "level": 3,
+  "change_pct": -14.2,
+  "typical_no_exercise_pct": -6.1,
+  "beyond_noise": 1.2,
+  "mission_day": 74,
+  "last_reading_at": "2027-03-16T09:30:00Z",
   "synthetic": true
 }
 ```
+
+| `state` | Cuándo | `basis` | Qué hace el Planner |
+|---|---|---|---|
+| `suspected` | La última prueba sola pasa el ruido: las mismas dos reglas de la alerta (abajo) aplicadas a una prueba. Pasa la pérdida típica sin ejercicio por más de 1,645 veces el ruido de una prueba, o, solo en VO2peak, pasa el estándar de NASA. No hay alerta ni aviso. | `one test` | Agenda un retest |
+| `confirmed` | Salta la alerta (promedio de las dos últimas pruebas). | `mean of two` | Agenda una revisión del médico |
+| `cleared` | Una medida cuyo último hallazgo era `suspected` o `confirmed` ya no cumple ninguna de las dos. | el del hallazgo anterior | Cancela lo que había agendado |
+
+- `rule`: `beyond_typical` o `nasa_standard`, como en la alerta.
+- `level`: el nivel 1–4 de la última prueba (`levels.py`).
+- `beyond_noise`: cuánto pasa la línea de ruido de la regla `beyond_typical`, en múltiplos de esa línea (1,645 × el ruido de una prueba o del promedio de dos, según `basis`). Más de 1 es más de lo que explica el ruido. En un hallazgo por `nasa_standard` puede ser menor que 1.
+- `mission_day` y `last_reading_at` son los de la última prueba, no el día en que se procesó.
+- Se publica una vez por prueba y estado: procesar la misma prueba de nuevo no agrega nada a la cola (dedupe `finding:<crew>:<measure>:<last_reading_at>:<state>`). Una prueba nueva que sigue en el mismo estado se publica de nuevo: así el Planner sabe que el retest ya se hizo y el hallazgo sigue.
+- El último hallazgo de cada medida se guarda en el DataService (resultado de kind `finding`, uno por tripulante, fechado al inicio de la misión, `model_version` `findings-1`), para que `cleared` funcione aunque el worker se reinicie.
+
+Con gravsim 0.2.0, en 200 tripulantes al azar (50 misiones, desde el lanzamiento hasta el aterrizaje), salen 92 hallazgos `suspected`. Contra `truth`:
+
+- 17 son por `beyond_typical` y 7 de esos son falsos.
+- 75 son por el estándar de VO2peak en una sola prueba y 53 de esos son falsos. Por eso una sola prueba no alcanza para la alerta. Para un retest alcanza, pero si el Planner los encuentra de más se puede sacar esta regla del `suspected` (`alerts.beyond_standard_one`).
+
+En la tripulación de la demo (semilla 7) salen 2 `suspected`, los dos de VO2peak.
 
 **Aviso.** El mensaje para personas sigue el contrato v1 de la [issue #11](https://github.com/IgnacioAVerdinelli/NASASpaceApps/issues/11), documentado en [health-notices.md](health-notices.md). El HealthService lo publica en la cola de notificaciones (topic `health.notice`) y el Notification Center es quien lo envía. En resumen:
 

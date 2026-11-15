@@ -71,7 +71,7 @@ export function Shell() {
   const bodyUrl = exampleMode ? '' : crewId ? dashboardUrl(apiUrl, crewId) : null;
   const bodyState = useDashboard(needsBodyData ? bodyUrl : null, loadDashboard);
   const active = TABS.find(item => item.id === tab);
-  // Source and mission name: in the heading of every tab but the Overview, which shows them in Mission status.
+  // Source and mission name: in the heading of every tab but the Overview.
   const sourceLabel = data ? (exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data') : null;
   const missionLabel = data ? data.mission.name.replaceAll('_', ' ').toUpperCase() : null;
   const error = analyses.error || crewState.error;
@@ -143,7 +143,7 @@ export function Shell() {
       return id === 'plan' ? <PlanView crew={crewId}/> : <VitalsView vitals={vitals} error={vitalsState.error}/>;
     }
     if (!data) return <DataNotice error={error}/>;
-    if (id === 'summary') return <SummaryView sourceLabel={sourceLabel} missionLabel={missionLabel} key={crewId} data={data} crewId={crewId} bodyState={bodyState} exampleMode={exampleMode} vitals={vitals} vitalsError={vitalsState.error}
+    if (id === 'summary') return <SummaryView key={crewId} data={data} crewId={crewId} bodyState={bodyState} exampleMode={exampleMode} vitals={vitals} vitalsError={vitalsState.error}
       onOpen={(destination, key) => {
         if (key) setFocusRequest({ key, request: Date.now() });
         if (destination === 'body') {

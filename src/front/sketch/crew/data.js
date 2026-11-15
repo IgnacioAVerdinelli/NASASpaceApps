@@ -86,19 +86,8 @@ const LOOKS = [
   { skin: '#D9A77F', hair: '#4A3426', style: 'buzz', height: 0.99, girth: 1.01 },
 ];
 
-// Looks for the example roster (data/roster.js): close to each person's portrait, still illustrations.
-const LOOK_BY_ID = {
-  'CM-1': { skin: '#E6BC98', hair: '#3A2A20', style: 'buzz', height: 1.0, girth: 1.03, tape: 'DUBROV' },
-  'CM-2': { skin: '#EEC6A6', hair: '#9C7648', style: 'bun', height: 0.96, girth: 0.97, tape: 'KIKINA' },
-  'CM-3': { skin: '#B07A55', hair: '#1A1412', style: 'short', height: 1.0, girth: 1.0, tape: 'MENON' },
-  'CM-4': { skin: '#6B4430', hair: '#120D0B', style: 'tied', height: 0.98, girth: 0.97, tape: 'WATKINS' },
-  'CM-5': { skin: '#E8BC98', hair: '#5A4030', style: 'short', height: 1.04, girth: 1.04, tape: 'DELANEY' },
-  'CM-6': { skin: '#EDC2A0', hair: '#4A3426', style: 'crop', height: 1.03, girth: 1.02, tape: 'KUTRYK' },
-  'CM-7': { skin: '#E4B896', hair: '#2E221B', style: 'buzz', height: 1.01, girth: 1.03, tape: 'TETERYATNIKOV' },
-};
-
 export function lookFor(index, body, id) {
-  const look = LOOK_BY_ID[id] || LOOKS[index % LOOKS.length];
+  const look = LOOKS[index % LOOKS.length];
   // Keep hair styles that read well on each base body.
   const style = body === 'female' ? (['bun', 'tied'].includes(look.style) ? look.style : index % 2 ? 'tied' : 'bun')
     : (['bun', 'tied'].includes(look.style) ? 'short' : look.style);

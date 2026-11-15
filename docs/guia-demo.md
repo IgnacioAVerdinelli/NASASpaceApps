@@ -53,7 +53,7 @@ Los casos están preparados para `DAY=130` y `SPEED=0`; con otros valores pueden
 
 ## 3. Qué mostrar
 
-Se puede empezar por `/crew.html`: la tripulación en un carrusel 3D con los nombres de ejemplo de la ISS Expedición 75 y una card con el estado de cada persona; clic en la persona de adelante (o en "Open health overview") abre su overview. Los datos de salud siguen siendo sintéticos. Con los cinco casos de la demo, CM-4 aparece con el nombre de Jessica Watkins y cuerpo masculino; ver [crew-select.md](crew-select.md#pendiente-para-integrar).
+Se puede empezar por `/crew.html`: la tripulación (ficticia) en un carrusel 3D y una card con el estado de cada persona; clic en la persona de adelante (o en "Open health overview") abre su overview. Los datos de salud siguen siendo sintéticos. Detalle en [crew-select.md](crew-select.md).
 
 La página es `/vuelo.html`. El selector de tripulante está arriba; "← All crew" vuelve a la selección.
 

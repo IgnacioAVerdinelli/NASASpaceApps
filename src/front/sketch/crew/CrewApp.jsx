@@ -4,7 +4,7 @@ import { Brand, Icon } from '../vuelo/Icons.jsx';
 import { loadCrew } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { loadSummaries, lookFor, summariesKey } from './data.js';
-import { MISSION, person } from '../data/roster.js';
+import { missionName, person } from '../data/roster.js';
 import { CrewScene } from './scene.js';
 import './style.css';
 
@@ -204,7 +204,7 @@ export function CrewApp() {
     <header className="flight-bar glass-bar">
       <div className="flight-bar-inner">
         <a className="flight-home" href="./crew.html" aria-label="GraviTal crew"><Brand/></a>
-        {mission && <div className="flight-context"><Icon name="orbit" size={22}/><span>{MISSION.name.toUpperCase()}</span><i/><Icon name="plan" size={16}/><span>{mission.todayLabel} <small>/ {mission.landing} days</small></span></div>}
+        {mission && <div className="flight-context"><Icon name="orbit" size={22}/><span>{missionName(mission)}</span><i/><Icon name="plan" size={16}/><span>{mission.todayLabel} <small>/ {mission.landing} days</small></span></div>}
       </div>
     </header>
 
@@ -287,7 +287,7 @@ export function CrewApp() {
         </article>}
       </div>
 
-      <p className="crew-footnote">Synthetic data, built on NASA bed-rest studies (reference curves 0.2.0). Not a health assessment. Names, roles and portraits are the ISS Expedition 75 crew (November 2026), used only as an example: none of the health data is theirs. Portraits: NASA, public domain. 3D figures are illustrations on the open-anatomy-3d bodies (BodyParts3D © DBCLS, CC BY 4.0; MakeHuman, CC0).</p>
+      <p className="crew-footnote">Synthetic data, built on NASA bed-rest studies (reference curves 0.2.0). Not a health assessment. The crew is fictional. 3D figures are illustrations on the open-anatomy-3d bodies (BodyParts3D © DBCLS, CC BY 4.0; MakeHuman, CC0).</p>
     </main>
   </div>;
 }

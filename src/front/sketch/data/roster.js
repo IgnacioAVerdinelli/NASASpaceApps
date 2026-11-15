@@ -1,21 +1,22 @@
-// Example roster: the simulated crew IDs (CM-1…CM-7) shown with the names, roles and portraits of the ISS
-// Expedition 75 crew as of November 2026. The health data stays synthetic; only the labels are real.
-// Portraits: NASA official photos, public domain (via Wikimedia Commons).
-const photo = name => new URL(`../crew/photos/${name}.jpg`, import.meta.url).href;
-
-export const MISSION = { name: 'ISS · Expedition 75', short: 'Expedition 75' };
-
-const ROSTER = {
-  'CM-1': { name: 'Pyotr Dubrov', role: 'Expedition 75 commander', agency: 'Roscosmos', vehicle: 'Soyuz MS-29', aboardSince: '2026-07-14', photo: photo('dubrov') },
-  'CM-2': { name: 'Anna Kikina', role: 'Flight engineer', agency: 'Roscosmos', vehicle: 'Soyuz MS-29', aboardSince: '2026-07-14', photo: photo('kikina') },
-  'CM-3': { name: 'Anil Menon', role: 'Flight engineer', agency: 'NASA', vehicle: 'Soyuz MS-29', aboardSince: '2026-07-14', photo: photo('menon') },
-  'CM-4': { name: 'Jessica Watkins', role: 'Crew-13 commander', agency: 'NASA', vehicle: 'SpaceX Crew-13', aboardSince: '2026-10-01', photo: photo('watkins') },
-  'CM-5': { name: 'Luke Delaney', role: 'Crew-13 pilot', agency: 'NASA', vehicle: 'SpaceX Crew-13', aboardSince: '2026-10-01', photo: photo('delaney') },
-  'CM-6': { name: 'Joshua Kutryk', role: 'Mission specialist', agency: 'CSA', vehicle: 'SpaceX Crew-13', aboardSince: '2026-10-01', photo: photo('kutryk') },
-  'CM-7': { name: 'Sergey Teteryatnikov', role: 'Mission specialist', agency: 'Roscosmos', vehicle: 'SpaceX Crew-13', aboardSince: '2026-10-01', photo: photo('teteryatnikov') },
+// Crew labels for the simulated crew IDs. The crew is fictional: each ID keeps its own label and a generic role,
+// with no names, photos or likenesses of real people. The health data is synthetic, and synthetic findings must
+// never sit next to a real person's name.
+const ROLES = {
+  'CM-1': 'Commander',
+  'CM-2': 'Pilot',
+  'CM-3': 'Flight engineer',
+  'CM-4': 'Flight engineer',
+  'CM-5': 'Mission specialist',
+  'CM-6': 'Mission specialist',
+  'CM-7': 'Mission specialist',
 };
 
-// The person behind a crew ID; unknown IDs fall back to the ID itself.
+// The person behind a crew ID: the ID itself as the name, plus a generic role.
 export function person(id) {
-  return ROSTER[id] ? { id, ...ROSTER[id] } : { id, name: id, role: 'Crew member', agency: '', photo: null };
+  return { id, name: id, role: ROLES[id] || 'Crew member', agency: '', photo: null };
+}
+
+// The mission's name as the simulator reports it ("iss_180_demo_five" -> "ISS 180 DEMO FIVE").
+export function missionName(mission) {
+  return mission?.name ? mission.name.replaceAll('_', ' ').toUpperCase() : '';
 }

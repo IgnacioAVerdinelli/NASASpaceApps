@@ -10,8 +10,8 @@ every number, level and alert comes from here, the same ones the HealthService s
 - Each test: its value, % change against the pre-flight reference, level (levels.py), whether the change is
   within the test's noise and, for VO2peak, whether it is below NASA's minimum. A test the DataService flagged
   keeps its place with no value and its quality.
-- Upcoming tests: the studies the analysis scheduler recorded in the DataService (kind "study"), routine or a
-  retest after a finding. Without the scheduler running there are none.
+- Upcoming tests: the tests the Planner booked (its plan, kind "plan" in the DataService), routine or a retest
+  after a finding. Without the Planner running there are none.
 - The cycle test's own data (peak heart rate, RER, Borg, why it stopped, measured or estimated) is not recorded
   by the DataService yet (docs/handoff/dataservice.md, requests 1 and 2), so `test` is null.
 """

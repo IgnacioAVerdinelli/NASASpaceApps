@@ -131,3 +131,18 @@
 /* Arriving from the crew select: the page settles in. */
 @keyframes flight-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .flight-content { animation: flight-enter .5s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Informational annex stays available while mission services load. */
+.flight-header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.flight-measurements { font-size: 12px; white-space: nowrap; }
+@media (max-width: 1180px) {
+  .flight-bar-inner { flex-wrap: wrap; padding-block: 10px 8px; }
+  .flight-navigation { order: 3; width: 100%; }
+  .flight-tabs { width: 100%; }
+  .flight-tabs > button { flex: 1; }
+}
+@media (max-width: 500px) {
+  .flight-header-actions { gap: 6px; }
+  .flight-measurements { font-size: 11px; }
+  .flight-crew { padding-right: 8px; gap: 4px; }
+}

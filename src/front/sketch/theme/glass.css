@@ -17,6 +17,11 @@
   --link: #2238A8;
   --link-hover: #16257A;
   --accent: #2F45C0;
+
+  /* Brand mark (docs/design-system.md §9) */
+  --brand-ink: var(--ink-strong);
+  --brand-heart: var(--accent);
+  --brand-field: #9AA8E0;
   --action: #17213D;
   --line: rgba(23,32,57,.12);
   --line-soft: rgba(23,32,57,.08);

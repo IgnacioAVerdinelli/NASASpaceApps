@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { StrengthView } from '../fuerza/App.jsx';
 import { dayDistance, recommendations, updateStatus } from './recommendations.js';
 import { AerobicView } from '../aerobica/AerobicView.jsx';
@@ -22,6 +23,27 @@ const TABS = [
 ];
 const fromHash = () => TABS.some(t => `#${t.id}` === window.location.hash) ? window.location.hash.slice(1) : TABS[0].id;
 const crewFromUrl = () => new URLSearchParams(window.location.search).get('crew') || '';
+
+function MeasurementTrend({ measurement }) {
+  const points = measurement.series || [];
+  const valid = points.filter(point => point.value !== null);
+  if (valid.length < 2) return null;
+  const latest = valid.at(-1);
+  return <figure className="measurement-trend">
+    <figcaption><span>Measurement trend</span><strong>{latest.value} <small>{measurement.unit}</small></strong><span>{latest.label}</span></figcaption>
+    <div className="measurement-chart" role="img" aria-label={`Trend for ${measurement.title}. Latest value ${latest.value} ${measurement.unit}, ${latest.label}.`}>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 260, height: 125 }}>
+        <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+          <CartesianGrid vertical={false} stroke="#dedfec" strokeDasharray="3 4"/>
+          <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#505a77' }} tickLine={false} axisLine={false} minTickGap={20}/>
+          <YAxis width={38} domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#505a77' }} tickLine={false} axisLine={false}/>
+          <Tooltip formatter={value => [`${value} ${measurement.unit}`, measurement.title]}/>
+          <Line type="linear" dataKey="value" stroke="#6258a0" strokeWidth={2} dot={{ r: 3, fill: '#6258a0' }} connectNulls={false} isAnimationActive={false}/>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </figure>;
+}
 
 export function Shell() {
   const [tab, setTab] = useState(fromHash);
@@ -95,16 +117,18 @@ export function Shell() {
       <div className="recommendations-header"><div><h2>Recommendations</h2><p>Alerts and upcoming assessments from HealthService.</p></div>{data.simulated && <span className="demo-label">SIMULATED DATA</span>}</div>
       <p className="recommendations-intro">Explore the measurement, observation and suggested next step.</p>
       {selectedItem ? <div className="decision-layout">
+        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{item.type === 'Alert' ? 'Current alert' : dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.severity || item.status}>{item.severity ? `${item.severity} alert` : item.status}</span></button>)}</div></aside>
         <article className="decision-main" aria-labelledby="recommendation-detail-title">
           <div className="decision-heading"><div><span className="decision-kind">{selectedItem.type} · {selectedItem.dayLabel}</span><h3 id="recommendation-detail-title">{selectedItem.title}</h3><p>{selectedItem.type === 'Alert' ? 'Current alert' : dayDistance(selectedItem.day, today)} · Crew member {selectedItem.crew}</p></div><span className="decision-status" data-status={selectedItem.severity || selectedItem.status}>{selectedItem.severity ? `${selectedItem.severity} alert` : selectedItem.status}</span></div>
+          <h4 className="pathway-title">Assessment pathway</h4>
           <div className="decision-steps" aria-label="Assessment details">
             {[['Measurement', selectedItem.measurement], ['Observation', selectedItem.finding], ['Suggested action', selectedItem.action]].map(([label, step]) => <div className="decision-step" key={label}>
-              <span className="step-label">{label}</span><strong>{step.title}</strong><p>{step.detail}</p>
+              <span className="step-label">{label}</span><strong>{step.title}</strong><p>{step.detail}</p>{label === 'Measurement' && <MeasurementTrend measurement={step}/>}
             </div>)}
           </div>
           <div className="recommendation-actions"><button type="button" onClick={() => { setFocusRequest(selectedItem.muscle ? { key: selectedItem.muscle, request: Date.now() } : null); select(selectedItem.view, true); }}>View related measurement <span aria-hidden="true">→</span></button>{selectedItem.type !== 'Alert' && <label>Local demo status <select value={selectedItem.status} onChange={event => setItems(current => updateStatus(current, selectedItem.id, event.target.value))}><option>Scheduled</option><option>Pending</option><option>Completed</option></select></label>}</div>
         </article>
-        <aside className="decision-sidebar" aria-label="Recommendation selection"><h3>Explore actions</h3><p>Select an action to see its context.</p><div className="decision-options">{items.map(item => <button key={item.id} type="button" aria-pressed={selectedItem.id === item.id} onClick={() => setSelectedId(item.id)}><span>{item.type} · {item.dayLabel}</span><strong>{item.title}</strong><small>{item.type === 'Alert' ? 'Current alert' : dayDistance(item.day, today)}</small><span className="decision-status" data-status={item.severity || item.status}>{item.severity ? `${item.severity} alert` : item.status}</span></button>)}</div></aside>
+
       </div> : <div className="decision-empty"><h3>No alerts or upcoming assessments</h3><p>No alerts or scheduled assessments are available for this crew member.</p></div>}
       <p className="recommendations-note">Alerts and scheduled assessments come from HealthService. Local demo status changes are not saved or sent to the scheduler.</p>
     </section>

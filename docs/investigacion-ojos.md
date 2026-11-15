@@ -130,9 +130,9 @@ Una sola pestaña que resume todas las pruebas oculares:
 | Análisis | `health/healthservice/eyes.py`; `GET /api/v1/eyes?crew=&day=` | Cada examen contra el previo al vuelo; clases A y B del consenso de 2026 |
 | Hallazgos | Worker (`healthservice.demo`), `source: ocular`, medida `eyes` | Clase A: sospechado; clase B: confirmado; sin signos: cerrado |
 | Planner | `plan.py`, rutina 6012 en el catálogo | La rutina se cierra sola con el examen; un hallazgo ocular agenda una revisión del médico de vuelo |
-| Página | `src/front/sketch/ojos/` (`EyesView`, `EyeDiagram`), `data/eyes.js`, pestaña "Eyes" en `vuelo/Shell.jsx` | Estado, ojo animado por examen, gráfico OCT con las líneas de +20 y +55 µm y una tarjeta por prueba |
+| Página | `src/front/sketch/ojos/` (`EyesView`, `Eye3D`), `data/eyes.js`, pestaña "Eyes" en `vuelo/Shell.jsx` | Estado; ojo 3D cortado al medio (Three.js, mismas luces y materiales que el cuerpo) que se deforma con cada examen y se anima por la misión; el cuerpo 3D de los otros análisis (capa de órganos) con los ojos coloreados por la clase; gráfico OCT con las líneas de +20 y +55 µm; una tarjeta por prueba |
 
-El dibujo del ojo exagera los cambios unas 40 veces para que se vean; los valores están en las tarjetas. Las clases C y D no se simulan: requieren campo visual y seguimiento a largo plazo.
+El ojo 3D exagera los cambios unas 40 veces para que se vean; los valores están en las tarjetas. Las clases C y D no se simulan: requieren campo visual y seguimiento a largo plazo.
 
 Tests: `sim/tests/test_ocular.py` (las proporciones publicadas se reproducen), `health/tests/test_eyes.py`, `planner/tests/test_plan.py` y `tests/eyes.test.mjs`.
 

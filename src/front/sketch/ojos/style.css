@@ -21,10 +21,10 @@
 
 .eye-main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
 .eye-figure,.eye-oct{margin:0;display:grid;gap:10px}
-.eye-figure figcaption,.eye-oct figcaption{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.eye-figure figcaption>div,.eye-oct figcaption>div{display:grid;gap:3px}
-.eye-figure figcaption strong,.eye-oct figcaption strong{font-size:18px}
-.eye-figure figcaption span,.eye-oct figcaption span{font-size:14px;color:#59617b;line-height:1.45}
+.eye-figure figcaption,.eye-oct figcaption,.eye-where figcaption{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eye-figure figcaption>div,.eye-oct figcaption>div,.eye-where figcaption>div{display:grid;gap:3px}
+.eye-figure figcaption strong,.eye-oct figcaption strong,.eye-where figcaption strong{font-size:18px}
+.eye-figure figcaption span,.eye-oct figcaption span,.eye-where figcaption span{font-size:14px;color:#59617b;line-height:1.45}
 .eye-diagram{width:100%;height:auto;max-height:380px;display:block}
 .eye-labels text{font-family:Manrope,Arial,sans-serif}
 
@@ -64,3 +64,15 @@
 
 @media(max-width:1180px){.eye-main{grid-template-columns:1fr}.eye-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.eyes-view{padding:14px 12px 24px}.eye-cards{grid-template-columns:1fr}.eye-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.eyes-intro{flex-direction:column}}
+
+/* 3D eye and body context */
+.eye-main{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+.eye-side{display:grid;gap:16px;align-content:start}
+.eye-3d{position:relative;height:460px;border-radius:12px;background:radial-gradient(ellipse at 50% 45%,#f7f6fd 0%,#eeedf7 70%,#e8e7f3 100%);overflow:hidden}
+.eye-3d-label{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#2f2850;white-space:nowrap;pointer-events:none;will-change:transform}
+.eye-3d-label i{width:7px;height:7px;border-radius:50%;background:#2f2850;box-shadow:0 0 0 2px #fff;margin-left:-3.5px}
+.eye-3d-label{text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
+.eye-3d-message{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
+.eye-where{margin:0;display:grid;gap:8px}
+.eye-body{height:260px;border-radius:12px;background:#f3f2fa;overflow:hidden}
+@media(max-width:1180px){.eye-3d{height:380px}}

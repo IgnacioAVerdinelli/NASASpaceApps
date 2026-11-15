@@ -101,7 +101,7 @@ export function Shell() {
       : <PlanView crew={crewId}/>}</section>
     <section id="panel-ojos" role="tabpanel" aria-labelledby="tab-ojos" hidden={tab !== 'ojos'}>{exampleMode
       ? <div className="connection-notice" role="status">The eye exams need the HealthService; they are not available in example mode.</div>
-      : <EyesView apiUrl={apiUrl} crewId={crewId}/>}</section>
+      : <EyesView apiUrl={apiUrl} crewId={crewId} body={data.crew.body}/>}</section>
     {TABS.filter(t => t.View).map(({ id, View }) => <section key={`${id}-${data.crew.id}`} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} hidden={tab !== id}><View data={data} focusRequest={id === 'fuerza' ? focusRequest : null}/></section>)}
     </>}
   </main>;

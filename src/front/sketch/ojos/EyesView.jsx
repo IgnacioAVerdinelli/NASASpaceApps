@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDashboard } from '../data/useDashboard.js';
 import { CLASSES, GROUPS, eyeShape, eyesUrl, fmt, loadEyes, octRows, shown } from '../data/eyes.js';
-import { EyeDiagram } from './EyeDiagram.jsx';
+import BodyViewer from '../../body-3d/BodyViewer.jsx';
+import { Eye3D } from './Eye3D.jsx';
 import './style.css';
 
 const LINES = [
@@ -11,6 +12,14 @@ const LINES = [
   { key: 'choroid', name: 'Choroid', color: '#c0566a' },
 ];
 const tick = { fontSize: 13, fill: '#4f5874' };
+const CLASS_COLORS = { none: '#9fc9ae', A: '#ef9959', B: '#d94d4b' };      // the body viewer's intensity palette
+
+// Where: the same 3D body as the other analyses, organs layer, the eyes coloured by the SANS class of the exam.
+function BodyContext({ body, cls }) {
+  const colors = useMemo(() => ({ eye_l: CLASS_COLORS[cls], eye_r: CLASS_COLORS[cls] }), [cls]);
+  const [exploration] = useState({ key: 'eye_l', request: 1 });
+  return <div className="eye-body"><BodyViewer body={body} layer="organs" structureColors={colors} selected="eye_l" framing={1.1} explorationRequest={exploration}/></div>;
+}
 
 function ClassPill({ cls }) {
   return <span className="eye-pill" data-class={cls}><i/>{CLASSES[cls]?.short ?? cls}</span>;
@@ -78,7 +87,7 @@ function TestCard({ group, measures }) {
   </article>;
 }
 
-export function EyesView({ apiUrl, crewId }) {
+export function EyesView({ apiUrl, crewId, body = 'male' }) {
   const { data, error } = useDashboard(crewId ? eyesUrl(apiUrl, crewId) : null, loadEyes);
   const exams = data?.exams || [];
   const [picked, setPicked] = useState(null);       // null follows the latest exam
@@ -118,17 +127,23 @@ export function EyesView({ apiUrl, crewId }) {
 
     {exams.length === 0 ? <p className="connection-notice">No eye exam recorded yet.</p> : <div className="eye-main">
       <figure className="panel eye-figure">
-        <figcaption><div><strong>Your eye at {exam.label}</strong><span>{pre && exam.day >= 0 ? `Compared with ${pre.label}. ` : ''}Changes drawn about 40 times larger so they can be seen.</span></div><ClassPill cls={exam.class}/></figcaption>
-        <EyeDiagram shape={eyeShape(exam)} title={`Side view of the eye at ${exam.label}`}/>
+        <figcaption><div><strong>Your eye at {exam.label}</strong><span>Cut in half to show the layers. Drag to rotate. {pre && exam.day >= 0 ? `Dashed: ${pre.label}, before flight. ` : ''}Changes drawn about 40 times larger so they can be seen.</span></div><ClassPill cls={exam.class}/></figcaption>
+        <Eye3D shape={eyeShape(exam)} cls={exam.class} title={`3D cut of the eye at ${exam.label}`}/>
         <ExamPicker exams={exams} index={index} onPick={i => { setPlaying(false); setPicked(i); }} playing={playing}
           onPlay={() => { if (!playing) setPicked(0); setPlaying(p => !p); }}/>
         <Facts exam={exam}/>
+      </figure>
+      <div className="eye-side">
+      <figure className="panel eye-where">
+        <figcaption><div><strong>Where</strong><span>Both eyes, coloured by the class of the exam.</span></div></figcaption>
+        <BodyContext body={body} cls={exam.class}/>
       </figure>
       <figure className="panel eye-oct">
         <figcaption><div><strong>OCT · change from pre-flight (µm)</strong><span>The retina around the optic disc is the first sign of SANS. The lines are the 2026 expert consensus classes.</span></div></figcaption>
         <OctChart data={data}/>
         <ul className="oct-legend">{LINES.map(l => <li key={l.key}><i style={{ background: l.color }}/>{l.name}</li>)}</ul>
       </figure>
+      </div>
     </div>}
 
     <div className="eye-cards">{byGroup.map(({ group, measures }) => <TestCard key={group.id} group={group} measures={measures}/>)}</div>

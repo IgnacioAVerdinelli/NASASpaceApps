@@ -46,6 +46,8 @@ LOADINGS = {mid: (factor, lam) for factor, f in PARAMS["baseline_factors"].items
 # Measures with a personal baseline and response. A "derived" measure (the spacesuit's heart rate) is computed
 # by its instrument from the others, so it draws nothing: adding it left every crew member's numbers unchanged.
 PERSONAL = [mid for mid, m in MEASURES.items() if m["model"] != "derived"]
+# What a fatigue spell does to the wearable's daily values (CrewMember.add_fatigue), as a fraction. Assumed.
+FATIGUE_EFFECT = {"resting_hr": 0.12, "hrv_rmssd": -0.30, "resting_sbp": 0.03}
 
 
 # --------------------------------------------------------------------------- mission
@@ -269,6 +271,7 @@ class CrewMember:
         self.responder = responder
         self.events: list[Event] = []
         self.evas: list[Eva] = []
+        self.fatigue_spells: list[tuple[float, float]] = []     # (first day, days): see add_fatigue()
         self._cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._day_var: dict[str, np.ndarray] = {}
         self.set_adherence(adherence)
@@ -357,6 +360,23 @@ class CrewMember:
         self.evas.append(ev)
         return ev
 
+    def add_fatigue(self, day: float, days: float = 6.0) -> tuple[float, float]:
+        """A spell of fatigue (poor sleep, stress, a cold coming): for `days` days from `day` the watch and the
+        wearable see it. Resting heart rate +12 %, heart-rate variability -30 %, systolic pressure +3 % and about
+        1.6 h less sleep with a worse sleep score (Watch). Only the wearable measures change; strength, VO2peak
+        and bone do not. The sizes are assumed, for the demo: they make a deviation the watch should catch."""
+        spell = (float(day), float(days))
+        self.fatigue_spells.append(spell)
+        return spell
+
+    def fatigue(self, day: float) -> float:
+        """1 inside a fatigue spell, 0 outside, with half a day of ramp at each end."""
+        best = 0.0
+        for start, days in self.fatigue_spells:
+            ramp = min(day - start + 0.5, start + days - day + 0.5)
+            best = max(best, min(1.0, max(0.0, ramp)))
+        return best
+
     def eva_on(self, day: float) -> Eva | None:
         """The spacewalk on the UTC date of mission `day`, if there is one."""
         date = self.mission.timestamp(day)[:10]
@@ -426,7 +446,10 @@ class CrewMember:
         return v
 
     def true_value(self, measure: str, day: float) -> float:
-        return max(0.0, self.baseline[measure] * (1.0 + self.change(measure, day) / 100.0))
+        value = max(0.0, self.baseline[measure] * (1.0 + self.change(measure, day) / 100.0))
+        if self.fatigue_spells and measure in FATIGUE_EFFECT:
+            value *= 1.0 + FATIGUE_EFFECT[measure] * self.fatigue(day)
+        return value
 
     def day_variation(self, measure: str, day: float) -> float:
         """This person's day-to-day variation on `measure` that calendar day, in SDs (standard normal, cut at

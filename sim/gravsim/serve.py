@@ -116,7 +116,19 @@ def mission_parser(description: str, port: int) -> argparse.ArgumentParser:
     ap.add_argument("--speed", type=float, default=0.0, help="mission days per real minute (0 = fixed day)")
     ap.add_argument("--port", type=int, default=port)
     ap.add_argument("--origin", default="*", help="value for Access-Control-Allow-Origin")
+    ap.add_argument("--fatigue", action="append", default=[], metavar="CREW:DAY[:DAYS]",
+                    help="a fatigue spell the watch should catch, e.g. CM-3:132:6 (repeatable; CrewMember.add_fatigue)")
     return ap
+
+
+def apply_fatigue(mission: Mission, specs: list[str]) -> None:
+    """--fatigue CREW:DAY[:DAYS] options onto the mission's crew."""
+    crew = {c.id: c for c in mission.crew}
+    for spec in specs:
+        parts = spec.split(":")
+        if len(parts) not in (2, 3) or parts[0] not in crew:
+            raise SystemExit(f"--fatigue {spec!r}: expected CREW:DAY[:DAYS] with CREW one of {sorted(crew)}")
+        crew[parts[0]].add_fatigue(float(parts[1]), float(parts[2]) if len(parts) == 3 else 6.0)
 
 
 def mission_clock(mission: Mission, day: float, speed: float) -> Callable[[], float]:
@@ -161,7 +173,8 @@ def data_routes(mission: Mission, data: DataService, clock: Callable[[], float])
         }
 
     def readings(q, _):
-        return 200, [sent(r, q) for r in data.readings(who(q), measures(q), end=now(q))]
+        # start: only readings from that time on (the watch's 15-minute heart rate is ~100 readings a day)
+        return 200, [sent(r, q) for r in data.readings(who(q), measures(q), start=q.get("start"), end=now(q))]
 
     def latest(q, _):
         return 200, {m: sent(r, q) for m, r in data.latest(who(q), measures(q), at=now(q)).items()}
@@ -233,6 +246,7 @@ def main(argv=None):
                         help="run the retests the Planner books (the Planner turns a repeated finding into a review, not another retest)")
     args = parser.parse_args(argv)
     mission = Mission.random(args.preset, n_crew=args.crew, seed=args.seed)
+    apply_fatigue(mission, args.fatigue)
     data = DataService(store=SqliteStore(args.db), publisher=Queue(args.queue) if args.queue else None)
     clock = mission_clock(mission, args.day, args.speed)
     pending = iter(mission.timeline(seed=args.seed))

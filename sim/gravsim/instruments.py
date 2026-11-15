@@ -262,18 +262,7 @@ class Wearable(Instrument):
         member's routine for that date (routine.py, returned as "context"): the resting level with a daily
         rhythm, a dip while asleep, a rise in each exercise block and through a spacewalk. The shape is
         assumed; the resting level comes from the model. Past 1440 minutes the same day repeats."""
-        rest = crew.true_value("resting_hr", day)
-        context = crew.routine(day)
-        midnight = crew.mission.day_of(context[0].start)
-        day_hr = rest + 6 * np.sin(2 * np.pi * (np.arange(1440) / 60 - 10) / 24)    # daily rhythm, low at night
-        for c in context:
-            s, e = (int(round((crew.mission.day_of(t) - midnight) * 1440)) for t in (c.start, c.end))
-            if c.activity == "sleep":
-                day_hr[s:e] -= 6
-            elif c.activity == "exercise":
-                day_hr[s:e] += (hr_max_tanaka(crew.age) - rest) * EXERCISE_EFFORT
-            elif c.activity == "eva":
-                day_hr[s:e] = eva_heart_rate(crew, c)
+        day_hr, context = day_heart_rate(crew, day)
         t = np.arange(minutes)
         hr = day_hr[t % 1440] + self.rng.normal(0, 2.5 * self.noise, size=minutes)
         trace = [{"minute": int(i), "hr_bpm": int(round(v))} for i, v in zip(t, hr)]
@@ -285,6 +274,82 @@ class Wearable(Instrument):
         return {"instrument": self.name, "crew_id": crew.id, "mission_day": day, "daily": [r.to_dict() for r in self.measure_all(crew, day)],
                 "trace": trace, "context": [c.to_dict() for c in context],
                 "assumed": ["daily rhythm, sleep dip, effort of exercise blocks and spacewalks"]}
+
+
+def day_heart_rate(crew: CrewMember, day: float) -> tuple[np.ndarray, list]:
+    """The true heart rate minute by minute over the UTC date of `day` (minute 0 is 00:00 UTC) and that date's
+    routine: the resting level with a daily rhythm, a dip while asleep, a rise in each exercise block and through
+    a spacewalk. The shape is assumed; the resting level comes from the model (fatigue spells included)."""
+    rest = crew.true_value("resting_hr", day)
+    context = crew.routine(day)
+    midnight = crew.mission.day_of(context[0].start)
+    day_hr = rest + 6 * np.sin(2 * np.pi * (np.arange(1440) / 60 - 10) / 24)    # daily rhythm, low at night
+    for c in context:
+        s, e = (int(round((crew.mission.day_of(t) - midnight) * 1440)) for t in (c.start, c.end))
+        if c.activity == "sleep":
+            day_hr[s:e] -= 6
+        elif c.activity == "exercise":
+            day_hr[s:e] += (hr_max_tanaka(crew.age) - rest) * EXERCISE_EFFORT
+        elif c.activity == "eva":
+            day_hr[s:e] = eva_heart_rate(crew, c)
+    return day_hr, context
+
+
+# Hours of sleep a night (Watch). In flight: Barger et al. 2014, 6.09 h on the ISS; before and after flight assumed.
+SLEEP_HOURS = {"flight": 6.09, "ground": 6.9}
+SLEEP_SPREAD_H = 0.6              # night-to-night variation, in h (assumed)
+FATIGUE_SLEEP_H = 1.6             # less sleep in a fatigue spell (assumed)
+
+
+class Watch(Instrument):
+    """Wrist watch, the crew's first line of monitoring: heart rate averaged every 15 minutes, all day, and the
+    night's sleep (hours from actigraphy, and the 1-to-7 score the crew member gives on waking, OCHMO-STD-100.1A
+    [6039]). The daily resting values (resting heart rate, blood pressure, SpO2, HRV) stay with Wearable."""
+    name = "watch"
+    device = "wrist watch (heart rate every 15 minutes, actigraphy sleep)"
+    measures = ("watch_hr", "sleep_hours", "sleep_quality")
+    every_minutes = 15
+    wake_hour = 6.0               # the night's sleep is reported at 06:00 UTC, when the routine's sleep ends
+
+    def sleep_true(self, crew: CrewMember, day: float) -> tuple[float, float]:
+        """The true hours slept and sleep score of the night ending on the UTC date of `day`."""
+        ground = crew.mission.gravity(day) >= 1.0
+        hours = (SLEEP_HOURS["ground" if ground else "flight"] + SLEEP_SPREAD_H * crew.day_variation("sleep_hours", day)
+                 - FATIGUE_SLEEP_H * crew.fatigue(day))
+        hours = float(np.clip(hours, 2.5, 9.5))
+        score = float(np.clip(4.8 + 0.9 * (hours - 6.1) + 0.6 * crew.day_variation("sleep_quality", day)
+                              - 1.5 * crew.fatigue(day), 1, 7))
+        return hours, score
+
+    def _wake_day(self, crew: CrewMember, day: float) -> float:
+        midnight = crew.mission.day_of(crew.mission.timestamp(day)[:10] + "T00:00:00Z")
+        return midnight + self.wake_hour / 24
+
+    def measure(self, crew: CrewMember, day: float, measure: str | None = None) -> Reading:
+        """One reading: watch_hr at mission time `day` (the 15-minute average around it), or the sleep of the
+        night ending on that UTC date."""
+        measure = measure or self.measures[0]
+        if measure not in self.measures:
+            raise KeyError(f"{self.name} measures {self.measures}, not {measure!r}")
+        if measure == "watch_hr":
+            hr, context = day_heart_rate(crew, day)
+            midnight = crew.mission.day_of(context[0].start)
+            m = int((day - midnight) * 1440) // self.every_minutes * self.every_minutes
+            return self._read(crew, day, measure, true_value=float(hr[m:m + self.every_minutes].mean()))
+        hours, score = self.sleep_true(crew, day)
+        return self._read(crew, self._wake_day(crew, day), measure, true_value=hours if measure == "sleep_hours" else score)
+
+    def measure_all(self, crew: CrewMember, day: float) -> list[Reading]:
+        """The UTC date of `day`: 96 heart-rate readings, one every 15 minutes (each the average of those
+        minutes), and the night's sleep reported at 06:00 UTC."""
+        hr, context = day_heart_rate(crew, day)
+        midnight = crew.mission.day_of(context[0].start)
+        out = [self._read(crew, midnight + m / 1440, "watch_hr", true_value=float(hr[m:m + self.every_minutes].mean()))
+               for m in range(0, 1440, self.every_minutes)]
+        hours, score = self.sleep_true(crew, day)
+        wake = midnight + self.wake_hour / 24
+        out += [self._read(crew, wake, "sleep_hours", true_value=hours), self._read(crew, wake, "sleep_quality", true_value=score)]
+        return out
 
 
 class Spacesuit(Instrument):
@@ -317,4 +382,4 @@ class Spacesuit(Instrument):
                 for m in range(0, len(hr), self.every_minutes)]
 
 
-INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit)}
+INSTRUMENTS = {cls.name: cls for cls in (Dynamometer, DxaScanner, CycleErgometer, Wearable, Spacesuit, Watch)}

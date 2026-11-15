@@ -57,6 +57,9 @@ LIMITS = {
     "spo2": (70, 100),           # %; a saturation can't pass 100, and pulse oximeters are not accurate under 70
     "hrv_rmssd": (1, 300),       # ms
     "heart_rate": (30, 220),     # bpm, the spacesuit's heart rate during a spacewalk
+    "watch_hr": (30, 220),       # bpm, the watch's heart rate every 15 minutes
+    "sleep_hours": (0, 16),      # h of sleep in a night
+    "sleep_quality": (1, 7),     # self-rated score, 1 very poor to 7 excellent (OCHMO-STD-100.1A [6039])
 }
 
 

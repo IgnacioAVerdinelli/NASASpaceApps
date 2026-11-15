@@ -31,7 +31,7 @@ function texture(kind = 'tissue') {
 }
 
 function text(ctx, value, x, y, color = '#d1ddd9', size = 13, align = 'left') {
-  ctx.font = `${size}px ui-monospace, SFMono-Regular, Consolas, monospace`;
+  ctx.font = `500 ${size}px 'Chakra Petch', Arial, sans-serif`;   // the page's font (design-system.md §5)
   ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, x, y);
 }
 function ellipse(ctx, x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, Math.max(2, ry), -0.09, 0, Math.PI * 2); }

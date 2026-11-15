@@ -55,27 +55,27 @@ Para levantar cada servicio por separado, ver el [README](../README.md).
 
 La página es `/vuelo.html`. El selector de tripulante está arriba.
 
-1. **Health summary, CM-3: el reloj como primera línea.**
+1. **Overview, CM-3: el reloj como primera línea.**
    - La banda amarilla dice "Check needed": la FC en reposo está alta hace 3 días.
    - El panel "Now · from your watch" tiene una tarjeta por signo vital, con la banda personal sombreada.
    - Más abajo, la frecuencia cardíaca de hoy contra ayer, hace una semana o antes del vuelo, con el sueño y el ejercicio sombreados.
    - En "To do", el Planner ya agendó "Review by the flight surgeon: resting heart rate".
-2. **Vital signs, CM-3.**
+2. **Wearable, CM-3.**
    - Cada signo a 30 días: la banda personal sombreada y los días fuera de rango en naranja.
    - El promedio semanal de toda la misión.
    - El texto explica por qué un cambio de 3 días agenda una revisión.
-3. **Health summary, CM-2: las pruebas periódicas como segunda línea.**
+3. **Overview, CM-2: las pruebas periódicas como segunda línea.**
    - Alarma roja de capacidad aeróbica: el VO2pico está por debajo del mínimo de la NASA (32,9 ml/kg/min).
    - El cuerpo 3D colorea cada grupo muscular según cuánta fuerza perdió.
 4. **Mission plan.**
    - "Open now" y "Coming up this week", con lenguaje simple.
    - Al abrir una tarea: pasos, qué hacer si algo sale anormal y la cita de la norma con su página.
    - "Mark as done" pide confirmación y lo guarda en el Planner.
-5. **Muscle strength y Aerobic capacity:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
-6. **Eyes, CM-1: la ecografía y el OCT del ojo (SANS).**
+5. **Muscles y Aerobic:** el detalle de cada prueba frente a los estudios de reposo en cama de la NASA.
+6. **Eyes (Eye exam), CM-1: la ecografía y el OCT del ojo (SANS).**
    - Clase B en el ojo derecho: la retina alrededor del disco óptico subió más de 55 µm desde antes del vuelo.
    - El ojo cortado al medio cambia con cada examen ("▶ Play the mission"); el cuerpo 3D colorea cada ojo por su clase.
-7. **Neck veins, CM-2: la ecografía de las yugulares.**
+7. **Neck veins (Neck vein ultrasound), CM-2: la ecografía de las yugulares.**
    - Alarma roja: la vena izquierda no colapsa al apretarla, un posible coágulo (el primero se encontró así, sin síntomas, en la ISS).
    - En la vena en 3D la sangre fluye, se detiene o vuelve según el grado; "Press the probe" muestra que la vena sana se aplasta y la del coágulo no.
    - En "To do", el Planner agendó la revisión del médico de vuelo para el mismo día.

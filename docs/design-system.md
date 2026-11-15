@@ -171,6 +171,18 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - **Gráficos (recharts)**: línea principal `--link` 2–2.5px; fuerza `#B24A18`; relleno de área 14%; grilla
   `--line-soft`; ticks 11–13px `--muted`; tooltip = `.glass-sm`.
 
+- **Estudios por imagen** (pestañas Eyes y Neck veins; layout común en `components/imaging.css`):
+  - arriba, la card de la figura (`.glass`) y, a la derecha, la card de estado con el patrón de "Mission status"
+    (eyebrow + chip, frase de 20px/600, texto, chips por lado y caja de alerta) y el cuerpo 3D "Where" sin card,
+    con título `.glass-sm` y halo, como en Aerobic;
+  - los niveles de cada estudio van a los tonos de la tabla 2.2: sin signo / normal → `ok`, clase A / check → `warn`,
+    clase B / alarm → `crit`. El mismo punto de color marca cada ojo, vena o examen en los `.seg`;
+  - ojo/vena y examen se eligen con `.seg` (un punto de estado por opción); una sola acción `.btn-primary` por card
+    ("Play the mission", "Compress the vein"); las lecturas como en la card de VO₂ (`dt` 11px, `dd` 20px `.num`);
+  - **las pantallas de ecografía (B-mode, Doppler color, espectral) y el corte 3D de la vena quedan oscuras**: son
+    imágenes, es decir datos, y van dentro de la card de vidrio con radio `--r-sm`. Sus grises y el rojo/azul del
+    Doppler color son los del ecógrafo, no del tema. Todo lo que las rodea sigue este documento.
+
 ---
 
 ## 7. Layout
@@ -183,6 +195,7 @@ Todo sutil: si una textura se nota antes que los datos, está de más.
 - ≤760px: una columna en este orden: status, cuerpo, indicadores, músculos, wearable, schedule. Las pestañas
   muestran solo íconos o pasan a grilla; el timeline scrollea dentro de su card.
 - Objetivos táctiles ≥ 44px (pestañas 38px dentro de una cápsula de 46px).
+- Son 7 pestañas: entre 741 y 940px ocupan todo el ancho con menos padding; en ≤740px pasan a una grilla de 4 columnas (4 + 3).
 
 ---
 

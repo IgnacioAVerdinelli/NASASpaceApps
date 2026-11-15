@@ -13,7 +13,7 @@ const DISC_WIDTH = 0.2;                       // angular half-width of the disc 
 const BACK = 62 * Math.PI / 180;              // retina and choroid cover the back of the eye, up to here from the front
 const COLORS = { sclera: '#f4f1ea', choroid: '#b5525e', retina: '#df8f6e', disc: '#f5e3b3', vitreous: '#e8f1f8', nerve: '#f2c14e',
   sheath: '#cfc8ef', iris: '#5d6f9e', lens: '#cfe6f3', cornea: '#dff0fb', retinaCut: '#f3c7a8' };
-const CLASS_COLORS = { none: '#eaa07c', A: '#ef9959', B: '#d94d4b' };      // the body viewer's intensity palette
+const CLASS_COLORS = { none: '#eaa07c', A: '#C27800', B: '#A4242F' };     // the retina's own colour, --warn-dot, --crit-dot
 
 function useTween(target, ms = 700) {
   const [value, setValue] = useState(target);

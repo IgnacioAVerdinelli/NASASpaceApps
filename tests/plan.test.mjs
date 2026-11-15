@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { byRoutine, counts, displayStatus, loadPlan, phaseOf, planUrl, postStatus, timing, upcoming, validatePlan, windowText } from '../src/front/sketch/data/plan.js';
+import {
+  byRoutine, counts, displayStatus, firstToDo, labelText, loadPlan, measureLabel, phaseOf, plainTitle, planUrl, postStatus, shortDay, timing, upcoming,
+  validatePlan, windowText,
+} from '../src/front/sketch/data/plan.js';
 
 const item = (id, from, to, extra = {}) => ({ id, type: 'study', routine_id: id.split(':')[0], reason: 'routine', title: id, ref: `[${id}]`, status: 'booked', window: { day_from: from, day_to: to, day: from, label: 'L+30' }, ...extra });
 
@@ -53,4 +56,30 @@ test('loadPlan and postStatus talk to the Planner', async () => {
   assert.deepEqual(JSON.parse(calls[1][2]), { status: 'done', by: 'CM-1', note: null });
   const failing = async () => ({ ok: false, status: 409, json: async () => ({ error: '6012:30 is already done' }) });
   await assert.rejects(postStatus({ id: '6012:30', crew: 'CM-1', status: 'missed', fetchImpl: failing, root: '/api/v1' }), /already done/);
+});
+
+test('plain words: measure names, schedule labels, short days', () => {
+  const review = item('review:vo2peak:141', 141, 148, { type: 'review', title: 'Review by the flight surgeon: vo2peak', measure: 'vo2peak' });
+  assert.equal(plainTitle(review), 'Review by the flight surgeon: aerobic capacity (VO2peak)');
+  assert.equal(plainTitle(item('6012:30', 27, 33)), '6012:30');
+  assert.equal(measureLabel('some_new_measure'), 'some new measure');
+  assert.equal(labelText('L+30'), '30 days after launch');
+  assert.equal(labelText('R-30'), '30 days before landing');
+  assert.equal(labelText('R+1'), '1 day after landing');
+  assert.equal(labelText('FD45'), 'flight day 45');
+  assert.equal(labelText('L-180/30'), 'between 180 and 30 days before launch');
+  assert.equal(labelText('L+0/20'), 'between launch and 20 days after');
+  assert.equal(labelText('L+0'), 'on launch day');
+  assert.equal(labelText('EVA before'), 'before a spacewalk');
+  assert.equal(labelText('something else'), 'something else');
+  assert.equal(shortDay(item('6013:-90', -120, -60, { window: { day_from: -120, day_to: -60, day: -90, label: 'L-90' } }), 180), 'L−90');
+  assert.equal(shortDay(item('6012:30', 27, 33, { window: { day_from: 27, day_to: 33, day: 30, label: 'L+30' } }), 180), 'FD31');
+  assert.equal(shortDay(item('6024:183', 183, 184, { window: { day_from: 183, day_to: 184, day: 183, label: 'R+3' } }), 180), 'R+3');
+});
+
+test('firstToDo: open first, then the next to open', () => {
+  const items = [item('6015:7', 4, 10, { status: 'done' }), item('6025:44', 41, 47), item('6012:30', 27, 33)];
+  assert.equal(firstToDo(items, 30).id, '6012:30');
+  assert.equal(firstToDo(items, 35).id, '6025:44');
+  assert.equal(firstToDo(items, 50).id, '6012:30');
 });

@@ -6,6 +6,53 @@ const base = (import.meta.env?.VITE_PLANNER_URL || '/api/v1').replace(/\/$/, '')
 export const TYPE_LABEL = { study: 'Study', routine: 'Routine', treatment: 'Treatment', retest: 'Retest', review: 'Review' };
 export const STATUS_LABEL = { booked: 'Booked', open: 'Open now', done: 'Done', missed: 'Missed', cancelled: 'Cancelled' };
 
+// Display names only. The Planner sends measure and instrument ids; until it sends names, these keep ids such as
+// `vo2peak` out of the screen. Unknown ids fall back to the id with spaces.
+export const MEASURE_LABEL = {
+  vo2peak: 'aerobic capacity (VO2peak)', heart_rate: 'heart rate',
+  hip_bmd: 'hip bone density', spine_bmd: 'spine bone density', heel_bmd: 'heel bone density',
+  lean_legs: 'leg muscle mass', lean_arms: 'arm muscle mass', lean_trunk: 'trunk muscle mass',
+  knee_extension_60: 'knee extension strength', knee_flexion_60: 'knee flexion strength',
+  ankle_plantarflexion_30: 'ankle plantar flexion strength', ankle_dorsiflexion_30: 'ankle dorsiflexion strength',
+  trunk_extension_60: 'trunk extension strength', trunk_flexion_60: 'trunk flexion strength',
+};
+export const INSTRUMENT_LABEL = { cycle: 'cycle ergometer', dxa: 'bone scan (DXA)', dynamometer: 'dynamometer', suit: 'spacesuit sensors' };
+
+export function measureLabel(id) {
+  return MEASURE_LABEL[id] || String(id || '').replace(/_/g, ' ');
+}
+
+// The title a person reads: "Review by the flight surgeon: vo2peak" names the measure in plain words.
+export function plainTitle(item) {
+  if (!item.measure) return item.title;
+  return item.title.replace(item.measure, measureLabel(item.measure));
+}
+
+// The standard's own schedule label in words: "L+30" → "30 days after launch", "FD45" → "flight day 45",
+// "L-180/30" → "between 180 and 30 days before launch". Unknown labels are returned as they are.
+export function labelText(label) {
+  const eva = { 'EVA before': 'before a spacewalk', EVA: 'on a spacewalk day', 'EVA after': 'after a spacewalk' }[label];
+  if (eva) return eva;
+  let m = /^FD(\d+)$/.exec(label);
+  if (m) return `flight day ${m[1]}`;
+  m = /^([LR])([+-])(\d+)(?:\/(\d+))?$/.exec(label || '');
+  if (!m) return label;
+  const [, ref, sign, a, b] = m;
+  const event = ref === 'L' ? 'launch' : 'landing', side = sign === '-' ? 'before' : 'after';
+  if (b !== undefined) return a === '0' ? `between ${event} and ${b} days ${side}` : `between ${a} and ${b} days ${side} ${event}`;
+  if (a === '0') return `on ${event} day`;
+  return `${days(Number(a))} ${side} ${event}`;
+}
+
+// A short day for chips, in the crew's own terms: "L−90" before launch, "FD31" in flight (FD1 is launch day, as in the
+// mission clock's todayLabel), "R+3" after landing.
+export function shortDay(item, landing = Infinity) {
+  const d = Math.round(item.window.day ?? item.window.day_from);
+  if (d < 0) return `L${num(d)}`;
+  if (d >= landing) return `R+${d - landing}`;
+  return `FD${d + 1}`;
+}
+
 export function planUrl(crew, root = base) {
   return `${root}/plan?crew=${encodeURIComponent(crew)}`;
 }
@@ -45,7 +92,7 @@ export function displayStatus(item, today) {
   return item.window.day_from <= today && today <= item.window.day_to ? 'open' : 'booked';
 }
 
-const days = n => `${n} day${n === 1 ? '' : 's'}`;
+function days(n) { return `${n} day${n === 1 ? '' : 's'}`; }
 
 // "Open now · closes in 2 days", "Opens in 3 days", "Closed 4 days ago", for the list and the detail.
 export function timing(item, today) {
@@ -118,4 +165,10 @@ export function byRoutine(items) {
     groups.get(key).items.push(item);
   }
   return [...groups.values()].sort((a, b) => (a.key === 'findings') - (b.key === 'findings') || a.items[0].window.day_from - b.items[0].window.day_from);
+}
+
+// What to show first: the first item open now, else the next one to open, else the last item.
+export function firstToDo(items, today) {
+  const booked = items.filter(i => i.status === 'booked').sort((a, b) => a.window.day_from - b.window.day_from);
+  return booked.find(i => displayStatus(i, today) === 'open') || booked.find(i => i.window.day_from > today) || items.at(-1) || null;
 }

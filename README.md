@@ -42,6 +42,8 @@ La página principal (`/`) reúne alertas, estudios programados y las mediciones
 
 La página consulta por defecto el HealthService y permite elegir un tripulante. Para iniciar el sistema completo a mano, instalá las dependencias de Python y levantá los servicios en terminales separadas desde la raíz:
 
+También podés iniciar todos los servicios juntos desde la raíz con `bash scripts/start.sh`. El script instala las dependencias faltantes y se detiene con `Ctrl+C`.
+
 ```bash
 python3 -m venv health/.venv
 health/.venv/bin/pip install -e ./sim -e './health[dev]' -e './planner[dev]'

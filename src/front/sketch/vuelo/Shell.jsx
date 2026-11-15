@@ -11,7 +11,7 @@ import { analysesUrl, loadAnalyses } from '../data/analyses.js';
 import { dashboardUrl, loadCrew, loadDashboard } from '../data/dashboard.js';
 import { useDashboard } from '../data/useDashboard.js';
 import { Brand, Icon } from './Icons.jsx';
-import { missionName, person } from '../data/roster.js';
+import { MISSION, person } from '../data/roster.js';
 import { Backdrop } from './Backdrop.jsx';
 import { measurementsHref } from '../como-medimos/navigation.js';
 import '../style.css';
@@ -75,7 +75,7 @@ export function Shell() {
   const active = TABS.find(item => item.id === tab);
   // Source and mission name: in the heading of every tab but the Overview.
   const sourceLabel = data ? (exampleMode ? 'Example data' : data.simulated ? 'Simulation' : 'Mission data') : null;
-  const missionLabel = data ? missionName(data.mission) : null;
+  const missionLabel = data ? MISSION.name.toUpperCase() : null;   // example roster label (data/roster.js)
   const error = analyses.error || crewState.error;
 
   function activate(id) {

@@ -1,6 +1,12 @@
 /* Crew select (crew.html). Tokens and glass classes: ../theme/glass.css; header and heading: ../vuelo/style.css.
    Rules: docs/design-system.md. Status colours only mark status; the suit blue lives in the 3D scene. */
 
+/* This page does not load the app's base sheet (../style.css): without these the header and content are
+   wider than the screen by their own padding plus the browser's default body margin. */
+body:has(.crew-page) { margin: 0; }
+.crew-page, .crew-page *, .crew-page *::before, .crew-page *::after { box-sizing: border-box; }
+.crew-page .flight-home { color: inherit; text-decoration: none; }
+
 .crew-content { display: flex; flex-direction: column; }
 .crew-counts { display: flex; flex-wrap: wrap; gap: 6px; }
 .crew-intro { margin: -8px 0 16px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }

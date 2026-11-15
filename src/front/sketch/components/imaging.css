@@ -63,6 +63,8 @@
   border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.62) 0%, rgba(255,255,255,0) 70%); pointer-events: none;
 }
 .img-stage .img-model { position: absolute; inset: 0; z-index: 1; }
+/* The shared body viewer asks for at least 360px; here the stage is 300px, and the extra 60px drew the figure over the card below. */
+.img-stage .img-model > div { min-height: 0 !important; }
 
 /* Chart card */
 .img-chart { padding: 18px 22px; display: grid; gap: 10px; min-width: 0; }

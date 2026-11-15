@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ATTRIBUTION } from 'open-anatomy-3d';
 import { components } from '../aerobica/data.js';
 import { Icon } from '../vuelo/Icons.jsx';
@@ -34,10 +34,27 @@ function statusLead(status, alerts, crew, hasVitals) {
   return who + lower(hasVitals ? 'Nothing needs action now.' : 'No alerts from the flight tests.');
 }
 
+// Wide but short windows: the first view has no room for today's heart-rate trace (summary/style.css, "First
+// view"). It is left out of the render instead of hidden with CSS, because the chart cannot measure itself
+// while hidden and would stay blank after the window grows.
+const SHORT_FIRST_VIEW = '(min-width: 1181px) and (min-height: 560px) and (max-height: 960px)';
+function useMedia(query) {
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const update = () => setMatches(list.matches);
+    update();
+    list.addEventListener('change', update);
+    return () => list.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
+
 export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, vitalsError }) {
   const { data: today, error: planError } = useDashboard(exampleMode || !crewId ? null : planTodayUrl(crewId), loadPlan);
   const testAlerts = useMemo(() => alertsOf(data), [data]);
   const notices = useMemo(() => watchNotices(vitals), [vitals]);
+  const shortFirstView = useMedia(SHORT_FIRST_VIEW);
   const alerts = [...testAlerts, ...notices];
   const status = overallStatus(testAlerts, notices);
   const rows = useMemo(() => muscleRows(data), [data]);
@@ -147,6 +164,8 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
             <h2 id="status-title" className="eyebrow">Mission status</h2>
             <span className="chip" data-tone={status.chip}>{chipText}</span>
           </div>
+          {/* Fixed height on wide screens so the watch panel fits in the first view; the details scroll inside. */}
+          <div className="ov-status-scroll">
           <p className="ov-status-lead">{statusLead(status, alerts, data.crew?.id, Boolean(vitals))}</p>
           <p className="ov-status-detail">{detail}</p>
           {alerts.length > 0 && <ul className="ov-alerts">
@@ -159,8 +178,9 @@ export function SummaryView({ data, crewId, exampleMode, onOpen, vitals = null, 
             </li>)}
           </ul>}
           {alerts.length > 0 && !exampleMode && <button type="button" className="btn-link ov-alert-plan" onClick={() => onOpen('plan')}>View mission plan <span aria-hidden="true">→</span></button>}
+          </div>
         </section>
-        {!exampleMode && <div className="ov-wearable"><WatchPanel vitals={vitals} error={vitalsError} compact onOpen={() => onOpen('vitales')}/></div>}
+        {!exampleMode && <div className="ov-wearable"><WatchPanel vitals={vitals} error={vitalsError} compact trace={!shortFirstView} onOpen={() => onOpen('vitales')}/></div>}
       </div>
     </div>
 

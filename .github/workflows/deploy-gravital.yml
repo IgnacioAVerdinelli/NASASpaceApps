@@ -1,0 +1,24 @@
+# Redeploys https://gravital.jdegiovanni.uk after every push to main.
+# It sends one empty POST; the server always deploys the current main from GitHub and ignores the request.
+# No secrets. A failed ping never fails anything: the server also checks main every 5 minutes.
+# To turn it off, disable this workflow in the Actions tab or delete this file.
+name: Deploy gravital.jdegiovanni.uk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  redeploy:
+    if: github.repository == 'IgnacioAVerdinelli/NASASpaceApps'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    continue-on-error: true
+    steps:
+      - name: Ask the demo server to redeploy main
+        run: |
+          curl -fsS -m 20 --retry 3 --retry-all-errors -X POST https://gravital.jdegiovanni.uk/hooks/deploy \
+            || echo "::warning::deploy ping failed; the server picks up main within 5 minutes anyway"

@@ -1,0 +1,598 @@
+{
+ "version": 1,
+ "updatedAt": "2027-06-20T12:00:00Z",
+ "simulated": true,
+ "notice": "Synthetic data, built on NASA bed-rest studies (reference curves 0.2.0). Not a health assessment.",
+ "crew": {
+  "id": "CM-1",
+  "body": "female"
+ },
+ "mission": {
+  "name": "iss_180",
+  "today": 170.0,
+  "todayLabel": "FD171",
+  "landing": 180
+ },
+ "levels": [
+  {
+   "level": 1,
+   "label": "No clear change",
+   "range": "less than 5% worse than pre-flight"
+  },
+  {
+   "level": 2,
+   "label": "Mild loss",
+   "range": "5 to 10% worse"
+  },
+  {
+   "level": 3,
+   "label": "Moderate loss",
+   "range": "10 to 20% worse"
+  },
+  {
+   "level": 4,
+   "label": "Large loss",
+   "range": "20% worse or more, or below a NASA minimum"
+  }
+ ],
+ "strength": {
+  "evaluations": [
+   {
+    "id": "pre",
+    "day": -30.0,
+    "label": "Pre-flight",
+    "phase": "pre"
+   },
+   {
+    "id": "d14",
+    "day": 14.0,
+    "label": "FD15",
+    "phase": "flight"
+   },
+   {
+    "id": "d44",
+    "day": 44.0,
+    "label": "FD45",
+    "phase": "flight"
+   },
+   {
+    "id": "d74",
+    "day": 74.0,
+    "label": "FD75",
+    "phase": "flight"
+   },
+   {
+    "id": "d104",
+    "day": 104.0,
+    "label": "FD105",
+    "phase": "flight"
+   },
+   {
+    "id": "d134",
+    "day": 134.0,
+    "label": "FD135",
+    "phase": "flight"
+   },
+   {
+    "id": "d164",
+    "day": 164.0,
+    "label": "FD165",
+    "phase": "flight"
+   }
+  ],
+  "groups": [
+   {
+    "key": "quadriceps",
+    "measure": "knee_extension_60",
+    "name": "Quadriceps",
+    "test": "Knee extension, 60°/s",
+    "region": "Front of the thigh",
+    "muscleKeys": [
+     "quadriceps_l",
+     "quadriceps_r"
+    ],
+    "unit": "N·m",
+    "baseline": 124.5,
+    "referenceTests": 2,
+    "noiseBandPct": 16.8,
+    "points": [
+     {
+      "evaluation": "pre",
+      "value": 124.5,
+      "changePct": 0.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d14",
+      "value": 134.2,
+      "changePct": 7.8,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d44",
+      "value": 128.9,
+      "changePct": 3.5,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d74",
+      "value": 121.3,
+      "changePct": -2.6,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d104",
+      "value": 125.1,
+      "changePct": 0.5,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d134",
+      "value": 141.4,
+      "changePct": 13.6,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d164",
+      "value": 119.7,
+      "changePct": -3.9,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     }
+    ],
+    "alert": null
+   },
+   {
+    "key": "hamstrings",
+    "measure": "knee_flexion_60",
+    "name": "Hamstrings",
+    "test": "Knee flexion, 60°/s",
+    "region": "Back of the thigh",
+    "muscleKeys": [
+     "hamstrings_l",
+     "hamstrings_r"
+    ],
+    "unit": "N·m",
+    "baseline": 85.5,
+    "referenceTests": 2,
+    "noiseBandPct": 20.6,
+    "points": [
+     {
+      "evaluation": "pre",
+      "value": 85.5,
+      "changePct": 0.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d14",
+      "value": 96.0,
+      "changePct": 12.3,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d44",
+      "value": 78.9,
+      "changePct": -7.7,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d74",
+      "value": 79.5,
+      "changePct": -7.0,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d104",
+      "value": 75.0,
+      "changePct": -12.2,
+      "level": 3,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d134",
+      "value": 83.8,
+      "changePct": -1.9,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d164",
+      "value": 84.5,
+      "changePct": -1.1,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     }
+    ],
+    "alert": null
+   },
+   {
+    "key": "calves",
+    "measure": "ankle_plantarflexion_30",
+    "name": "Calves",
+    "test": "Ankle plantarflexion, 30°/s",
+    "region": "Soleus and gastrocnemius",
+    "muscleKeys": [
+     "calf_l",
+     "calf_r"
+    ],
+    "unit": "N·m",
+    "baseline": 115.4,
+    "referenceTests": 2,
+    "noiseBandPct": 21.1,
+    "points": [
+     {
+      "evaluation": "pre",
+      "value": 115.4,
+      "changePct": 0.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d14",
+      "value": 110.8,
+      "changePct": -4.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d44",
+      "value": 88.4,
+      "changePct": -23.4,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d74",
+      "value": 88.4,
+      "changePct": -23.4,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d104",
+      "value": 86.5,
+      "changePct": -25.0,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d134",
+      "value": 72.8,
+      "changePct": -36.9,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d164",
+      "value": 82.7,
+      "changePct": -28.3,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     }
+    ],
+    "alert": null
+   },
+   {
+    "key": "shins",
+    "measure": "ankle_dorsiflexion_30",
+    "name": "Shins",
+    "test": "Ankle dorsiflexion, 30°/s",
+    "region": "Front of the lower leg",
+    "muscleKeys": [
+     "shin_muscles_l",
+     "shin_muscles_r"
+    ],
+    "unit": "N·m",
+    "baseline": 36.9,
+    "referenceTests": 2,
+    "noiseBandPct": 20.6,
+    "points": [
+     {
+      "evaluation": "pre",
+      "value": 36.9,
+      "changePct": 0.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d14",
+      "value": 38.0,
+      "changePct": 3.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d44",
+      "value": 34.3,
+      "changePct": -7.0,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d74",
+      "value": 36.1,
+      "changePct": -2.2,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d104",
+      "value": 33.5,
+      "changePct": -9.2,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d134",
+      "value": 26.3,
+      "changePct": -28.7,
+      "level": 4,
+      "withinNoise": false,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d164",
+      "value": 36.3,
+      "changePct": -1.6,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     }
+    ],
+    "alert": null
+   },
+   {
+    "key": "back",
+    "measure": "trunk_extension_60",
+    "name": "Back",
+    "test": "Trunk extension, 60°/s",
+    "region": "Back of the trunk",
+    "muscleKeys": [
+     "back_muscles_l",
+     "back_muscles_r"
+    ],
+    "unit": "N·m",
+    "baseline": 247.8,
+    "referenceTests": 2,
+    "noiseBandPct": 17.6,
+    "points": [
+     {
+      "evaluation": "pre",
+      "value": 247.8,
+      "changePct": 0.0,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d14",
+      "value": 272.8,
+      "changePct": 10.1,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d44",
+      "value": 230.9,
+      "changePct": -6.8,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d74",
+      "value": 229.1,
+      "changePct": -7.6,
+      "level": 2,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d104",
+      "value": 248.9,
+      "changePct": 0.4,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d134",
+      "value": 255.7,
+      "changePct": 3.2,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     },
+     {
+      "evaluation": "d164",
+      "value": 276.6,
+      "changePct": 11.6,
+      "level": 1,
+      "withinNoise": true,
+      "belowMinimum": null,
+      "quality": "ok"
+     }
+    ],
+    "alert": null
+   }
+  ],
+  "upcoming": [
+   {
+    "day": 185.0,
+    "label": "R+5",
+    "reason": "routine"
+   },
+   {
+    "day": 210.0,
+    "label": "R+30",
+    "reason": "routine"
+   }
+  ]
+ },
+ "aerobic": {
+  "measure": "vo2peak",
+  "name": "Aerobic capacity (VO2peak)",
+  "test": "Peak oxygen uptake on the cycle test",
+  "unit": "ml/kg/min",
+  "baseline": 36.9,
+  "referenceTests": 2,
+  "noiseBandPct": 11.4,
+  "minimum": 32.9,
+  "standardLossPct": 20.0,
+  "evaluations": [
+   {
+    "id": "pre",
+    "day": -30.0,
+    "label": "Pre-flight",
+    "phase": "pre",
+    "value": 36.9,
+    "changePct": 0.0,
+    "level": 1,
+    "withinNoise": true,
+    "belowMinimum": false,
+    "quality": "ok",
+    "test": null
+   },
+   {
+    "id": "d13",
+    "day": 13.0,
+    "label": "FD14",
+    "phase": "flight",
+    "value": 35.7,
+    "changePct": -3.1,
+    "level": 1,
+    "withinNoise": true,
+    "belowMinimum": false,
+    "quality": "ok",
+    "test": null
+   },
+   {
+    "id": "d74",
+    "day": 74.0,
+    "label": "FD75",
+    "phase": "flight",
+    "value": 32.7,
+    "changePct": -11.3,
+    "level": 4,
+    "withinNoise": true,
+    "belowMinimum": true,
+    "quality": "ok",
+    "test": null
+   },
+   {
+    "id": "d164",
+    "day": 164.0,
+    "label": "FD165",
+    "phase": "flight",
+    "value": 30.6,
+    "changePct": -17.0,
+    "level": 4,
+    "withinNoise": false,
+    "belowMinimum": true,
+    "quality": "ok",
+    "test": null
+   },
+   {
+    "id": "d166",
+    "day": 166.0,
+    "label": "FD167",
+    "phase": "flight",
+    "value": 33.7,
+    "changePct": -8.5,
+    "level": 2,
+    "withinNoise": true,
+    "belowMinimum": false,
+    "quality": "ok",
+    "test": null
+   }
+  ],
+  "alert": {
+   "severity": "critical",
+   "rule": "nasa_standard",
+   "message": "Peak oxygen uptake (VO2peak): -8.5% since pre-flight; the last two tests average 32.2 ml/kg/min, below NASA's in-mission minimum of 32.9 ml/kg/min."
+  },
+  "upcoming": [
+   {
+    "day": 185.0,
+    "label": "R+5",
+    "reason": "routine"
+   },
+   {
+    "day": 210.0,
+    "label": "R+30",
+    "reason": "routine"
+   }
+  ]
+ }
+}

@@ -2,10 +2,12 @@
 
 GET /api/v1/dashboard    dashboard JSON for the 3D page (contract version 1). ?crew=CM-2 picks a crew member,
                          ?day=150 looks at a given mission day without saving anything.
+GET /api/v1/analyses     strength and aerobic capacity test by test, for the flight-measurement page; same
+                         ?crew and ?day as /dashboard
 GET /api/v1/alerts       alerts published so far (until the notification system defines its queue)
 GET /api/v1/health       service status
 
-If the DataService does not answer, /dashboard and /health answer 503 with the reason, and the page keeps
+If the DataService does not answer, /dashboard, /analyses and /health answer 503 with the reason, and the page keeps
 retrying.
 """
 from __future__ import annotations
@@ -35,6 +37,15 @@ def create_app(service: HealthService, allow_origin: str = "*", delivery_queue=N
     def dashboard(response: Response, crew: str | None = None, day: float | None = None):
         try:
             data = service.dashboard(crew, day)
+        except KeyError:
+            return unknown_crew(crew)
+        response.headers["Cache-Control"] = "no-store"
+        return data
+
+    @app.get("/api/v1/analyses")
+    def analyses(response: Response, crew: str | None = None, day: float | None = None):
+        try:
+            data = service.analyses(crew, day)
         except KeyError:
             return unknown_crew(crew)
         response.headers["Cache-Control"] = "no-store"

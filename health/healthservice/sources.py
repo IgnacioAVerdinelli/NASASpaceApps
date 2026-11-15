@@ -5,7 +5,8 @@
 - the mission (launch date, phases with their gravity) and the crew, with each member's sex;
 - the mission day now, by the DataService's clock;
 - a crew member's readings up to a mission day;
-- somewhere to save what it computes.
+- somewhere to save what it computes;
+- the studies the analysis scheduler recorded for a crew member (results of kind "study").
 
 `DataServiceSource` asks the DataService's HTTP API for them (`python -m gravsim.serve`, port 8000).
 `GravsimSource` runs gravsim's DataService in this process instead, for the tests, the evaluation and a demo
@@ -25,6 +26,7 @@ from .models import CrewInfo, MissionInfo, Phase, Reading, parse_time
 from .processing import MEASURES, MeasureResult
 
 RESULT_KIND = "measure_results"
+STUDY_KIND = "study"
 SHARED = ("crew_id", "measure", "mission_day", "model_version")     # fields every result of one save has in common
 
 
@@ -34,6 +36,19 @@ class DataSource(Protocol):
     def current_day(self) -> float: ...
     def readings(self, crew_id: str, until_day: float) -> list[Reading]: ...
     def save_results(self, results: list[MeasureResult]) -> None: ...
+    def studies(self, crew_id: str) -> list[dict]: ...
+
+
+def study_list(mission: MissionInfo, records: list[dict]) -> list[dict]:
+    """The scheduler's study records (each one {timestamp, payload: {studies: [...]}}) as a flat list, each study
+    with the mission day it is for: [{day, id, study, status, reason, measure?}]."""
+    out = []
+    for r in records:
+        day = mission.day_of(r["timestamp"])
+        for study in (r.get("payload") or {}).get("studies", []):
+            if isinstance(study, dict):
+                out.append({**study, "day": day})
+    return out
 
 
 def result_record(mission: MissionInfo, results: list[MeasureResult]) -> dict:
@@ -88,6 +103,9 @@ class DataServiceSource:
     def save_results(self, results: list[MeasureResult]) -> None:
         if results:
             self._request("POST", "/api/v1/results", body=result_record(self._mission, results))
+
+    def studies(self, crew_id: str) -> list[dict]:
+        return study_list(self._mission, self._request("GET", "/api/v1/results", {"crew": crew_id, "kind": STUDY_KIND}))
 
     def _request(self, method: str, path: str, query: dict | None = None, body: dict | None = None):
         url = self.url + path + (f"?{urlencode(query)}" if query else "")
@@ -152,6 +170,9 @@ class GravsimSource:
     def save_results(self, results: list[MeasureResult]) -> None:
         if results:
             self.data.save_result(**result_record(self._mission, results))
+
+    def studies(self, crew_id: str) -> list[dict]:
+        return study_list(self._mission, [r.to_dict() for r in self.data.results(crew_id, STUDY_KIND)])
 
     @property
     def saved_results(self) -> list:

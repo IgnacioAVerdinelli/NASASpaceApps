@@ -1,0 +1,89 @@
+/* Strength tab: reuses the sketch's style.css and adds only its own rules. */
+.fuerza{background:#f8f9fe}
+.fuerza ::selection{background:#d9d4f3;color:#231d45}
+.page-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px 40px;align-items:center;padding:14px 7%;border-bottom:1px solid #dedfee;background:#fbfbff}
+.page-head h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0}
+.page-head h1 span{font-weight:500;color:#4f5874}
+.lede{font-size:17px;line-height:1.65;color:#465071;max-width:70ch;margin-top:14px}
+.mission{display:flex;flex-wrap:wrap;gap:6px 28px;margin:0}
+.mission div{display:flex;align-items:baseline;gap:8px}
+.mission dt{font-size:12px;font-weight:800;letter-spacing:.08em;color:#596080;text-transform:uppercase}
+.mission dd{margin:0;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:#2f2850;white-space:nowrap}
+.mission small{font-size:12px;font-weight:600;color:#6b6340}
+
+/* Mapa corporal y resumen (sobrescribe tamaños base del sketch) */
+.fuerza-overview{min-height:auto}
+.fuerza-overview .body-stage{min-height:560px}
+.fuerza .body-panel-heading{font-size:12px;letter-spacing:.06em}
+.fuerza .body-panel-heading span:last-child{font-size:13px;letter-spacing:.02em;text-transform:none;font-weight:600}
+.fuerza .atlas-indicators{font-size:13px}
+.fuerza .summary-intro{font-size:16px;line-height:1.65;max-width:42ch}
+.fuerza .insight-name{font-size:18px}
+.fuerza .insight-detail{font-size:14.5px}
+.fuerza .insight-change{font-size:18px;color:#2f2850}
+.fuerza .insight-marker{border-width:0;transition:background-color .6s cubic-bezier(.22,1,.36,1)}
+.fuerza .note{font-size:13.5px;line-height:1.6}
+
+.legend-levels{list-style:none;display:flex;flex-wrap:wrap;gap:10px 22px;margin:16px 0 0;padding:0;font-size:14px;color:#2f3756;position:relative;z-index:2}
+.legend-levels li{display:flex;align-items:flex-start;gap:8px;font-weight:700}
+.legend-levels li span{display:flex;flex-direction:column;gap:2px}
+.legend-levels small{font-size:12.5px;font-weight:500;color:#59617b}
+.legend-levels i{width:16px;height:16px;margin-top:2px;border-radius:4px;flex:none;border:1px solid #fff;box-shadow:0 0 0 1px #d4d2e6}
+.legend-levels i.not-assessed{background:#d6d9dc}
+.legend-levels .alert-icon{margin-top:3px;color:#a4242f}
+
+.timeline{position:relative;z-index:2;margin-top:20px;padding:16px 18px;background:#f3f2fb;border-radius:12px}
+.timeline-label{font-size:12px;font-weight:800;letter-spacing:.08em;color:#4f5874;text-transform:uppercase}
+.timeline ol{list-style:none;display:flex;justify-content:space-between;gap:6px;margin:16px 0 0;padding:26px 0 0;font-size:14px;color:#4f5874;position:relative}
+.timeline ol::before{content:'';position:absolute;top:8px;left:4%;right:4%;height:3px;border-radius:2px;background:linear-gradient(90deg,#6258a0 0 var(--progress,0%),#d4d0ea var(--progress,0%))}
+.timeline li{position:relative;text-align:center}
+.timeline li::before{content:'';position:absolute;top:-28px;left:50%;width:20px;height:20px;margin-left:-10px;box-sizing:border-box;border-radius:50%;background:#fff;border:3px solid #6258a0;transition:background-color .3s,box-shadow .3s}
+.timeline li.next::before{border-color:#c9c5e2;border-style:dashed}
+.timeline li.done::before{background:#6258a0}
+.timeline li.on::before{background:#6258a0;box-shadow:0 0 0 7px rgba(98,88,160,.2)}
+.timeline li button{font:inherit;background:none;border:0;padding:4px 8px;color:inherit;cursor:pointer;border-radius:6px;transition:background-color .2s,color .2s}
+.timeline li button:hover{background:#e6e3f6}
+.timeline li.on button{color:#fff;background:#6258a0;font-weight:700}
+.timeline li button:focus-visible{outline:3px solid #6055a5;outline-offset:2px}
+.timeline li.next{color:#7c829c}
+.timeline li.next small{display:block;font-size:12px}
+
+.level-badge{display:inline-flex;align-items:center;gap:7px;width:max-content;font-size:13px;font-weight:700;color:#2f3756;background:#eeeff6;border-radius:20px;padding:4px 11px 4px 9px}
+.level-badge i{width:10px;height:10px;border-radius:50%;flex:none}
+.level-badge.level-4{background:#f6e3e4;color:#7d1a23}
+.level-badge.level-none{color:#59617b}
+.level-badge small{font-size:12px;font-weight:600;color:#59617b}
+.level-badge small::before{content:'· '}
+.alert-icon{flex:none}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.alert-badge{display:inline-flex;align-items:center;gap:6px;width:max-content;font-size:13px;font-weight:800;border-radius:20px;padding:4px 11px 4px 9px}
+.alert-badge.alert-critical{background:#a4242f;color:#fff}
+.alert-badge.alert-warning{background:#fbecc7;color:#6b4a06}
+.alert-message{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:15px;line-height:1.6;color:#2f3756;max-width:80ch}
+
+/* Detalle del grupo seleccionado */
+.detail{padding:72px 7% 32px;background:#fbfbff}
+.detail-head{display:flex;justify-content:space-between;align-items:end;gap:30px;padding-bottom:24px;border-bottom:1px solid #d9ddeb}
+.detail-head h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,3.2vw,46px);font-weight:600;letter-spacing:-.035em;margin:0 0 8px}
+.detail-sub{font-size:16px;color:#4f5874}
+.detail-figure{display:flex;flex-direction:column;align-items:end;gap:8px;text-align:right}
+.detail-figure strong{font-size:44px;letter-spacing:-.03em;color:#2f2850;font-variant-numeric:tabular-nums;line-height:1}
+.detail-figure span{font-size:15px;color:#4f5874}
+.detail-charts{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:24px;margin-top:30px}
+.panel{margin:0;background:#f1f0fa;border-radius:14px;padding:clamp(20px,2.5vw,32px)}
+.panel h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;letter-spacing:-.02em}
+.panel figcaption p{font-size:15px;line-height:1.6;color:#4f5874;margin-top:8px;max-width:70ch}
+.detail-chart{height:320px;margin-top:18px}
+.fuerza .chart-tooltip{font-size:14px}
+.chart-note{font-size:13.5px;line-height:1.6;color:#555d78;margin-top:12px}
+
+/* Método */
+.method{padding:64px 7% 96px;background:#fbfbff}
+.method h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(28px,2.8vw,40px);font-weight:600;letter-spacing:-.03em}
+.method-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:30px;margin-top:28px;border-top:1px solid #d9ddeb;padding-top:26px}
+.method h3{font-size:17px;margin-bottom:10px}
+.method p{font-size:15px;line-height:1.7;color:#465071}
+.method .source{margin-top:28px;font-size:13.5px;color:#596080}
+
+@media(max-width:1100px){.method-grid{grid-template-columns:1fr 1fr}.detail-charts{grid-template-columns:1fr}}
+@media(max-width:750px){.page-head{padding:12px 16px}.detail,.method{padding-left:16px;padding-right:16px}.method-grid{grid-template-columns:1fr}.fuerza-overview .body-stage{min-height:420px}.detail-head{flex-direction:column;align-items:start}.detail-figure{align-items:start;text-align:left}.fuerza .atlas-indicators{font-size:11px}}

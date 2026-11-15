@@ -14,8 +14,12 @@ change) then says whether the alert was right:
 
 Every rule looks at the "excess": how many percentage points the measured change goes beyond that typical
 change (positive = worse), against the noise of one test, 100 * noise_cv * sqrt(1 + 1/n_ref) (see
-healthservice/alerts.py). The last row runs the HealthService's own code (compute_results + alerts.check) on
-the same readings, so the table scores what is actually implemented.
+healthservice/alerts.py). The last row runs the HealthService's own code (compute_results + alerts.check, rule
+"beyond_typical") on the same readings, so the table scores what is actually implemented.
+
+The NASA-standard rule (alerts.check, rule "nasa_standard": VO2peak 20% or more below pre-flight, or below
+32.9 ml/kg/min, on the mean of the last two tests) makes a different claim, so it gets its own table: it is right
+when truth is past the standard at that test.
 """
 from __future__ import annotations
 
@@ -30,7 +34,7 @@ import gravsim as gs
 from gravsim.schedule import default_instruments, timeline
 
 from healthservice import CrewInfo, Reading, Reference, compute_results
-from healthservice.alerts import can_alert, check
+from healthservice.alerts import STANDARD_LOSS_PCT, STANDARD_MEASURES, can_alert, check
 from healthservice.processing import ITEMS, WHOLE_BODY
 from healthservice.sources import mission_info
 
@@ -52,7 +56,9 @@ class Point:
     n_ref: int                    # pre-flight readings in the reference
     can_alert: bool               # the measure's typical loss over the mission is bigger than one test's noise
     prev: "Point | None" = None   # previous reading of this measure from launch on
-    service: bool = False         # flagged by the HealthService's own alerts.check
+    service: bool = False         # flagged by the HealthService's own alerts.check, rule "beyond_typical"
+    past_standard: bool = False   # truth: past NASA's in-mission standard (VO2peak only)
+    standard: bool = False        # flagged by alerts.check, rule "nasa_standard"
 
     @property
     def sigma(self) -> float:
@@ -82,11 +88,14 @@ def points_for(mission: gs.Mission, seed: int, group: str, reference: Reference,
             if r.mission_day < 0:
                 continue
             typical = reference.worse_by(mid, reference.typical_change(mid, info.unloaded_days(r.mission_day), 0.0))
+            floor = reference.minimum(mid)
+            past = mid in STANDARD_MEASURES and (reference.worse_by(mid, r.truth["change_pct"]) >= STANDARD_LOSS_PCT
+                                                 or (floor is not None and r.truth["value"] < floor))
             p = Point(group, f"{seed}/{crew_id}", mid, r.mission_day, r.mission_day < landing,
                       excess=reference.worse_by(mid, 100 * (r.value / ref - 1)) - typical,
                       true_excess=reference.worse_by(mid, r.truth["change_pct"]) - typical,
                       noise_pts=100 * reference.measure(mid)["noise_cv"], n_ref=len(pre),
-                      can_alert=can_alert(reference, info, mid, len(pre)), prev=prev)
+                      can_alert=can_alert(reference, info, mid, len(pre)), prev=prev, past_standard=past)
             out.append(p)
             index[(crew_id, mid, r.mission_day)] = p
             prev = p
@@ -98,8 +107,10 @@ def points_for(mission: gs.Mission, seed: int, group: str, reference: Reference,
         mine = [r for r in readings if r.crew_id == cm.id]
         for day in sorted({r.mission_day for r in mine if r.mission_day >= 0}):
             results = {res.measure: res for res in compute_results(reference, info, crew, mine, day)}
-            for mid in check(reference, info, list(results.values())):
+            for mid in check(reference, info, list(results.values()), rules=("beyond_typical",)):
                 index[(cm.id, mid, results[mid].last_mission_day)].service = True
+            for mid in check(reference, info, list(results.values()), rules=("nasa_standard",)):
+                index[(cm.id, mid, results[mid].last_mission_day)].standard = True
     return out
 
 
@@ -246,6 +257,20 @@ def crew_table(title: str, points: list[Point], rule: Rule) -> str:
     return "\n".join(rows)
 
 
+def standard_table(title: str, points: list[Point]) -> str:
+    """The NASA-standard rule, scored against truth being past the standard at the flagged test."""
+    rows = [f"### {title}", "",
+            "| Measure | Alerts raised | False alerts | Tests past the standard (truth) caught |", "|---|---|---|---|"]
+    for mid in STANDARD_MEASURES:
+        ps = [p for p in points if p.measure == mid]
+        raised = [p for p in ps if p.standard and (p.prev is None or not p.prev.standard)]
+        real = [p for p in ps if p.past_standard]
+        caught = sum(p.standard for p in real)
+        rows.append(f"| {mid} | {len(raised)} | {sum(not p.past_standard for p in raised)} | "
+                    f"{caught}/{len(real)} ({pct(caught, len(real))}) |")
+    return "\n".join(rows)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--seeds", type=int, default=50, help="random missions of 4 crew (default 50)")
@@ -266,7 +291,10 @@ def main(argv=None):
     print(table(f"Random crews ({args.seeds} missions x 4 crew)", rand, RULES), "\n")
     print(table("Same crews, with 1 in 10 dynamometer tests off by 20% (spike fault)", spikes, RULES), "\n")
     print(table(f"Designed cases ({len(CASES)} cases x {args.per_case} crew)", cases, RULES), "\n")
-    print(crew_table("HealthService rule, per crew member (designed cases and random crews)", cases + rand, service))
+    print(crew_table("HealthService rule, per crew member (designed cases and random crews)", cases + rand, service), "\n")
+    print(standard_table("NASA-standard rule: demo mission (seed 7)", demo), "\n")
+    print(standard_table(f"NASA-standard rule: random crews ({args.seeds} missions x 4 crew)", rand), "\n")
+    print(standard_table(f"NASA-standard rule: designed cases ({len(CASES)} cases x {args.per_case} crew)", cases))
 
 
 if __name__ == "__main__":

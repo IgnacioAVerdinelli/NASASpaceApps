@@ -89,6 +89,14 @@ test('a front thigh indicator follows the model and disappears behind it', async
     assert.equal(overlay.children[0].children[2].children[0].textContent, 'Quadriceps · L');
     assert.equal(overlay.children[0].children[2].children[1].textContent, '75%');
     const dot = overlay.children[0];
+    const intersect = THREE.Raycaster.prototype.intersectObjects;
+    let raycasts = 0;
+    THREE.Raycaster.prototype.intersectObjects = function (...args) { raycasts++; return intersect.apply(this, args); };
+    try {
+      labels.update(values, 1250);
+      labels.update(values, 1450);
+      assert.equal(raycasts, 0, 'a stationary camera does not repeat visibility raycasts');
+    } finally { THREE.Raycaster.prototype.intersectObjects = intersect; }
     const initialX = parseFloat(dot.style['--dot-x']);
     camera.position.set(.12, .86, 3.3); camera.lookAt(0, .86, 0); camera.updateMatrixWorld();
     labels.update(values, 1050);

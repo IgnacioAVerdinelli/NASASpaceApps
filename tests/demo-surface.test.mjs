@@ -5,6 +5,7 @@ import { demoSurfaceScores } from '../src/front/sketch/data/demoSurface.js';
 test('five demo crew have complete and distinct illustrative surface profiles', () => {
   const mission = { name: 'iss_180_demo_five', today: 130 };
   const profiles = Array.from({ length: 5 }, (_, i) => demoSurfaceScores(mission, `CM-${i + 1}`));
+  assert.strictEqual(profiles[0], demoSurfaceScores({ ...mission }, 'CM-1'));
   assert.equal(new Set(profiles.map(p => JSON.stringify(p))).size, 5);
   for (const profile of profiles) {
     assert.equal(Object.keys(profile).length, 27);
